@@ -41,7 +41,8 @@ const Login = () => {
       const data = await res.json();
       if (res.ok) {
         login(data);
-        navigate(data.role === 'client' ? '/tickets' : '/');
+        navigate('/');
+
       } else {
         setError(data.message || 'Something went wrong');
       }
@@ -408,9 +409,13 @@ const Login = () => {
                 >
                   <option value="client">Client — External (Website / App issues)</option>
                   <option value="employee">Employee — Internal IT Requests</option>
+                  <option value="team_leader">Team Leader — Management</option>
+                  <option value="hr">HR — Personnel Management</option>
+                  <option value="admin">Admin — System Administration</option>
                 </select>
                 <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '-0.5rem', marginBottom: '1rem' }}>
-                  Note: Admin accounts are provisioned separately by system administrators.
+                  Note: Choose the role that best matches your responsibilities.
+
                 </p>
               </div>
             )}

@@ -423,7 +423,14 @@ const EmployeeDashboard = ({ stats: initialStats, navigate, token, userId }) => 
 
       {/* Stat Cards */}
       <div className="dashboard-grid" style={{ marginBottom: '2rem' }}>
+        <StatCard label="Assigned to Me" value={stats.total} icon={ListTodo} iconColor="#6366f1" onClick={() => setActiveTab('assigned')} accent="#6366f1" />
+        <StatCard label="Pending" value={stats.pending} icon={AlertCircle} iconColor="#ef4444" onClick={() => setActiveTab('assigned')} />
+        <StatCard label="In Progress" value={stats.inProgress} icon={Clock} iconColor="#6366f1" />
+        <StatCard label="Resolved" value={stats.completed} icon={CheckCircle2} iconColor="#10b981" />
+        <StatCard label="Unassigned Pool" value={stats.unassigned} icon={Inbox} iconColor="#ef4444" onClick={() => setActiveTab('unassigned')} accent="#ef4444" />
+        <StatCard label="My Raised" value={stats.myRaisedTickets} icon={Award} iconColor="#0ea5e9" onClick={() => setActiveTab('raised')} />
       </div>
+
 
       {/* Two-column layout: Ticket panels + Chart */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: '1.5rem', alignItems: 'start' }}>

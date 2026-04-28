@@ -162,7 +162,7 @@ app.post('/api/auth/register', async (req, res) => {
 
   // Self-registration is limited to end-user roles only
   // Registration is now open to all roles as requested
-  const allowedSelfRegisterRoles = ['client', 'employee', 'admin'];
+  const allowedSelfRegisterRoles = ['client', 'employee', 'team_leader', 'hr', 'admin'];
   if (normalizedRole && !allowedSelfRegisterRoles.includes(normalizedRole)) {
     return res.status(403).json({ message: 'Invalid role specified.' });
   }
