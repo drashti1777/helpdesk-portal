@@ -928,7 +928,7 @@ connectDB().then(async () => {
   app.use(express.static(distPath));
   
   // Catch-all route to serve the frontend
-  app.get('*', (req, res) => {
+  app.get('/:path*', (req, res) => {
     // Check if it's an API route - if so, don't serve index.html (already handled or 404)
     if (req.path.startsWith('/api')) {
       return res.status(404).json({ message: 'API route not found' });
