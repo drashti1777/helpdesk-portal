@@ -1,0 +1,926 @@
+import 'dotenv/config';
+import express from 'express';
+import cors from 'cors';
+import morgan from 'morgan';
+import multer from 'multer';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import bcrypt from 'bcryptjs';
+import { connectDB, User, Ticket, Comment, Notification, SystemConfig, Project } from './database.js';
+import { generateToken, protect, authorize, normalizeRole } from './auth.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+async function dispatchNotifications(ticket, message, initiatorId, initiatorRole) {
+  let targetRoles = [];
+  if (initiatorRole === 'client') {
+    targetRoles = ['employee', 'team_leader', 'admin'];
+  } else if (initiatorRole === 'employee') {
+    targetRoles = ['team_leader', 'admin'];
+  } else if (initiatorRole === 'team_leader') {
+    targetRoles = ['admin'];
+  } else if (initiatorRole === 'hr') {
+    targetRoles = ['admin'];
+  } else if (initiatorRole === 'admin') {
+    targetRoles = [];
+  }
+
+  const usersToNotify = await User.find({ role: { $in: targetRoles }, status: 1 });
+  const notificationDocs = usersToNotify
+    .filter(u => u._id.toString() !== initiatorId.toString())
+    .map(u => ({
+      userId: u._id,
+      ticketId: ticket._id,
+      message
+    }));
+
+  const assignedToId = ticket.assignedTo?._id?.toString() || ticket.assignedTo?.toString();
+  if (assignedToId && assignedToId !== initiatorId.toString()) {
+    if (!notificationDocs.some(n => n.userId.toString() === assignedToId)) {
+      notificationDocs.push({ userId: assignedToId, ticketId: ticket._id, message });
+    }
+  }
+
+  const createdById = ticket.createdBy?._id?.toString() || ticket.createdBy?.toString();
+  if (createdById && createdById !== initiatorId.toString()) {
+    if (!notificationDocs.some(n => n.userId.toString() === createdById)) {
+      notificationDocs.push({ userId: createdById, ticketId: ticket._id, message });
+    }
+  }
+
+  if (notificationDocs.length > 0) {
+    await Notification.insertMany(notificationDocs);
+  }
+}
+
+const app = express();
+
+// Middleware
+app.use(express.json());
+app.use(cors());
+app.use(morgan('dev'));
+app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
+
+// Multer Storage
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => { cb(null, 'public/uploads/'); },
+  filename: (req, file, cb) => { cb(null, Date.now() + '-' + file.originalname); }
+});
+const upload = multer({ storage });
+
+const DEFAULT_ROLE_PERMISSIONS = {
+  client: ['tickets:create', 'tickets:read:own', 'tickets:comment:own', 'tickets:close:own'],
+  employee: ['tickets:create', 'tickets:read:assigned', 'tickets:update:assigned', 'tickets:comment:any'],
+  hr: ['tickets:read:assigned', 'tickets:update:assigned', 'tickets:comment:any'],
+  admin: ['*']
+};
+
+const getSystemConfig = async () => {
+  let config = await SystemConfig.findOne({ key: 'global' });
+  if (!config) {
+    config = await SystemConfig.create({
+      key: 'global',
+      settings: {
+        allowSelfRegistration: true,
+        allowEmployeeSelfRegistration: true,
+        maintenanceMode: false,
+        defaultPriority: 'low'
+      },
+      rolePermissions: DEFAULT_ROLE_PERMISSIONS
+    });
+  }
+  return config;
+};
+
+const seedAdmin = async () => {
+  const adminEmail = 'admin@gmail.com';
+  const adminExists = await User.findOne({ email: adminEmail });
+  
+  if (!adminExists) {
+    const hashedPassword = await bcrypt.hash('admin@123', 10);
+    await User.create({
+      name: 'System Admin',
+      email: adminEmail,
+      password: hashedPassword,
+      role: 'admin',
+      status: 1
+    });
+    console.log('✅ Default Admin created: admin@gmail.com / admin@123');
+  } else {
+    // If user exists but maybe password was different, we can force reset it for the user if they are stuck
+    const hashedPassword = await bcrypt.hash('admin@123', 10);
+    adminExists.password = hashedPassword;
+    adminExists.role = 'admin'; // ensure they are admin
+    await adminExists.save();
+    console.log('✅ Admin credentials updated: admin@gmail.com / admin@123');
+  }
+};
+
+const canAccessTicket = (user, ticket) => {
+  if (!user || !ticket) return false;
+  const userId = user._id.toString();
+  const createdById = (ticket.createdBy?._id || ticket.createdBy)?.toString();
+  const assignedToId = (ticket.assignedTo?._id || ticket.assignedTo)?.toString();
+
+  if (['admin', 'team_leader'].includes(user.role)) return true;
+  
+  if (user.role === 'employee') {
+    // Employees can access:
+    // 1. Client tickets (to handle them)
+    // 2. Tickets they created
+    // 3. Tickets assigned to them
+    return (
+      ticket.type === 'client' ||
+      createdById === userId ||
+      assignedToId === userId
+    );
+  }
+  
+  if (user.role === 'client') {
+    // Clients can access their own tickets OR tickets created for them
+    const targetClientId = (ticket.targetClient?._id || ticket.targetClient)?.toString();
+    return (createdById === userId || targetClientId === userId) && ticket.type === 'client';
+  }
+  
+  return false;
+};
+
+// ─────────────────────────────────────────────
+// AUTH ROUTES
+// ─────────────────────────────────────────────
+
+app.post('/api/auth/register', async (req, res) => {
+  const { name, email, password, role } = req.body;
+  const cleanEmail = String(email || '').trim().toLowerCase();
+  const normalizedRole = normalizeRole(role);
+  const config = await getSystemConfig();
+
+  if (!config.settings?.allowSelfRegistration) {
+    return res.status(403).json({ message: 'Self-registration is currently disabled.' });
+  }
+
+  // Self-registration is limited to end-user roles only
+  // Registration is now open to all roles as requested
+  const allowedSelfRegisterRoles = ['client', 'employee', 'admin'];
+  if (normalizedRole && !allowedSelfRegisterRoles.includes(normalizedRole)) {
+    return res.status(403).json({ message: 'Invalid role specified.' });
+  }
+
+  const userExists = await User.findOne({ email: cleanEmail });
+  if (userExists) {
+    if (userExists.status === 1) {
+      return res.status(400).json({ message: 'User already exists' });
+    } else {
+      // Reactivate user
+      const hashedPassword = await bcrypt.hash(password, 10);
+      userExists.name = name;
+      userExists.password = hashedPassword;
+      userExists.role = allowedSelfRegisterRoles.includes(normalizedRole) ? normalizedRole : 'client';
+      userExists.status = 1;
+      await userExists.save();
+      return res.status(201).json({
+        _id: userExists._id,
+        name: userExists.name,
+        email: userExists.email,
+        role: normalizeRole(userExists.role),
+        token: generateToken(userExists._id)
+      });
+    }
+  }
+
+  const hashedPassword = await bcrypt.hash(password, 10);
+  const user = await User.create({
+    name,
+    email: cleanEmail,
+    password: hashedPassword,
+    role: allowedSelfRegisterRoles.includes(normalizedRole) ? normalizedRole : 'client',
+    status: 1
+  });
+
+  if (user) {
+    res.status(201).json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      role: normalizeRole(user.role),
+      token: generateToken(user._id)
+    });
+  } else {
+    res.status(400).json({ message: 'Invalid user data' });
+  }
+});
+
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const cleanEmail = String(email || '').trim().toLowerCase();
+    const user = await User.findOne({ email: cleanEmail, status: 1 });
+    
+    if (user && (await bcrypt.compare(password, user.password))) {
+      user.lastLogin = new Date();
+      await user.save();
+      
+      const normalizedRole = normalizeRole(user.role);
+      res.json({
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        role: normalizedRole,
+        token: generateToken(user._id)
+      });
+    } else {
+      console.log(`Failed login attempt for: ${cleanEmail}`);
+      res.status(401).json({ message: 'Invalid email or password' });
+    }
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ message: 'Internal server error during login' });
+  }
+});
+
+// Seed a super_admin (only if none exists — call once)
+app.post('/api/auth/seed-super-admin', async (req, res) => {
+  const { name, email, password, secretKey } = req.body;
+  const cleanEmail = String(email || '').trim().toLowerCase();
+  if (secretKey !== process.env.SUPER_ADMIN_SECRET) {
+    return res.status(403).json({ message: 'Invalid secret key' });
+  }
+
+  const exists = await User.findOne({ email: cleanEmail });
+  if (exists) return res.status(400).json({ message: 'User already exists' });
+
+  const hashedPassword = await bcrypt.hash(password, 10);
+  const user = await User.create({
+    name,
+    email: cleanEmail,
+    password: hashedPassword,
+    role: 'super_admin',
+    status: 1
+  });
+
+  res.status(201).json({
+    _id: user._id,
+    name: user.name,
+    email: user.email,
+    role: 'super_admin',
+    token: generateToken(user._id)
+  });
+});
+
+// ─────────────────────────────────────────────
+// TICKET ROUTES
+// ─────────────────────────────────────────────
+
+app.get('/api/tickets', protect, async (req, res) => {
+  let query = {};
+
+  if (req.user.role === 'client') {
+    // Clients see tickets they created OR tickets created FOR them
+    query.$or = [
+      { createdBy: req.user._id, type: 'client' },
+      { targetClient: req.user._id, type: 'client' }
+    ];
+
+  } else if (req.user.role === 'employee') {
+    // Employees see:
+    //   1. ALL tickets of type 'client' (unassigned or assigned to them)
+    //   2. Tickets they raised themselves (regardless of type)
+    query.$or = [
+      { createdBy: req.user._id }, // My requests
+      { assignedTo: req.user._id } // Tickets assigned to me to solve
+    ];
+
+  } else if (req.user.role === 'team_leader') {
+    // Team Leaders see everything except maybe some restricted internal notes if we had them.
+    // For now, same as Admin visibility but focused on oversight.
+    query.$or = [
+      { type: 'client' }, // TLs manage all client tickets
+      { type: 'hr' },     // TLs manage employee internal tickets to assign to HR
+      { createdBy: req.user._id },
+      { assignedTo: req.user._id }
+    ];
+
+  } else if (req.user.role === 'admin') {
+    // Admins see everything
+    query.$or = [
+      { type: 'hr' },      // Admins manage all HR tickets
+      { type: 'employee' }, // Admins oversee everything
+      { type: 'client' },
+      { createdBy: req.user._id },
+      { assignedTo: req.user._id }
+    ];
+
+  } else if (req.user.role === 'hr') {
+    // HR sees tickets assigned to them and tickets they created
+    query.$or = [
+      { createdBy: req.user._id },
+      { assignedTo: req.user._id }
+    ];
+  }
+
+  const tickets = await Ticket.find(query)
+    .populate('createdBy', 'name role')
+    .populate('targetClient', 'name role')
+    .populate('assignedTo', 'name role')
+    .sort({ createdAt: -1 });
+
+  res.json(tickets);
+});
+
+app.post('/api/tickets', protect, upload.array('files'), async (req, res) => {
+  const { title, description, project, type, priority, category, targetClient, assignedTo } = req.body;
+  console.log('🎫 Creating ticket:', { title, type, targetClient, assignedTo, createdBy: req.user._id, role: req.user.role });
+  const attachments = req.files ? req.files.map(f => ({ filename: f.filename, path: f.path })) : [];
+  const config = await getSystemConfig();
+
+  // Derive ticket type if not explicitly set
+  let ticketType = type;
+  if (!ticketType) {
+    if (req.user.role === 'client') ticketType = 'client';
+    else ticketType = 'hr'; // Employee/Admin internal issues go to HR
+  }
+
+  // SLA Logic
+  const now = new Date();
+  const slaResponseHours = priority === 'high' ? (config.settings?.slaHighResponse || 2) : priority === 'medium' ? (config.settings?.slaMediumResponse || 8) : (config.settings?.slaLowResponse || 24);
+  const slaResolutionHours = slaResponseHours * 4;
+  const slaResponseDue = new Date(now.getTime() + slaResponseHours * 60 * 60 * 1000);
+  const slaResolutionDue = new Date(now.getTime() + slaResolutionHours * 60 * 60 * 1000);
+
+  const ticket = await Ticket.create({
+    title, description, project, type: ticketType, priority: priority || config.settings?.defaultPriority || 'low',
+    category: category || 'General',
+    createdBy: req.user._id,
+    targetClient: targetClient || null,
+    assignedTo: assignedTo || null,
+    attachments, slaResponseDue, slaResolutionDue
+  });
+
+  await dispatchNotifications(ticket, `New ticket raised: ${title}`, req.user._id, req.user.role);
+
+  // Notify the target client if ticket was created on their behalf
+  if (targetClient) {
+    await Notification.create({
+      userId: targetClient,
+      message: `A support ticket has been created for you: ${title}`,
+      ticketId: ticket._id
+    });
+  }
+
+  res.status(201).json(ticket);
+});
+
+app.get('/api/tickets/:id', protect, async (req, res) => {
+  const ticket = await Ticket.findById(req.params.id)
+    .populate('createdBy', 'name email role')
+    .populate('targetClient', 'name email role')
+    .populate('assignedTo', 'name email role');
+  if (!ticket) return res.status(404).json({ message: 'Ticket not found' });
+  if (!canAccessTicket(req.user, ticket)) {
+    return res.status(403).json({ message: 'Not authorized to view this ticket' });
+  }
+  const comments = await Comment.find({ ticketId: req.params.id })
+    .populate('userId', 'name role')
+    .sort({ createdAt: 1 });
+  res.json({ ticket, comments });
+});
+
+app.put('/api/tickets/:id', protect, async (req, res) => {
+  const { status, assignedTo, priority, rating, feedback } = req.body;
+  const ticket = await Ticket.findById(req.params.id);
+  if (!ticket) return res.status(404).json({ message: 'Ticket not found' });
+
+  // Role-based update permissions
+  const isAdminLevel = ['admin', 'team_leader'].includes(req.user.role);
+  const isEmployee = req.user.role === 'employee';
+  const isOwner = ticket.createdBy.toString() === req.user._id.toString();
+
+  if (status) {
+    if (isAdminLevel || isEmployee) {
+    if (req.user.role === 'admin' && ticket.type === 'hr') {
+        return res.status(403).json({ message: 'Admins cannot manage HR tickets directly if they are sensitive.' });
+      }
+      ticket.status = status;
+    } else {
+      return res.status(403).json({ message: 'Only administrators and employees can update ticket status' });
+    }
+  }
+
+  if (assignedTo !== undefined) {
+    if (isAdminLevel) {
+      ticket.assignedTo = assignedTo || null;
+    } else if (isEmployee) {
+      const target = assignedTo?.toString() || null;
+      const me = req.user._id.toString();
+      if ((!ticket.assignedTo || ticket.assignedTo.toString() === me) && (target === null || target === me)) {
+        ticket.assignedTo = assignedTo || null;
+      } else {
+        return res.status(403).json({ message: 'Employees can only self-assign unassigned tickets' });
+      }
+    }
+  }
+
+  if (priority) {
+    if (isAdminLevel || isEmployee) ticket.priority = priority;
+  }
+
+  if (rating && isOwner && ticket.status === 'completed') {
+    ticket.rating = rating;
+    if (feedback) ticket.feedback = feedback;
+  }
+
+  ticket.updatedAt = Date.now();
+  await ticket.save();
+
+  // Role-based notification for ticket update
+  await dispatchNotifications(ticket, `Ticket updated: ${ticket.title}`, req.user._id, req.user.role);
+
+  // Return populated ticket so frontend state remains consistent
+  const updatedTicket = await Ticket.findById(ticket._id)
+    .populate('createdBy', 'name email role')
+    .populate('assignedTo', 'name email role');
+
+  res.json(updatedTicket);
+});
+
+// Delete ticket
+app.delete('/api/tickets/:id', protect, authorize('admin', 'team_leader'), async (req, res) => {
+  const ticket = await Ticket.findById(req.params.id);
+  if (!ticket) return res.status(404).json({ message: 'Ticket not found' });
+  
+  if (req.user.role === 'team_leader' && (ticket.type === 'hr' || ticket.type === 'employee')) {
+    if (ticket.type !== 'client') {
+      return res.status(403).json({ message: 'Team Leaders can only delete Client tickets.' });
+    }
+  }
+
+  await Ticket.findByIdAndDelete(req.params.id);
+  await Comment.deleteMany({ ticketId: req.params.id });
+  res.json({ message: 'Ticket deleted' });
+});
+
+// Notifications
+app.get('/api/notifications', protect, async (req, res) => {
+  try {
+    const notifications = await Notification.find({ userId: req.user._id })
+      .sort({ createdAt: -1 })
+      .limit(20);
+    res.json(notifications);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+app.put('/api/notifications/:id/read', protect, async (req, res) => {
+  try {
+    const notification = await Notification.findById(req.params.id);
+    if (!notification) return res.status(404).json({ message: 'Notification not found' });
+    if (notification.userId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Unauthorized' });
+    }
+    notification.isRead = true;
+    await notification.save();
+    res.json(notification);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+app.put('/api/notifications/read-all', protect, async (req, res) => {
+  try {
+    await Notification.updateMany({ userId: req.user._id, isRead: false }, { isRead: true });
+    res.json({ message: 'All notifications marked as read' });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+app.delete('/api/notifications/clear-all', protect, async (req, res) => {
+  try {
+    await Notification.deleteMany({ userId: req.user._id });
+    res.json({ message: 'All notifications cleared' });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Delete a single notification
+app.delete('/api/notifications/:id', protect, async (req, res) => {
+  try {
+    const notification = await Notification.findById(req.params.id);
+    if (!notification) return res.status(404).json({ message: 'Notification not found' });
+    if (notification.userId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Unauthorized' });
+    }
+    await Notification.findByIdAndDelete(req.params.id);
+    res.json({ message: 'Notification deleted' });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+app.post('/api/tickets/:id/comments', protect, async (req, res) => {
+  const { content } = req.body;
+  const ticket = await Ticket.findById(req.params.id);
+  if (!ticket) return res.status(404).json({ message: 'Ticket not found' });
+  if (!canAccessTicket(req.user, ticket)) {
+    return res.status(403).json({ message: 'Not authorized to comment on this ticket' });
+  }
+  const comment = await Comment.create({ ticketId: req.params.id, userId: req.user._id, content });
+  
+  await dispatchNotifications(ticket, `New comment on ticket: ${ticket.title}`, req.user._id, req.user.role);
+  
+  const populatedComment = await comment.populate('userId', 'name role');
+  res.status(201).json(populatedComment);
+});
+
+// ─────────────────────────────────────────────
+// PROJECT ROUTES
+// ─────────────────────────────────────────────
+
+app.get('/api/projects', protect, async (req, res) => {
+  const projects = await Project.find().populate('teamLeader', 'name').sort({ name: 1 });
+  res.json(projects);
+});
+
+app.post('/api/projects', protect, authorize('admin'), async (req, res) => {
+  const { name, description, teamLeader } = req.body;
+  if (!name) return res.status(400).json({ message: 'Project name is required' });
+  try {
+    const project = await Project.create({ name, description, teamLeader: teamLeader || null });
+    res.status(201).json(project);
+  } catch (err) {
+    res.status(400).json({ message: 'Project already exists' });
+  }
+});
+
+app.delete('/api/projects/:id', protect, authorize('admin'), async (req, res) => {
+  await Project.findByIdAndDelete(req.params.id);
+  res.json({ message: 'Project deleted' });
+});
+
+// ─────────────────────────────────────────────
+// STATS ROUTES
+// ─────────────────────────────────────────────
+
+// Admin — team & ticket overview (Super Admin merged here)
+app.get('/api/stats/admin', protect, authorize('admin', 'team_leader'), async (req, res) => {
+  const total = await Ticket.countDocuments();
+  const pending = await Ticket.countDocuments({ status: 'pending' });
+  const inProgress = await Ticket.countDocuments({ status: 'in_progress' });
+  const onHold = await Ticket.countDocuments({ status: 'on_hold' });
+  const completed = await Ticket.countDocuments({ status: 'completed' });
+  const unassigned = await Ticket.countDocuments({ assignedTo: null, status: { $ne: 'completed' } });
+
+  const totalUsers = await User.countDocuments();
+  const totalClients = await User.countDocuments({ role: 'client' });
+  const totalEmployees = await User.countDocuments({ role: 'employee' });
+  const totalHR = await User.countDocuments({ role: 'hr' });
+  const totalTeamLeaders = await User.countDocuments({ role: 'team_leader' });
+
+  const byPriority = await Ticket.aggregate([
+    { $group: { _id: '$priority', count: { $sum: 1 } } }
+  ]);
+
+  const byType = await Ticket.aggregate([
+    { $group: { _id: '$type', count: { $sum: 1 } } }
+  ]);
+
+  const recentTickets = await Ticket.find()
+    .populate('createdBy', 'name role')
+    .populate('assignedTo', 'name')
+    .sort({ createdAt: -1 })
+    .limit(10);
+
+  res.json({ 
+    total, pending, inProgress, onHold, completed, unassigned, 
+    totalUsers, totalClients, totalEmployees, totalHR, totalTeamLeaders,
+    byPriority, byType, recentTickets,
+    userRole: req.user.role
+  });
+});
+
+// Employee & HR — workload overview
+app.get('/api/stats/employee', protect, authorize('employee', 'hr'), async (req, res) => {
+  const uid = req.user._id;
+
+  // Stats: tickets assigned to ME
+  const assignedQuery = { assignedTo: uid };
+  const total       = await Ticket.countDocuments(assignedQuery);
+  const pending     = await Ticket.countDocuments({ ...assignedQuery, status: 'pending' });
+  const inProgress  = await Ticket.countDocuments({ ...assignedQuery, status: 'in_progress' });
+  const onHold      = await Ticket.countDocuments({ ...assignedQuery, status: 'on_hold' });
+  const completed   = await Ticket.countDocuments({ ...assignedQuery, status: 'completed' });
+
+  // Tickets I raised (as an employee)
+  const myRaisedTickets = await Ticket.countDocuments({ createdBy: uid });
+
+  // 🎯 Ticket lists for interactive dashboard
+  const assignedTickets = await Ticket.find({ assignedTo: uid, status: { $ne: 'completed' } })
+    .populate('createdBy', 'name role')
+    .sort({ createdAt: -1 })
+    .limit(10);
+
+  const byPriority = await Ticket.aggregate([
+    { $match: assignedQuery },
+    { $group: { _id: '$priority', count: { $sum: 1 } } }
+  ]);
+
+  const byType = await Ticket.aggregate([
+    { $match: assignedQuery },
+    { $group: { _id: '$type', count: { $sum: 1 } } }
+  ]);
+
+  // Tickets raised by this employee
+  const raisedTickets = await Ticket.find({ createdBy: uid })
+    .populate('assignedTo', 'name')
+    .sort({ createdAt: -1 })
+    .limit(10);
+
+  // 🎯 NEW: Distinguish between HR and Employee for unassigned pool
+  let unassignedQuery = { assignedTo: null, status: { $ne: 'completed' } };
+  if (req.user.role === 'hr') {
+    // HR handles Employee IT Issues and HR-type internal tickets
+    unassignedQuery.type = { $in: ['employee', 'hr'] };
+  } else {
+    // Employees handle Client-type support tickets
+    unassignedQuery.type = 'client';
+  }
+
+  const unassigned = await Ticket.countDocuments(unassignedQuery);
+  const unassignedTickets = await Ticket.find(unassignedQuery)
+    .populate('createdBy', 'name role')
+    .sort({ createdAt: -1 })
+    .limit(10);
+
+  res.json({
+    total, pending, inProgress, onHold, completed,
+    myRaisedTickets, unassigned, byPriority, byType,
+    assignedTickets, unassignedTickets, raisedTickets,
+    userRole: req.user.role
+  });
+});
+
+
+// Client — strictly scoped to their own tickets only
+app.get('/api/stats/client', protect, authorize('client'), async (req, res) => {
+  const matchQuery = { createdBy: req.user._id, type: 'client' };
+  const total      = await Ticket.countDocuments(matchQuery);
+  const pending    = await Ticket.countDocuments({ ...matchQuery, status: 'pending' });
+  const inProgress = await Ticket.countDocuments({ ...matchQuery, status: 'in_progress' });
+  const onHold     = await Ticket.countDocuments({ ...matchQuery, status: 'on_hold' });
+  const completed  = await Ticket.countDocuments({ ...matchQuery, status: 'completed' });
+
+  const byPriority = await Ticket.aggregate([
+    { $match: matchQuery },
+    { $group: { _id: '$priority', count: { $sum: 1 } } }
+  ]);
+
+  // Recent ticket list for the client dashboard
+  const recentTickets = await Ticket.find(matchQuery)
+    .populate('assignedTo', 'name')
+    .sort({ createdAt: -1 })
+    .limit(5);
+
+  res.json({ total, pending, inProgress, onHold, completed, byPriority, recentTickets });
+});
+
+// ─────────────────────────────────────────────
+// PROFILE & USER SETTINGS
+// ─────────────────────────────────────────────
+
+app.put('/api/users/profile', protect, async (req, res) => {
+  const { name, email, password } = req.body;
+  const user = await User.findById(req.user._id);
+  if (!user) return res.status(404).json({ message: 'User not found' });
+
+  if (name) user.name = name;
+  if (email) {
+    const existing = await User.findOne({ email, _id: { $ne: user._id } });
+    if (existing) return res.status(400).json({ message: 'Email already in use' });
+    user.email = email;
+  }
+  if (password) {
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(password, salt);
+  }
+
+  await user.save();
+  const updated = user.toObject();
+  delete updated.password;
+  res.json({ message: 'Profile updated successfully', user: updated });
+});
+
+// ─────────────────────────────────────────────
+// USER MANAGEMENT (Admin + Super Admin)
+// ─────────────────────────────────────────────
+
+// All users for management page:
+app.get('/api/users/employees', protect, authorize('admin', 'team_leader'), async (req, res) => {
+  try {
+    const query = { status: 1 };
+    const users = await User.find(query).select('name email role createdAt lastLogin').sort({ createdAt: -1 });
+    res.json(users);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Assignable agents — ONLY employees/team_leaders
+app.get('/api/users/agents', protect, authorize('admin', 'super_admin', 'team_leader'), async (req, res) => {
+  const query = { status: 1, role: { $in: ['employee', 'team_leader', 'hr', 'admin'] } };
+  const agents = await User.find(query).select('name email role');
+  res.json(agents);
+});
+
+app.get('/api/users/all', protect, authorize('admin'), async (req, res) => {
+  try {
+    const query = { status: 1 };
+    const users = await User.find(query).select('name email role createdAt lastLogin').sort({ createdAt: -1 });
+    res.json(users);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Add a new user (Admin / Super Admin / Team Leader)
+app.post('/api/users', protect, authorize('admin', 'team_leader'), async (req, res) => {
+  const { name, email, password, role } = req.body;
+  const cleanEmail = String(email || '').trim().toLowerCase();
+  const normalizedRole = normalizeRole(role);
+  
+  if (!name || !email || !password || !role) {
+    return res.status(400).json({ message: 'All fields are required' });
+  }
+
+  const allowedRoles = ['client', 'employee', 'team_leader', 'hr', 'admin'];
+
+  if (!allowedRoles.includes(normalizedRole)) {
+    return res.status(403).json({ message: 'You are not authorized to create a user with this role' });
+  }
+
+  const exists = await User.findOne({ email: cleanEmail });
+  if (exists) {
+    if (exists.status === 1) {
+      return res.status(400).json({ message: 'User already exists' });
+    } else {
+      // Reactivate and update
+      const hashedPassword = await bcrypt.hash(password, 10);
+      exists.name = name;
+      exists.password = hashedPassword;
+      exists.role = normalizedRole;
+      exists.status = 1;
+      await exists.save();
+      return res.status(201).json({
+        _id: exists._id,
+        name: exists.name,
+        email: exists.email,
+        role: normalizeRole(exists.role),
+        createdAt: exists.createdAt
+      });
+    }
+  }
+
+  const hashedPassword = await bcrypt.hash(password, 10);
+  const newUser = await User.create({ name, email: cleanEmail, password: hashedPassword, role: normalizedRole, status: 1 });
+  
+  res.status(201).json({
+    _id: newUser._id,
+    name: newUser.name,
+    email: newUser.email,
+    role: normalizeRole(newUser.role),
+    createdAt: newUser.createdAt
+  });
+});
+
+// Update user role
+app.put('/api/users/:id/role', protect, authorize('admin', 'team_leader'), async (req, res) => {
+  const { role } = req.body;
+  const normalizedRole = normalizeRole(role);
+  
+  const allowedRoles = ['client', 'employee', 'team_leader', 'hr', 'admin'];
+
+  if (!allowedRoles.includes(normalizedRole)) {
+    return res.status(403).json({ message: 'You are not authorized to assign this role' });
+  }
+
+  // Prevent modifying yourself
+  const targetUser = await User.findById(req.params.id);
+  if (!targetUser) return res.status(404).json({ message: 'User not found' });
+  if (targetUser._id.toString() === req.user._id.toString()) {
+    return res.status(403).json({ message: 'Cannot modify your own role' });
+  }
+
+  targetUser.role = normalizedRole;
+  await targetUser.save();
+  res.json({ _id: targetUser._id, name: targetUser.name, email: targetUser.email, role: normalizeRole(targetUser.role) });
+});
+
+// Delete user
+app.delete('/api/users/:id', protect, authorize('admin', 'team_leader'), async (req, res) => {
+  try {
+    const targetUser = await User.findById(req.params.id);
+    if (!targetUser) return res.status(404).json({ message: 'User not found' });
+    
+    if (targetUser._id.toString() === req.user._id.toString()) {
+      return res.status(400).json({ message: 'Cannot remove yourself' });
+    }
+
+    if (req.user.role === 'team_leader' && targetUser.role === 'admin') {
+      return res.status(403).json({ message: 'Team Leaders cannot remove Admin accounts' });
+    }
+
+    targetUser.status = 0;
+    await targetUser.save();
+    res.json({ message: 'User removed successfully' });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// ─────────────────────────────────────────────
+// SUPER ADMIN CONTROL (Settings & Permissions)
+// ─────────────────────────────────────────────
+
+app.get('/api/system/config', protect, authorize('admin'), async (req, res) => {
+  const config = await getSystemConfig();
+  res.json(config);
+});
+
+app.put('/api/system/settings', protect, authorize('admin'), async (req, res) => {
+  const config = await getSystemConfig();
+  const { 
+    allowSelfRegistration, 
+    allowEmployeeSelfRegistration, 
+    maintenanceMode, 
+    defaultPriority,
+    slaHighResponse,
+    slaMediumResponse,
+    slaLowResponse
+  } = req.body;
+
+  if (allowSelfRegistration !== undefined) config.settings.allowSelfRegistration = !!allowSelfRegistration;
+  if (allowEmployeeSelfRegistration !== undefined) config.settings.allowEmployeeSelfRegistration = !!allowEmployeeSelfRegistration;
+  if (maintenanceMode !== undefined) config.settings.maintenanceMode = !!maintenanceMode;
+  if (['low', 'medium', 'high'].includes(defaultPriority)) config.settings.defaultPriority = defaultPriority;
+  
+  if (slaHighResponse !== undefined) config.settings.slaHighResponse = Number(slaHighResponse);
+  if (slaMediumResponse !== undefined) config.settings.slaMediumResponse = Number(slaMediumResponse);
+  if (slaLowResponse !== undefined) config.settings.slaLowResponse = Number(slaLowResponse);
+
+  config.updatedAt = new Date();
+  await config.save();
+  res.json(config);
+});
+
+app.post('/api/system/backup', protect, authorize('admin'), async (req, res) => {
+  try {
+    // Mocking a backup process
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    res.json({ message: 'Backup completed successfully!', timestamp: new Date() });
+  } catch (err) {
+    res.status(500).json({ message: 'Backup failed' });
+  }
+});
+
+app.put('/api/system/permissions', protect, authorize('admin'), async (req, res) => {
+  const config = await getSystemConfig();
+  const { rolePermissions } = req.body;
+  if (!rolePermissions || typeof rolePermissions !== 'object') {
+    return res.status(400).json({ message: 'Invalid role permissions payload' });
+  }
+  config.rolePermissions = {
+    ...config.rolePermissions,
+    ...rolePermissions
+  };
+  config.updatedAt = new Date();
+  await config.save();
+  res.json(config);
+});
+
+app.get('/api/reports/summary', protect, authorize('admin'), async (req, res) => {
+  const byStatus = await Ticket.aggregate([{ $group: { _id: '$status', count: { $sum: 1 } } }]);
+  const byPriority = await Ticket.aggregate([{ $group: { _id: '$priority', count: { $sum: 1 } } }]);
+  const byType = await Ticket.aggregate([{ $group: { _id: '$type', count: { $sum: 1 } } }]);
+  const avgResolutionMs = await Ticket.aggregate([
+    { $match: { status: 'completed' } },
+    { $project: { diff: { $subtract: ['$updatedAt', '$createdAt'] } } },
+    { $group: { _id: null, avg: { $avg: '$diff' } } }
+  ]);
+  res.json({
+    byStatus,
+    byPriority,
+    byType,
+    avgResolutionHours: avgResolutionMs?.[0]?.avg ? Number((avgResolutionMs[0].avg / (1000 * 60 * 60)).toFixed(2)) : 0
+  });
+});
+
+// ─────────────────────────────────────────────
+// Start Server
+// ─────────────────────────────────────────────
+const PORT = process.env.PORT || 5000;
+connectDB().then(async () => {
+  await seedAdmin();
+  app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+});
