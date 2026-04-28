@@ -12,11 +12,22 @@ const TICKET_TYPE_MAP = {
   team_leader: { value: 'hr',    label: 'HR Request',          desc: 'Internal HR or administrative request' },
 };
 
-const CATEGORIES = [
-  'Hardware Issue', 'Software / Application', 'Network / Connectivity',
-  'Account Access', 'Email / Communication', 'Security Incident',
-  'Website / App Bug', 'Feature Request', 'Other'
-];
+const CATEGORIES_BY_TYPE = {
+  client: [
+    'Website / App Bug', 'Feature Request', 'Billing Issue', 
+    'UI/UX Feedback', 'Content Update', 'Performance Issue', 'Other'
+  ],
+  employee: [
+    'Hardware Issue', 'Software Installation', 'Network / Wi-Fi', 
+    'Password Reset', 'Email Config', 'System Slowdown', 'Printer Issue', 'Other'
+  ],
+  hr: [
+    'Leave Application', 'Payroll / Salary', 'Policy Query', 
+    'Recruitment / Hiring', 'Onboarding', 'Documents / Letters', 
+    'Desk / Facility Issue', 'Employee Grievance', 'Other'
+  ]
+};
+
 
 const NewTicket = () => {
   const { user } = useContext(AuthContext);
@@ -135,10 +146,11 @@ const NewTicket = () => {
               onChange={e => setFormData({ ...formData, category: e.target.value })}
             >
               <option value="">Select a category (optional)</option>
-              {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+              {(CATEGORIES_BY_TYPE[formData.type] || []).map(c => <option key={c} value={c}>{c}</option>)}
             </select>
 
-            {user.role !== 'employee' && (
+
+            {!['employee', 'hr'].includes(user.role) && (
               <>
                 <label style={labelStyle}>Project {user.role !== 'hr' && '*'}</label>
                 <select
