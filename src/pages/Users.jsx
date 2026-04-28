@@ -226,8 +226,9 @@ const Users = () => {
       </header>
 
       {/* Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: `repeat(5, 1fr)`, gap: '1rem', marginBottom: '2rem' }}>
-        {['admin', 'team_leader', 'employee', 'client'].map(role => {
+      <div style={{ display: 'grid', gridTemplateColumns: `repeat(${isTeamLeader ? 3 : 5}, 1fr)`, gap: '1rem', marginBottom: '2rem' }}>
+        {['admin', 'team_leader', 'employee', 'client'].filter(r => !isTeamLeader || (r === 'employee' || r === 'client')).map(role => {
+
           const meta = ROLE_META[role];
           const Icon = meta.icon;
           return (

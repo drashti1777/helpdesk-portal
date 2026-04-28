@@ -9,8 +9,10 @@ import {
 import {
   AlertCircle, CheckCircle2, Clock, ListTodo, ShieldCheck, Users,
   UserCheck, TrendingUp, Globe, Briefcase, Inbox, RefreshCw,
-  ChevronRight, ArrowRight, Zap, PlusCircle
+  ChevronRight, ArrowRight, Zap, PlusCircle, Award, Star
 } from 'lucide-react';
+
+
 
 // ── Shared helpers ──────────────────────────────────────────────────────────
 
@@ -187,8 +189,10 @@ const PriorityDot = ({ p }) => (
 );
 
 // ── Inline-editable ticket row ──────────────────────────────────────────────
-const TicketRow = ({ ticket, onStatusChange, onPriorityChange, onNavigate, showClaim, onClaim }) => {
+const TicketRow = ({ ticket, onStatusChange, onPriorityChange, onNavigate, showClaim, onClaim, currentUserId }) => {
+  const isOwner = ticket.createdBy?._id === currentUserId || ticket.createdBy === currentUserId;
   const s = STATUS_CFG[ticket.status] || STATUS_CFG.pending;
+
   return (
     <div
       style={{
@@ -218,6 +222,8 @@ const TicketRow = ({ ticket, onStatusChange, onPriorityChange, onNavigate, showC
           value={ticket.status}
           onChange={e => onStatusChange(ticket._id, e.target.value)}
           onClick={e => e.stopPropagation()}
+          disabled={isOwner}
+
           style={{
             marginBottom: 0, padding: '0.3rem 0.5rem', fontSize: '0.75rem',
             fontWeight: '600', cursor: 'pointer',
@@ -245,6 +251,8 @@ const TicketRow = ({ ticket, onStatusChange, onPriorityChange, onNavigate, showC
           value={ticket.priority}
           onChange={e => onPriorityChange(ticket._id, e.target.value)}
           onClick={e => e.stopPropagation()}
+          disabled={isOwner}
+
           style={{
             marginBottom: 0, padding: '0.3rem 0.5rem', fontSize: '0.75rem',
             cursor: 'pointer', background: 'var(--glass)', color: 'var(--text-main)',
@@ -282,7 +290,7 @@ const TicketRow = ({ ticket, onStatusChange, onPriorityChange, onNavigate, showC
 };
 
 // ── Employee Dashboard (stateful, editable) ──────────────────────────────────
-const EmployeeDashboard = ({ stats: initialStats, navigate, token, userId }) => {
+const EmployeeDashboard = ({ stats: initialStats, navigate, token, user }) => {
   const [stats, setStats] = useState(initialStats);
   const [activeTab, setActiveTab] = useState('assigned'); // assigned | unassigned | raised
   const [toast, setToast] = useState(null);
@@ -352,7 +360,7 @@ const EmployeeDashboard = ({ stats: initialStats, navigate, token, userId }) => 
       const res = await fetch(`${API_BASE_URL}/api/tickets/${ticketId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ assignedTo: userId, status: 'in_progress' })
+        body: JSON.stringify({ assignedTo: user._id, status: 'in_progress' })
       });
       if (res.ok) {
         showToast('Ticket claimed and moved to In Progress!');
@@ -406,13 +414,13 @@ const EmployeeDashboard = ({ stats: initialStats, navigate, token, userId }) => 
       <header style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
-            <div style={{ padding: '0.4rem 0.9rem', borderRadius: '999px', background: stats.userRole === 'hr' ? 'rgba(251,113,133,0.12)' : 'rgba(16,185,129,0.12)', border: stats.userRole === 'hr' ? '1px solid rgba(251,113,133,0.25)' : '1px solid rgba(16,185,129,0.25)', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
-              <UserCheck size={13} color={stats.userRole === 'hr' ? '#fb7185' : '#6ee7b7'} />
-              <span style={{ fontSize: '0.72rem', fontWeight: '700', color: stats.userRole === 'hr' ? '#fb7185' : '#6ee7b7', textTransform: 'uppercase', letterSpacing: '0.07em' }}>{stats.userRole === 'hr' ? 'HR Role' : 'Employee'}</span>
+            <div style={{ padding: '0.4rem 0.9rem', borderRadius: '999px', background: user.role === 'hr' ? 'rgba(251,113,133,0.12)' : 'rgba(16,185,129,0.12)', border: user.role === 'hr' ? '1px solid rgba(251,113,133,0.25)' : '1px solid rgba(16,185,129,0.25)', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+              <UserCheck size={13} color={user.role === 'hr' ? '#fb7185' : '#6ee7b7'} />
+              <span style={{ fontSize: '0.72rem', fontWeight: '700', color: user.role === 'hr' ? '#fb7185' : '#6ee7b7', textTransform: 'uppercase', letterSpacing: '0.07em' }}>{user.role === 'hr' ? 'HR Role' : 'Employee'}</span>
             </div>
           </div>
           <h1 style={{ fontSize: '2rem', fontWeight: '700', letterSpacing: '-0.02em' }}>My Workspace</h1>
-          <p style={{ color: 'var(--text-muted)', marginTop: '0.25rem' }}>{stats.userRole === 'hr' ? 'Manage internal HR tickets and track requests.' : 'Manage your tickets, claim new ones, and track your activity.'}</p>
+          <p style={{ color: 'var(--text-muted)', marginTop: '0.25rem' }}>{user.role === 'hr' ? 'Manage internal HR tickets and track requests.' : 'Manage your tickets, claim new ones, and track your activity.'}</p>
         </div>
         <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
           <button className="btn btn-primary" onClick={() => navigate('/tickets/new')} style={{ fontSize: '0.875rem' }}>
@@ -503,7 +511,9 @@ const EmployeeDashboard = ({ stats: initialStats, navigate, token, userId }) => 
                 onPriorityChange={handlePriorityChange}
                 onClaim={handleClaim}
                 onNavigate={(id) => navigate(`/tickets/${id}`)}
+                currentUserId={user._id}
               />
+
             ))
           )}
 
@@ -676,13 +686,13 @@ const ClientDashboard = ({ stats, navigate }) => {
         <div className="glass-card" style={{ padding: '1.25rem' }}>
           <SectionTitle>My Recent Feedbacks</SectionTitle>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            {stats.recentTickets?.filter(t => t.rating).length === 0 ? (
+            {stats.recentTickets?.filter(t => t.rating)?.length === 0 ? (
               <div style={{ padding: '1rem', textAlign: 'center', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid var(--border)' }}>
                 <Star size={24} color="var(--text-muted)" style={{ opacity: 0.2, marginBottom: '0.5rem' }} />
                 <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>No feedbacks yet. Rate your tickets once they are completed!</p>
               </div>
             ) : (
-              stats.recentTickets?.filter(t => t.rating).map(t => (
+              stats.recentTickets?.filter(t => t.rating)?.map(t => (
                 <div key={t._id} style={{ padding: '1rem', background: 'rgba(245,158,11,0.05)', borderRadius: '12px', border: '1px solid rgba(245,158,11,0.2)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
                     <div style={{ display: 'flex', gap: '2px' }}>
@@ -770,8 +780,8 @@ const Dashboard = () => {
   return (
     <div className="main-content animate-fade-in">
       {(user.role === 'admin' || user.role === 'team_leader') && <AdminDashboard stats={stats} navigate={navigate} />}
-      {(user.role === 'employee' || user.role === 'hr') && <EmployeeDashboard stats={stats} navigate={navigate} token={user.token} userId={user._id} />}
-      {user.role === 'client'      && <ClientDashboard     stats={stats} navigate={navigate} />}
+      {(user.role === 'employee' || user.role === 'hr') && <EmployeeDashboard stats={stats} navigate={navigate} token={user.token} user={user} />}
+      {user.role === 'client'      && <ClientDashboard     stats={stats} navigate={navigate} user={user} />}
     </div>
   );
 };

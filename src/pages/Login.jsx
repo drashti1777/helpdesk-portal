@@ -430,7 +430,21 @@ const Login = () => {
             </button>
           </form>
 
-          <p style={{ marginTop: '1.75rem', textAlign: 'center', fontSize: '0.875rem', color: 'var(--text-muted)' }}>
+          {!isRegister && (
+            <p style={{ marginTop: '1.25rem', textAlign: 'center', fontSize: '0.85rem' }}>
+              <span 
+                style={{ color: 'var(--text-muted)', cursor: 'pointer', transition: 'color 0.2s' }}
+                onClick={() => alert('Please contact the IT administrator or your Team Leader to reset your password.')}
+                onMouseEnter={e => e.currentTarget.style.color = 'var(--primary)'}
+                onMouseLeave={e => e.currentTarget.style.color = 'var(--text-muted)'}
+              >
+                Forgot Password?
+              </span>
+            </p>
+          )}
+
+          <p style={{ marginTop: '1rem', textAlign: 'center', fontSize: '0.875rem', color: 'var(--text-muted)' }}>
+
             {isRegister ? 'Already have an account?' : "Don't have an account?"}{' '}
             <span
               style={{ color: 'var(--primary)', cursor: 'pointer', fontWeight: '600' }}

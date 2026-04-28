@@ -10,7 +10,9 @@ const ROLE_META = {
   admin:       { label: 'Admin',       color: '#a5b4fc', bg: 'rgba(99,102,241,0.15)' },
   team_leader: { label: 'Team Leader', color: '#c084fc', bg: 'rgba(168,85,247,0.15)' },
   employee:    { label: 'Employee',    color: '#6ee7b7', bg: 'rgba(16,185,129,0.12)' },
+  hr:          { label: 'HR',          color: '#fb7185', bg: 'rgba(251,113,133,0.15)' },
   client:      { label: 'Client',      color: '#94a3b8', bg: 'rgba(148,163,184,0.1)'  },
+
 };
 
 const getInitials = (name = '') =>

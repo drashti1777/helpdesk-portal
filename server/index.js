@@ -566,12 +566,20 @@ app.delete('/api/projects/:id', protect, authorize('admin'), async (req, res) =>
 
 // Admin — team & ticket overview (Super Admin merged here)
 app.get('/api/stats/admin', protect, authorize('admin', 'team_leader'), async (req, res) => {
-  const total = await Ticket.countDocuments();
-  const pending = await Ticket.countDocuments({ status: 'pending' });
-  const inProgress = await Ticket.countDocuments({ status: 'in_progress' });
-  const onHold = await Ticket.countDocuments({ status: 'on_hold' });
-  const completed = await Ticket.countDocuments({ status: 'completed' });
-  const unassigned = await Ticket.countDocuments({ assignedTo: null, status: { $ne: 'completed' } });
+  const isTL = req.user.role === 'team_leader';
+  
+  // Base query for tickets
+  // TL sees: tickets they created OR tickets of type client/employee
+  const ticketQuery = isTL 
+    ? { $or: [{ createdBy: req.user._id }, { type: { $in: ['client', 'employee'] } }] }
+    : {};
+
+  const total = await Ticket.countDocuments(ticketQuery);
+  const pending = await Ticket.countDocuments({ ...ticketQuery, status: 'pending' });
+  const inProgress = await Ticket.countDocuments({ ...ticketQuery, status: 'in_progress' });
+  const onHold = await Ticket.countDocuments({ ...ticketQuery, status: 'on_hold' });
+  const completed = await Ticket.countDocuments({ ...ticketQuery, status: 'completed' });
+  const unassigned = await Ticket.countDocuments({ ...ticketQuery, assignedTo: null, status: { $ne: 'completed' } });
 
   const totalUsers = await User.countDocuments();
   const totalClients = await User.countDocuments({ role: 'client' });
@@ -580,14 +588,16 @@ app.get('/api/stats/admin', protect, authorize('admin', 'team_leader'), async (r
   const totalTeamLeaders = await User.countDocuments({ role: 'team_leader' });
 
   const byPriority = await Ticket.aggregate([
+    { $match: ticketQuery },
     { $group: { _id: '$priority', count: { $sum: 1 } } }
   ]);
 
   const byType = await Ticket.aggregate([
+    { $match: ticketQuery },
     { $group: { _id: '$type', count: { $sum: 1 } } }
   ]);
 
-  const recentTickets = await Ticket.find()
+  const recentTickets = await Ticket.find(ticketQuery)
     .populate('createdBy', 'name role')
     .populate('assignedTo', 'name')
     .sort({ createdAt: -1 })
@@ -600,6 +610,7 @@ app.get('/api/stats/admin', protect, authorize('admin', 'team_leader'), async (r
     userRole: req.user.role
   });
 });
+
 
 // Employee & HR — workload overview
 app.get('/api/stats/employee', protect, authorize('employee', 'hr'), async (req, res) => {
@@ -641,12 +652,13 @@ app.get('/api/stats/employee', protect, authorize('employee', 'hr'), async (req,
   // 🎯 NEW: Distinguish between HR and Employee for unassigned pool
   let unassignedQuery = { assignedTo: null, status: { $ne: 'completed' } };
   if (req.user.role === 'hr') {
-    // HR handles Employee IT Issues and HR-type internal tickets
-    unassignedQuery.type = { $in: ['employee', 'hr'] };
+    // HR handles ONLY HR-type internal tickets
+    unassignedQuery.type = 'hr';
   } else {
-    // Employees handle Client-type support tickets
-    unassignedQuery.type = 'client';
+    // Employees handle Client-type support tickets AND Employee IT issues
+    unassignedQuery.type = { $in: ['client', 'employee'] };
   }
+
 
   const unassigned = await Ticket.countDocuments(unassignedQuery);
   const unassignedTickets = await Ticket.find(unassignedQuery)

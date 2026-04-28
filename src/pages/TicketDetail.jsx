@@ -196,7 +196,8 @@ const TicketDetail = () => {
   const canManage = isAdmin ||
                    (isHR && ticket.type === 'hr') ||
                    (isTeamLeader && ticket.type === 'client') ||
-                   (isEmployee && isAssignedToMe);
+                   (isEmployee && isAssignedToMe && !isOwner);
+
 
   const canDelete = isAdmin;
 

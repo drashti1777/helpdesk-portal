@@ -40,7 +40,7 @@ const NewTicket = () => {
       // We need a route for clients, but let's use the employees list and filter for now if no specific route exists
       fetch(`${API_BASE_URL}/api/users/employees`, { headers: { 'Authorization': `Bearer ${user.token}` } })
         .then(res => res.json())
-        .then(data => setClients(Array.isArray(data) ? data.filter(u => u.role === 'client') : []));
+        .then(data => setClients(Array.isArray(data) ? data : []));
     }
   }, [user.token, user.role]);
 
@@ -138,17 +138,22 @@ const NewTicket = () => {
               {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
 
-            <label style={labelStyle}>Project *</label>
-            <select
-              required
-              value={formData.project}
-              onChange={e => setFormData({ ...formData, project: e.target.value })}
-            >
-              <option value="">Select a project</option>
-              {projects.map(p => (
-                <option key={p._id} value={p.name}>{p.name}</option>
-              ))}
-            </select>
+            {user.role !== 'employee' && (
+              <>
+                <label style={labelStyle}>Project {user.role !== 'hr' && '*'}</label>
+                <select
+                  required={user.role !== 'hr'}
+                  value={formData.project}
+                  onChange={e => setFormData({ ...formData, project: e.target.value })}
+                >
+                  <option value="">Select a project</option>
+                  {projects.map(p => (
+                    <option key={p._id} value={p.name}>{p.name}</option>
+                  ))}
+                </select>
+              </>
+            )}
+
 
             <label style={labelStyle}>Description *</label>
             <textarea
