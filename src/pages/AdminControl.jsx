@@ -1,3 +1,4 @@
+import API_BASE_URL from '../config';
 import React, { useCallback, useContext, useEffect, useState } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { 
@@ -27,7 +28,7 @@ const AdminControl = () => {
   const fetchConfig = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch('http://localhost:5000/api/system/config', {
+      const res = await fetch(`${API_BASE_URL}/api/system/config`, {
         headers: { Authorization: `Bearer ${user.token}` }
       });
       const data = await res.json();
@@ -52,7 +53,7 @@ const AdminControl = () => {
       const endpoint = target === 'permissions' ? 'permissions' : 'settings';
       const body = target === 'permissions' ? { rolePermissions: config.rolePermissions } : config.settings;
       
-      const res = await fetch(`http://localhost:5000/api/system/${endpoint}`, {
+      const res = await fetch(`${API_BASE_URL}/api/system/${endpoint}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -78,7 +79,7 @@ const AdminControl = () => {
   const handleBackup = async () => {
     setBackingUp(true);
     try {
-      const res = await fetch('http://localhost:5000/api/system/backup', {
+      const res = await fetch(`${API_BASE_URL}/api/system/backup`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${user.token}` }
       });

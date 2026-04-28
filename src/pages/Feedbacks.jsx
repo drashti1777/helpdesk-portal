@@ -1,3 +1,4 @@
+import API_BASE_URL from '../config';
 import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { Star, MessageSquare, User, Calendar, Ticket, ExternalLink, Filter, TrendingUp } from 'lucide-react';
@@ -13,7 +14,7 @@ const Feedbacks = () => {
   useEffect(() => {
     const fetchFeedbacks = async () => {
       try {
-        const res = await fetch('http://localhost:5000/api/tickets', {
+        const res = await fetch(`${API_BASE_URL}/api/tickets`, {
           headers: { 'Authorization': `Bearer ${user.token}` }
         });
         const data = await res.json();

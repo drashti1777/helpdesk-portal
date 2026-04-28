@@ -1,3 +1,4 @@
+import API_BASE_URL from '../config';
 import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
@@ -27,17 +28,17 @@ const NewTicket = () => {
   const [projects, setProjects] = useState([]);
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/projects', { headers: { 'Authorization': `Bearer ${user.token}` } })
+    fetch(`${API_BASE_URL}/api/projects`, { headers: { 'Authorization': `Bearer ${user.token}` } })
       .then(res => res.json())
       .then(data => setProjects(Array.isArray(data) ? data : []));
 
     if (user.role === 'admin' || user.role === 'team_leader') {
-      fetch('http://localhost:5000/api/users/agents', { headers: { 'Authorization': `Bearer ${user.token}` } })
+      fetch(`${API_BASE_URL}/api/users/agents`, { headers: { 'Authorization': `Bearer ${user.token}` } })
         .then(res => res.json())
         .then(data => setAgents(Array.isArray(data) ? data : []));
       
       // We need a route for clients, but let's use the employees list and filter for now if no specific route exists
-      fetch('http://localhost:5000/api/users/employees', { headers: { 'Authorization': `Bearer ${user.token}` } })
+      fetch(`${API_BASE_URL}/api/users/employees`, { headers: { 'Authorization': `Bearer ${user.token}` } })
         .then(res => res.json())
         .then(data => setClients(Array.isArray(data) ? data.filter(u => u.role === 'client') : []));
     }
@@ -77,7 +78,7 @@ const NewTicket = () => {
     files.forEach(f => data.append('files', f));
 
     try {
-      const res = await fetch('http://localhost:5000/api/tickets', {
+      const res = await fetch(`${API_BASE_URL}/api/tickets`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${user.token}` },
         body: data

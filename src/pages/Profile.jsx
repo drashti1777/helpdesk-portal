@@ -1,3 +1,4 @@
+import API_BASE_URL from '../config';
 import React, { useState, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { User, Mail, Lock, Save, Camera, Shield, CheckCircle2, AlertCircle } from 'lucide-react';
@@ -26,7 +27,7 @@ const Profile = () => {
 
     setLoading(true);
     try {
-      const res = await fetch('http://localhost:5000/api/users/profile', {
+      const res = await fetch(`${API_BASE_URL}/api/users/profile`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

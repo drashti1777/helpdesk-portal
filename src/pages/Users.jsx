@@ -1,3 +1,4 @@
+import API_BASE_URL from '../config';
 import React, { useEffect, useState, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import {
@@ -45,7 +46,7 @@ const Users = () => {
   const isAdmin = user.role === 'admin';
   const isTeamLeader = user.role === 'team_leader';
 
-  const fetchUrl = 'http://localhost:5000/api/users/employees';
+  const fetchUrl = `${API_BASE_URL}/api/users/employees`;
 
   const fetchUsers = () => {
     setLoading(true);
@@ -71,7 +72,7 @@ const Users = () => {
   const handleRoleChange = async (emp, newRole) => {
     setActionMenu(null);
     try {
-      const res = await fetch(`http://localhost:5000/api/users/${emp._id}/role`, {
+      const res = await fetch(`${API_BASE_URL}/api/users/${emp._id}/role`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${user.token}` },
         body: JSON.stringify({ role: newRole })
@@ -91,7 +92,7 @@ const Users = () => {
     if (!emp) return;
     setDeleteConfirm({ isOpen: false, emp: null });
     try {
-      const res = await fetch(`http://localhost:5000/api/users/${emp._id}`, {
+      const res = await fetch(`${API_BASE_URL}/api/users/${emp._id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${user.token}` }
       });
@@ -113,7 +114,7 @@ const Users = () => {
       email: addForm.email.trim() 
     };
     try {
-      const res = await fetch('http://localhost:5000/api/users', {
+      const res = await fetch(`${API_BASE_URL}/api/users`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${user.token}` },
         body: JSON.stringify(payload)

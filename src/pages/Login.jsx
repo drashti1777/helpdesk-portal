@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { Headphones, Eye, EyeOff, Shield, Layout, Users, Activity, FileText, Zap, BarChart3 } from 'lucide-react';
 import loginIllustration from '../assets/login-illustration.png';
+import API_BASE_URL from '../config';
+
 
 const ROLE_INFO = {
   admin:       { label: 'Admin',             desc: 'Manage team & all tickets',     color: '#a5b4fc' },
@@ -31,7 +33,7 @@ const Login = () => {
         ...formData, 
         email: formData.email.trim() 
       };
-      const res = await fetch(`http://localhost:5000${endpoint}`, {
+      const res = await fetch(`${API_BASE_URL}${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)

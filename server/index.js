@@ -922,5 +922,20 @@ app.get('/api/reports/summary', protect, authorize('admin'), async (req, res) =>
 const PORT = process.env.PORT || 5000;
 connectDB().then(async () => {
   await seedAdmin();
+  
+  // Static files for production
+  const distPath = path.join(__dirname, '../dist');
+  app.use(express.static(distPath));
+  
+  // Catch-all route to serve the frontend
+  app.get('*', (req, res) => {
+    // Check if it's an API route - if so, don't serve index.html (already handled or 404)
+    if (req.path.startsWith('/api')) {
+      return res.status(404).json({ message: 'API route not found' });
+    }
+    res.sendFile(path.join(distPath, 'index.html'));
+  });
+
   app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 });
+

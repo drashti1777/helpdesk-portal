@@ -1,5 +1,7 @@
 import React, { useEffect, useState, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import API_BASE_URL from '../config';
+
 import { AuthContext } from '../context/AuthContext';
 import {
   ArrowLeft, Send, Paperclip, Clock, User as UserIcon,
@@ -95,7 +97,7 @@ const TicketDetail = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      const res = await fetch(`http://localhost:5000/api/tickets/${id}`, {
+      const res = await fetch(`${API_BASE_URL}/api/tickets/${id}`, {
         headers: { 'Authorization': `Bearer ${user.token}` }
       });
       if (res.ok) {
@@ -104,7 +106,7 @@ const TicketDetail = () => {
 
         // ✅ FIXED: Agents fetched for team_leader too
         if (isAdminLevel) {
-          const empRes = await fetch('http://localhost:5000/api/users/agents', {
+          const empRes = await fetch(`${API_BASE_URL}/api/users/agents`, {
             headers: { 'Authorization': `Bearer ${user.token}` }
           });
           if (empRes.ok) {
@@ -121,7 +123,7 @@ const TicketDetail = () => {
   }, [id, user.token]);
 
   const updateTicket = async (payload) => {
-    const res = await fetch(`http://localhost:5000/api/tickets/${id}`, {
+    const res = await fetch(`${API_BASE_URL}/api/tickets/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${user.token}` },
       body: JSON.stringify(payload)
@@ -134,7 +136,7 @@ const TicketDetail = () => {
 
   const handleDeleteTicket = async () => {
     setShowDeleteConfirm(false);
-    const res = await fetch(`http://localhost:5000/api/tickets/${id}`, {
+    const res = await fetch(`${API_BASE_URL}/api/tickets/${id}`, {
       method: 'DELETE',
       headers: { 'Authorization': `Bearer ${user.token}` }
     });
@@ -145,7 +147,7 @@ const TicketDetail = () => {
     e.preventDefault();
     if (!newComment.trim()) return;
     setSubmitting(true);
-    const res = await fetch(`http://localhost:5000/api/tickets/${id}/comments`, {
+    const res = await fetch(`${API_BASE_URL}/api/tickets/${id}/comments`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${user.token}` },
       body: JSON.stringify({ content: newComment })
@@ -292,7 +294,7 @@ const TicketDetail = () => {
                 <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
                   {ticket.attachments.map((file, i) => (
                     <a
-                      key={i} href={`http://localhost:5000/${file.path}`} target="_blank" rel="noreferrer"
+                      key={i} href={`${API_BASE_URL}/${file.path}`} target="_blank" rel="noreferrer"
                       className="btn btn-outline" style={{ fontSize: '0.8rem', padding: '0.4rem 0.9rem' }}
                     >
                       {file.filename}

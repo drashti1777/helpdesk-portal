@@ -1,6 +1,8 @@
 import React, { useEffect, useState, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
+import API_BASE_URL from '../config';
+
 import { Plus, Search, Ticket as TicketIcon, Clock, CheckCircle2, AlertCircle, Inbox, Download, BarChart3, RefreshCw, X } from 'lucide-react';
 
 const STATUS_CONFIG = {
@@ -75,7 +77,7 @@ const Tickets = () => {
   const handleExportCSV = async () => {
     setExporting(true);
     try {
-      const res = await fetch('http://localhost:5000/api/tickets', {
+      const res = await fetch(`${API_BASE_URL}/api/tickets`, {
         headers: { Authorization: `Bearer ${user.token}` }
       });
       const data = await res.json();
@@ -118,7 +120,7 @@ const Tickets = () => {
 
   useEffect(() => {
     setLoading(true);
-    fetch('http://localhost:5000/api/tickets', {
+    fetch(`${API_BASE_URL}/api/tickets`, {
       headers: { 'Authorization': `Bearer ${user.token}` }
     })
       .then(res => res.json())
@@ -134,7 +136,7 @@ const Tickets = () => {
   const fetchStats = () => {
     const endpoint = (user.role === 'admin' || user.role === 'team_leader') ? '/api/stats/admin' : 
                     (user.role === 'employee' ? '/api/stats/employee' : '/api/stats/client');
-    fetch(`http://localhost:5000${endpoint}`, {
+    fetch(`${API_BASE_URL}${endpoint}`, {
       headers: { 'Authorization': `Bearer ${user.token}` }
     })
       .then(res => res.json())

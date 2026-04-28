@@ -1,3 +1,4 @@
+import API_BASE_URL from '../../config';
 import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
@@ -25,7 +26,7 @@ const NotificationPanel = () => {
     const fetchAndToast = async (isInitial = false) => {
       setLoading(isInitial);
       try {
-        const res = await fetch('http://localhost:5000/api/notifications', {
+        const res = await fetch(`${API_BASE_URL}/api/notifications`, {
           headers: { 'Authorization': `Bearer ${user.token}` }
         });
         const data = await res.json();
@@ -56,7 +57,7 @@ const NotificationPanel = () => {
 
   const markAsRead = async (id) => {
     try {
-      await fetch(`http://localhost:5000/api/notifications/${id}/read`, {
+      await fetch(`${API_BASE_URL}/api/notifications/${id}/read`, {
         method: 'PUT',
         headers: { 'Authorization': `Bearer ${user.token}` }
       });
@@ -68,7 +69,7 @@ const NotificationPanel = () => {
 
   const markAllRead = async () => {
     try {
-      await fetch('http://localhost:5000/api/notifications/read-all', {
+      await fetch(`${API_BASE_URL}/api/notifications/read-all`, {
         method: 'PUT',
         headers: { 'Authorization': `Bearer ${user.token}` }
       });
@@ -81,7 +82,7 @@ const NotificationPanel = () => {
   const clearAll = async () => {
     setShowClearConfirm(false);
     try {
-      await fetch('http://localhost:5000/api/notifications/clear-all', {
+      await fetch(`${API_BASE_URL}/api/notifications/clear-all`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${user.token}` }
       });
@@ -96,7 +97,7 @@ const NotificationPanel = () => {
     if (!id) return;
     setDeleteConfirm({ isOpen: false, id: null });
     try {
-      const res = await fetch(`http://localhost:5000/api/notifications/${id}`, {
+      const res = await fetch(`${API_BASE_URL}/api/notifications/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${user.token}` }
       });

@@ -1,3 +1,4 @@
+import API_BASE_URL from '../config';
 import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { Plus, Trash2, Folder, RefreshCw } from 'lucide-react';
@@ -19,7 +20,7 @@ const Projects = () => {
   const fetchProjects = async () => {
     setLoading(true);
     try {
-      const res = await fetch('http://localhost:5000/api/projects', {
+      const res = await fetch(`${API_BASE_URL}/api/projects`, {
         headers: { 'Authorization': `Bearer ${user.token}` }
       });
       const data = await res.json();
@@ -33,7 +34,7 @@ const Projects = () => {
 
   const fetchTeamLeaders = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/users/agents', {
+      const res = await fetch(`${API_BASE_URL}/api/users/agents`, {
         headers: { 'Authorization': `Bearer ${user.token}` }
       });
       const data = await res.json();
@@ -52,7 +53,7 @@ const Projects = () => {
     e.preventDefault();
     if (!name.trim()) return;
     try {
-      const res = await fetch('http://localhost:5000/api/projects', {
+      const res = await fetch(`${API_BASE_URL}/api/projects`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -78,7 +79,7 @@ const Projects = () => {
     const { id } = deleteConfirm;
     if (!id) return;
     setDeleteConfirm({ isOpen: false, id: null });
-    await fetch(`http://localhost:5000/api/projects/${id}`, {
+    await fetch(`${API_BASE_URL}/api/projects/${id}`, {
       method: 'DELETE',
       headers: { 'Authorization': `Bearer ${user.token}` }
     });

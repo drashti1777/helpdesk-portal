@@ -1,6 +1,8 @@
 import React, { useEffect, useState, useContext, useCallback } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import API_BASE_URL from '../config';
+
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell
 } from 'recharts';
@@ -294,7 +296,7 @@ const EmployeeDashboard = ({ stats: initialStats, navigate, token, userId }) => 
   const refreshStats = useCallback(async () => {
     setRefreshing(true);
     try {
-      const res = await fetch('http://localhost:5000/api/stats/employee', {
+      const res = await fetch(`${API_BASE_URL}/api/stats/employee`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await res.json();
@@ -306,7 +308,7 @@ const EmployeeDashboard = ({ stats: initialStats, navigate, token, userId }) => 
 
   const handleStatusChange = async (ticketId, newStatus) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/tickets/${ticketId}`, {
+      const res = await fetch(`${API_BASE_URL}/api/tickets/${ticketId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ status: newStatus })
@@ -328,7 +330,7 @@ const EmployeeDashboard = ({ stats: initialStats, navigate, token, userId }) => 
 
   const handlePriorityChange = async (ticketId, priority) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/tickets/${ticketId}`, {
+      const res = await fetch(`${API_BASE_URL}/api/tickets/${ticketId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ priority })
@@ -347,7 +349,7 @@ const EmployeeDashboard = ({ stats: initialStats, navigate, token, userId }) => 
 
   const handleClaim = async (ticketId) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/tickets/${ticketId}`, {
+      const res = await fetch(`${API_BASE_URL}/api/tickets/${ticketId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ assignedTo: userId, status: 'in_progress' })
@@ -721,7 +723,7 @@ const Dashboard = () => {
     const endpoint = endpointMap[user.role];
     if (!endpoint) return;
     
-    fetch(`http://localhost:5000${endpoint}`, {
+        fetch(`${API_BASE_URL}${endpoint}`, {
       headers: { 'Authorization': `Bearer ${user.token}` }
     })
       .then(res => {
