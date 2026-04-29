@@ -15,7 +15,6 @@ const STATUS_CONFIG = {
 };
 
 const TYPE_CONFIG = {
-  client: { label: 'Client', color: '#0ea5e9' },
   employee: { label: 'Employee', color: '#10b981' },
   hr: { label: 'HR', color: '#6366f1' },
 };
@@ -66,10 +65,7 @@ const Tickets = () => {
   const [typeFilter, setTypeFilter] = useState('');
   const [activeTab, setActiveTab] = useState(() => {
     if (user.role === 'employee' || user.role === 'hr') return 'assigned';
-    if (user.role === 'team_leader') return 'all_tickets';
-    // Admins should land on the true all-overview tab by default.
-    if (user.role === 'admin') return 'all_tickets';
-    return 'all';
+    return 'all_tickets';
   });
   const [stats, setStats] = useState(null);
   const [showReportSidebar, setShowReportSidebar] = useState(false);
@@ -86,7 +82,6 @@ const Tickets = () => {
     ['admin', 'team_leader'].includes(user.role) && activeTab === 'all_tickets';
 
   const getGridTemplate = () => {
-    if (user.role === 'client') return '70px 1fr 120px 100px 110px 110px';
     if (showTeamLeaderCol) return '70px 1fr 110px 130px 120px 100px 110px 110px';
     return '70px 1fr 110px 120px 100px 110px 110px';
   };
@@ -154,8 +149,7 @@ const Tickets = () => {
   }, [user.token, user.role]);
 
   const fetchStats = () => {
-    const endpoint = (user.role === 'admin' || user.role === 'team_leader') ? '/api/stats/admin' :
-      (user.role === 'employee' ? '/api/stats/employee' : '/api/stats/client');
+    const endpoint = (user.role === 'admin' || user.role === 'team_leader') ? '/api/stats/admin' : '/api/stats/employee';
     fetch(`${API_BASE_URL}${endpoint}`, {
       headers: { 'Authorization': `Bearer ${user.token}` }
     })
@@ -177,11 +171,9 @@ const Tickets = () => {
       else matchCategory = (t.createdBy?._id || t.createdBy) === user?._id;
     } else if (user.role === 'team_leader') {
       if (activeTab === 'all_tickets') matchCategory = true;
-      else if (activeTab === 'client_pool') matchCategory = t.type === 'client';
       else matchCategory = (t.createdBy?._id || t.createdBy) === user?._id;
     } else if (user.role === 'admin') {
       if (activeTab === 'hr_pool') matchCategory = t.type === 'hr';
-      else if (activeTab === 'client_pool') matchCategory = t.type === 'client';
       else if (activeTab === 'employee_pool') matchCategory = ['employee', 'bug'].includes(t.type);
       else if (activeTab === 'all_tickets') matchCategory = true;
       else matchCategory = (t.createdBy?._id || t.createdBy) === user?._id;
@@ -200,14 +192,12 @@ const Tickets = () => {
     admin: 'All Tickets',
     team_leader: 'Team Management',
     employee: 'Tickets',
-    client: 'My Tickets',
   }[user.role] || 'Tickets';
 
   const pageSubtitle = {
     admin: 'Manage, assign, and resolve support tickets.',
     team_leader: 'Oversee and manage your team tickets.',
     employee: 'Your assigned and available tickets.',
-    client: 'Track and manage your submitted requests.',
   }[user.role] || '';
 
   return (
@@ -334,7 +324,6 @@ const Tickets = () => {
       {user.role === 'team_leader' && (
         <div style={{ display: 'flex', gap: '1.5rem', borderBottom: '1px solid var(--border)', marginBottom: '1.5rem', paddingBottom: '0.2rem' }}>
           <TabButton active={activeTab === 'all_tickets'} onClick={() => setActiveTab('all_tickets')} label="All Overview" />
-          <TabButton active={activeTab === 'client_pool'} onClick={() => setActiveTab('client_pool')} label="Client Support Pool" />
           <TabButton active={activeTab === 'my_requests'} onClick={() => setActiveTab('my_requests')} label="My Requests" />
         </div>
       )}
@@ -344,7 +333,6 @@ const Tickets = () => {
         <div style={{ display: 'flex', gap: '1.5rem', borderBottom: '1px solid var(--border)', marginBottom: '1.5rem', paddingBottom: '0.2rem' }}>
           <TabButton active={activeTab === 'all_tickets'} onClick={() => setActiveTab('all_tickets')} label="All Tickets Overview" />
           <TabButton active={activeTab === 'hr_pool'} onClick={() => setActiveTab('hr_pool')} label="HR Internal" />
-          <TabButton active={activeTab === 'client_pool'} onClick={() => setActiveTab('client_pool')} label="Client Tickets" />
           <TabButton active={activeTab === 'employee_pool'} onClick={() => setActiveTab('employee_pool')} label="Employee Tickets" />
         </div>
       )}
@@ -406,7 +394,6 @@ const Tickets = () => {
               style={{ width: 'auto', minWidth: '150px', marginBottom: 0, fontSize: '0.875rem', cursor: 'pointer' }}
             >
               <option value="">All Types</option>
-              <option value="client">Client Tickets</option>
               <option value="employee">Employee Tickets</option>
               <option value="hr">HR Tickets</option>
             </select>
@@ -425,7 +412,7 @@ const Tickets = () => {
         }}>
           <span>ID</span>
           <span>Subject</span>
-          {user.role !== 'client' && <span>Type</span>}
+          <span>Type</span>
           {showTeamLeaderCol && <span>Team Leader</span>}
           <span>Status</span>
           <span>Priority</span>
@@ -476,16 +463,14 @@ const Tickets = () => {
                     </p>
                   )}
                 </div>
-                {user.role !== 'client' && (
-                  <span style={{
-                    fontSize: '0.72rem', fontWeight: '600', textTransform: 'capitalize',
-                    color: typeCfg.color, padding: '0.2rem 0.6rem',
-                    background: `${typeCfg.color}18`, borderRadius: '999px',
-                    border: `1px solid ${typeCfg.color}33`, whiteSpace: 'nowrap', justifySelf: 'start'
-                  }}>
-                    {typeCfg.label}
-                  </span>
-                )}
+                <span style={{
+                  fontSize: '0.72rem', fontWeight: '600', textTransform: 'capitalize',
+                  color: typeCfg.color, padding: '0.2rem 0.6rem',
+                  background: `${typeCfg.color}18`, borderRadius: '999px',
+                  border: `1px solid ${typeCfg.color}33`, whiteSpace: 'nowrap', justifySelf: 'start'
+                }}>
+                  {typeCfg.label}
+                </span>
                 {/* ── Team Leader column: only in All Tickets Overview ── */}
                 {showTeamLeaderCol && (
                   <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>

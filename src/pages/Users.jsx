@@ -13,7 +13,6 @@ const ROLE_META = {
   team_leader: { label: 'Team Leader', color: '#c084fc', bg: 'rgba(168,85,247,0.15)', border: 'rgba(168,85,247,0.3)', icon: Award },
   hr: { label: 'HR Role', color: '#fb7185', bg: 'rgba(251,113,133,0.15)', border: 'rgba(251,113,133,0.3)', icon: ShieldCheck },
   employee: { label: 'Employee', color: '#6ee7b7', bg: 'rgba(16,185,129,0.12)', border: 'rgba(16,185,129,0.25)', icon: UserCheck },
-  client: { label: 'Client', color: '#94a3b8', bg: 'rgba(148,163,184,0.1)', border: 'rgba(148,163,184,0.2)', icon: Globe },
 };
 
 const avatarGradients = [
@@ -44,7 +43,7 @@ const Users = () => {
 
   // Add User Modal State
   const [showAddModal, setShowAddModal] = useState(false);
-  const [addForm, setAddForm] = useState({ name: '', email: '', mobile: '', password: '', role: 'client' });
+  const [addForm, setAddForm] = useState({ name: '', email: '', mobile: '', password: '', role: 'employee' });
   const [addLoading, setAddLoading] = useState(false);
 
   // Delete Confirmation State
@@ -131,7 +130,7 @@ const Users = () => {
       if (res.ok) {
         setUsers(prev => [data, ...prev]);
         setShowAddModal(false);
-        setAddForm({ name: '', email: '', mobile: '', password: '', role: 'client' });
+        setAddForm({ name: '', email: '', mobile: '', password: '', role: 'employee' });
         showToast(`${data.name} added successfully as ${data.role}`);
       } else {
         showToast(data.message || 'Failed to add user', 'error');
@@ -162,8 +161,7 @@ const Users = () => {
     }, {});
 
   const getAssignableRolesForUser = (targetUser) => {
-    if (targetUser.role === 'client') return []; // Clients cannot be promoted via this menu
-    if (isAdmin) return ['admin', 'team_leader', 'hr', 'employee', 'client'];
+    if (isAdmin) return ['admin', 'team_leader', 'hr', 'employee'];
     if (isTeamLeader && (targetUser.role === 'employee' || targetUser.role === 'team_leader')) {
       return ['team_leader', 'employee']; // TL can only toggle between TL and Employee
     }
@@ -175,8 +173,8 @@ const Users = () => {
     if (targetUser.role === 'admin') return false; // Admins are untouchable
     if (isAdmin) return true;
     if (isTeamLeader) {
-      // TL can only manage Employees and Clients
-      return targetUser.role === 'employee' || targetUser.role === 'client';
+      // TL can only manage Employees
+      return targetUser.role === 'employee';
     }
     return false;
   };
@@ -207,11 +205,9 @@ const Users = () => {
           </button>
         </div>
       </header>
-
-      {/* Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: `repeat(${isTeamLeader ? 3 : 5}, 1fr)`, gap: '1rem', marginBottom: '2rem' }}>
-        {['admin', 'team_leader', 'employee', 'client'].filter(r => !isTeamLeader || (r === 'employee' || r === 'client')).map(role => {
-
+      {/* Stats Grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
+        {['admin', 'team_leader', 'employee'].filter(r => !isTeamLeader || r === 'employee').map(role => {
           const meta = ROLE_META[role];
           const Icon = meta.icon;
           return (
@@ -255,7 +251,6 @@ const Users = () => {
           <option value="admin">Admin</option>
           <option value="team_leader">Team Leader</option>
           <option value="employee">Employee</option>
-          <option value="client">Client</option>
         </select>
       </div>
 
@@ -291,7 +286,7 @@ const Users = () => {
           </div>
         ) : (
           filtered.map((emp, idx) => {
-            const meta = ROLE_META[emp.role] || ROLE_META.client;
+            const meta = ROLE_META[emp.role] || ROLE_META.employee;
             const Icon = meta.icon;
             const isOwn = emp._id === user._id;
 
@@ -424,7 +419,7 @@ const Users = () => {
                                 Change Role
                               </div>
                               {getAssignableRolesForUser(emp).filter(r => r !== emp.role).map(r => {
-                                const rm = ROLE_META[r] || ROLE_META.client;
+                                const rm = ROLE_META[r] || ROLE_META.employee;
                                 const RI = rm.icon;
                                 return (
                                   <button
@@ -560,7 +555,7 @@ const Users = () => {
                   value={addForm.role} onChange={e => setAddForm({ ...addForm, role: e.target.value })}
                   style={{ cursor: 'pointer' }}
                 >
-                  <option value="client">Client</option>
+                  <option value="employee">Employee</option>
                   <option value="employee">Employee</option>
                   <option value="hr">HR Role</option>
                   <option value="team_leader">Team Leader</option>

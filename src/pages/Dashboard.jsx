@@ -382,7 +382,7 @@ const EmployeeDashboard = ({ stats: initialStats, navigate, token, user, onNewTi
 
   const tabConfig = [
     { key: 'assigned', label: 'Assigned to Me', count: stats.total, color: '#6366f1' },
-    { key: 'unassigned', label: stats.userRole === 'hr' ? 'Employee Issues' : 'Client Pool', count: stats.unassigned, color: '#f59e0b' },
+    { key: 'unassigned', label: stats.userRole === 'hr' ? 'Employee Issues' : 'General Pool', count: stats.unassigned, color: '#f59e0b' },
     { key: 'raised', label: 'My Requests', count: stats.myRaisedTickets, color: '#0ea5e9' },
   ];
 
@@ -555,119 +555,7 @@ const EmployeeDashboard = ({ stats: initialStats, navigate, token, user, onNewTi
   );
 };
 
-const ClientDashboard = ({ stats, navigate, onNewTicket }) => {
-  const STATUS_COLORS = {
-    pending: { color: '#ef4444', label: 'Pending' },
-    in_progress: { color: '#6366f1', label: 'In Progress' },
-    on_hold: { color: '#f59e0b', label: 'On Hold' },
-    completed: { color: '#10b981', label: 'Completed' },
-  };
 
-  return (
-    <>
-      <header style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
-            <div style={{ padding: '0.4rem 0.9rem', borderRadius: '999px', background: 'rgba(148,163,184,0.1)', border: '1px solid rgba(148,163,184,0.2)', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
-              <Globe size={13} color="#94a3b8" />
-              <span style={{ fontSize: '0.72rem', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Client</span>
-            </div>
-          </div>
-          <h1 style={{ fontSize: '2rem', fontWeight: '700', letterSpacing: '-0.02em' }}>My Support Tickets</h1>
-          <p style={{ color: 'var(--text-muted)', marginTop: '0.25rem' }}>All data shown is exclusively yours — other clients' data is never shared.</p>
-        </div>
-        <button className="btn btn-primary" onClick={() => onNewTicket()} style={{ fontSize: '0.875rem', flexShrink: 0 }}>
-          <PlusCircle size={15} /> New Ticket
-        </button>
-      </header>
-
-      {/* Stat Cards */}
-      <div className="dashboard-grid" style={{ marginBottom: '2rem' }}>
-        <StatCard label="Total Raised" value={stats.total} icon={ListTodo} iconColor="#6366f1" onClick={() => navigate('/tickets')} accent="#6366f1" />
-        <StatCard label="Pending" value={stats.pending} icon={AlertCircle} iconColor="#ef4444" onClick={() => navigate('/tickets?status=pending')} />
-        <StatCard label="In Progress" value={stats.inProgress} icon={Clock} iconColor="#6366f1" onClick={() => navigate('/tickets?status=in_progress')} />
-        <StatCard label="On Hold" value={stats.onHold} icon={AlertCircle} iconColor="#f59e0b" onClick={() => navigate('/tickets?status=on_hold')} />
-        <StatCard label="Resolved" value={stats.completed} icon={CheckCircle2} iconColor="#10b981" onClick={() => navigate('/tickets?status=completed')} />
-      </div>
-
-      {/* Recent tickets */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.5rem', alignItems: 'start' }}>
-
-        {/* Recent Tickets List */}
-        <div className="glass-card" style={{ padding: 0, overflow: 'hidden' }}>
-          <div style={{ padding: '1rem 1.5rem', borderBottom: '1px solid var(--border)' }}>
-            <SectionTitle>My Recent Tickets</SectionTitle>
-          </div>
-
-          {/* Header row */}
-          <div style={{
-            display: 'grid', gridTemplateColumns: '1fr 120px 90px',
-            padding: '0.5rem 1.5rem', borderBottom: '1px solid var(--border)',
-            fontSize: '0.68rem', fontWeight: '700', color: 'var(--text-muted)',
-            textTransform: 'uppercase', letterSpacing: '0.07em',
-            background: 'rgba(255,255,255,0.02)'
-          }}>
-            <span>Subject</span>
-            <span>Status</span>
-            <span>Priority</span>
-          </div>
-
-          {(!stats.recentTickets || stats.recentTickets.length === 0) ? (
-            <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-              <Inbox size={36} style={{ opacity: 0.2, marginBottom: '0.75rem' }} />
-              <p style={{ fontWeight: '500' }}>No tickets yet</p>
-              <p style={{ fontSize: '0.8rem', marginTop: '0.3rem' }}>Submit your first support request using the button above.</p>
-            </div>
-          ) : (
-            stats.recentTickets.map((t, i) => {
-              const sc = STATUS_COLORS[t.status] || { color: '#94a3b8', label: t.status };
-              return (
-                <div
-                  key={t._id}
-                  onClick={() => navigate(`/tickets/${t._id}`)}
-                  style={{
-                    display: 'grid', gridTemplateColumns: '1fr 120px 90px',
-                    alignItems: 'center', padding: '0.85rem 1.5rem',
-                    borderBottom: i < stats.recentTickets.length - 1 ? '1px solid var(--border)' : 'none',
-                    cursor: 'pointer', transition: 'background 0.15s'
-                  }}
-                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}
-                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                >
-                  <div>
-                    <p style={{ fontWeight: '500', fontSize: '0.875rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.title}</p>
-                    <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '1px' }}>
-                      {t.assignedTo ? `Assigned to ${t.assignedTo.name}` : 'Awaiting assignment'}
-                      {' · '}{new Date(t.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}
-                    </p>
-                  </div>
-                  <span style={{
-                    display: 'inline-flex', padding: '0.22rem 0.6rem', borderRadius: '999px',
-                    fontSize: '0.7rem', fontWeight: '700', textTransform: 'uppercase',
-                    background: `${sc.color}15`, color: sc.color,
-                    border: `1px solid ${sc.color}30`, whiteSpace: 'nowrap'
-                  }}>{sc.label}</span>
-                  <span className={`badge badge-${t.priority}`}>{t.priority}</span>
-                </div>
-              );
-            })
-          )}
-
-          {stats.recentTickets?.length > 0 && (
-            <div style={{ padding: '0.65rem 1.5rem', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end' }}>
-              <button onClick={() => navigate('/tickets')} className="btn btn-outline" style={{ fontSize: '0.78rem', padding: '0.3rem 0.75rem' }}>
-                View all <ChevronRight size={13} />
-              </button>
-            </div>
-          )}
-        </div>
-
-
-
-      </div>
-    </>
-  );
-};
 
 
 const endpointMap = {
@@ -675,7 +563,6 @@ const endpointMap = {
   team_leader: '/api/stats/admin',
   employee: '/api/stats/employee',
   hr: '/api/stats/employee',
-  client: '/api/stats/client',
 };
 
 // ── Main Dashboard Component ─────────────────────────────────────────────────
@@ -742,7 +629,6 @@ const Dashboard = () => {
     <div className="main-content animate-fade-in">
       {(user.role === 'admin' || user.role === 'team_leader') && <AdminDashboard stats={stats} navigate={navigate} />}
       {(user.role === 'employee' || user.role === 'hr') && <EmployeeDashboard stats={stats} navigate={navigate} token={user.token} user={user} onNewTicket={() => setShowNewTicketDrawer(true)} />}
-      {user.role === 'client' && <ClientDashboard stats={stats} navigate={navigate} user={user} onNewTicket={() => setShowNewTicketDrawer(true)} />}
 
       <div style={{ marginTop: '3rem', paddingTop: '2rem', borderTop: '1px solid var(--border)' }}>
         <Leaderboard embedded={true} />

@@ -20,7 +20,6 @@ const ROLE_COLORS = {
   admin: '#a5b4fc',
   team_leader: '#c084fc',
   employee: '#6ee7b7',
-  client: '#94a3b8',
 };
 
 const getInitials = (name = '') => name.split(' ').map(p => p[0]).join('').toUpperCase().slice(0, 2);
@@ -93,7 +92,6 @@ const TicketDetail = () => {
   const isAdminLevel = ['admin', 'team_leader', 'hr'].includes(user.role);
   const isHR = user.role === 'hr';
   const isEmployee = user.role === 'employee';
-  const isClient = user.role === 'client';
 
   useEffect(() => {
     const fetchData = async () => {
@@ -195,14 +193,12 @@ const TicketDetail = () => {
 
   const canManage = isAdmin ||
                    (isHR && ticket.type === 'hr') ||
-                   (isTeamLeader && ticket.type === 'client') ||
                    (isEmployee && isAssignedToMe && !isOwner);
 
 
   const canDelete = isAdmin;
 
-  const canAssign = isAdmin ||
-                    (isTeamLeader && (ticket.type === 'client' || ticket.type === 'hr'));
+  const canAssign = isAdmin || (isTeamLeader && ticket.type === 'hr');
 
   return (
     <div className="main-content animate-fade-in">
@@ -362,7 +358,6 @@ const TicketDetail = () => {
             <InfoRow label="Type" value={ticket.type?.charAt(0).toUpperCase() + ticket.type?.slice(1)} />
             <InfoRow label="Category" value={ticket.category || 'General'} />
             <InfoRow label="Created By" value={ticket.createdBy?.name} />
-            {ticket.targetClient && <InfoRow label="For Client" value={ticket.targetClient.name} />}
             <InfoRow
               label="Assigned To"
               value={ticket.assignedTo ? ticket.assignedTo.name : 'Unassigned'}
@@ -410,7 +405,6 @@ const TicketDetail = () => {
                   .filter(emp => {
                     // Filter logic for Team Leaders
                     if (user.role === 'team_leader') {
-                      if (ticket.type === 'client') return emp.role === 'employee';
                       if (ticket.type === 'hr') return emp.role === 'hr';
                       if (ticket.type === 'employee') return emp.role === 'hr' || emp.role === 'admin';
                     }
@@ -468,12 +462,7 @@ const TicketDetail = () => {
             </div>
           )}
 
-          {/* Role Info — Client */}
-          {isClient && (
-            <div style={{ padding: '0.85rem 1rem', borderRadius: '10px', background: 'var(--glass)', border: '1px solid var(--border)', fontSize: '0.82rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>
-              <p>Our support team will review your ticket and respond within the SLA timeframe.</p>
-            </div>
-          )}
+
 
 
         </div>

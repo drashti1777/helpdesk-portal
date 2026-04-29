@@ -8,14 +8,13 @@ import API_BASE_URL from '../config';
 
 const ROLE_INFO = {
   admin: { label: 'Admin', desc: 'Manage team & all tickets', color: '#a5b4fc' },
-  team_leader: { label: 'Team Leader', desc: 'Oversee team and client support', color: '#c084fc' },
+  team_leader: { label: 'Team Leader', desc: 'Oversee team support', color: '#c084fc' },
   employee: { label: 'Employee (Internal)', desc: 'Raise internal IT support tickets', color: '#6ee7b7' },
-  client: { label: 'Client (External)', desc: 'Report website or app issues', color: '#94a3b8' },
 };
 
 const Login = () => {
   const [isRegister, setIsRegister] = useState(false);
-  const [formData, setFormData] = useState({ name: '', email: '', password: '', role: 'client' });
+  const [formData, setFormData] = useState({ name: '', email: '', password: '', role: 'employee' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -163,7 +162,7 @@ const Login = () => {
             </div>
             <div style={{ width: '60px', height: '4px', background: '#4f46e5', borderRadius: '2px', margin: '0 auto 1.5rem' }} />
             <p style={{ fontSize: '1.1rem', fontWeight: '500', color: '#475569', maxWidth: '480px', margin: '0 auto' }}>
-              One platform for employees and clients to manage IT support tickets efficiently.
+              One platform for employees to manage IT support and HR requests efficiently.
             </p>
           </div>
 
@@ -277,7 +276,7 @@ const Login = () => {
                   <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'linear-gradient(135deg, #6366f1, #4f46e5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <Layout size={18} color="#fff" />
                   </div>
-                  <span style={{ fontWeight: '800', fontSize: '0.85rem', color: '#1e293b' }}>For Clients</span>
+                  <span style={{ fontWeight: '800', fontSize: '0.85rem', color: '#1e293b' }}>For HR & Admin</span>
                 </div>
               </div>
             </div>
@@ -407,7 +406,6 @@ const Login = () => {
                   onChange={e => setFormData({ ...formData, role: e.target.value })}
                   style={{ ...inputStyle, cursor: 'pointer' }}
                 >
-                  <option value="client">Client — External (Website / App issues)</option>
                   <option value="employee">Employee — Internal IT Requests</option>
                   <option value="team_leader">Team Leader — Management</option>
                   <option value="hr">HR — Personnel Management</option>

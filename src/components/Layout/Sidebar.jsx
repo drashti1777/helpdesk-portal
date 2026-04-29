@@ -13,8 +13,6 @@ const ROLE_META = {
   team_leader: { label: 'Team Leader', color: '#c084fc', bg: 'rgba(168,85,247,0.15)' },
   employee: { label: 'Employee', color: '#6ee7b7', bg: 'rgba(16,185,129,0.12)' },
   hr: { label: 'HR', color: '#fb7185', bg: 'rgba(251,113,133,0.15)' },
-  client: { label: 'Client', color: '#94a3b8', bg: 'rgba(148,163,184,0.1)' },
-
 };
 
 const getInitials = (name = '') =>
@@ -24,7 +22,7 @@ const Sidebar = () => {
   const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
   const role = user?.role;
-  const meta = ROLE_META[role] || ROLE_META.client;
+  const meta = ROLE_META[role] || ROLE_META.employee;
 
   // Theme state moved to AppLayout
 
@@ -64,7 +62,7 @@ const Sidebar = () => {
     {/* Tickets — everyone */}
     <NavLink to="/tickets" end className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
       <Ticket size={18} />
-      {role === 'client' ? 'My Tickets' : role === 'employee' ? 'All Tickets' : 'Tickets'}
+      {role === 'employee' ? 'All Tickets' : 'Tickets'}
     </NavLink>
 
     {/* Project */}

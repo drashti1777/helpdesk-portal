@@ -223,7 +223,7 @@ const Projects = () => {
         <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
           <div>
             <h1 style={{ fontSize: '2rem', fontWeight: '700', letterSpacing: '-0.02em' }}>Project Management</h1>
-            <p style={{ color: 'var(--text-muted)', marginTop: '0.25rem' }}>Full visibility and oversight of all registered client projects.</p>
+            <p style={{ color: 'var(--text-muted)', marginTop: '0.25rem' }}>Full visibility and oversight of all registered projects.</p>
           </div>
           <button onClick={() => { resetForm(); setShowModal(true); }} className="btn btn-primary">
             <PlusCircle size={18} /> New Project

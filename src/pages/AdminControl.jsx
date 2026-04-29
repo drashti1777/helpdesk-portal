@@ -243,7 +243,7 @@ const AdminControl = () => {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
               <Toggle 
                 label="Self Registration" 
-                desc="Allow new clients to register accounts"
+                desc="Allow new users to register accounts"
                 checked={config.settings.allowSelfRegistration}
                 onChange={(v) => setConfig(p => ({...p, settings: {...p.settings, allowSelfRegistration: v}}))}
               />
@@ -341,7 +341,7 @@ const AdminControl = () => {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               {Object.entries(config.rolePermissions || {})
-                .filter(([role]) => role !== 'super_admin' && role !== 'admin')
+                .filter(([role]) => !['super_admin', 'admin', 'client'].includes(role))
                 .map(([role, permissions]) => (
                 <div key={role} style={{ 
                   padding: '1.25rem', borderRadius: '16px', background: 'rgba(255,255,255,0.02)', 

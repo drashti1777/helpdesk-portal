@@ -5,7 +5,6 @@ import { AuthContext } from '../context/AuthContext';
 import { ArrowLeft, Upload, X, FileText, AlertTriangle } from 'lucide-react';
 
 const TICKET_TYPE_MAP = {
-  client: { value: 'client', label: 'Client Request', desc: 'Issue with your website or application' },
   employee: { value: 'employee', label: 'Employee IT Issue', desc: 'Internal system or software problem' },
   hr: { value: 'hr', label: 'HR Request', desc: 'Internal HR or administrative request' },
   team_leader: { value: 'team_leader', label: 'Team Leader Request', desc: 'Management or high-level coordination issue' },
@@ -14,10 +13,6 @@ const TICKET_TYPE_MAP = {
 const BUG_TYPE_TILE = { value: 'bug', label: 'Bug Report', desc: 'Earn points by reporting verified bugs' };
 
 const CATEGORIES_BY_TYPE = {
-  client: [
-    'Website / App Bug', 'Feature Request', 'Billing Issue',
-    'UI/UX Feedback', 'Content Update', 'Performance Issue', 'Other'
-  ],
   employee: [
     'Hardware Issue', 'Software Installation', 'Network / Wi-Fi',
     'Password Reset', 'Email Config', 'System Slowdown', 'Printer Issue', 'Other'
@@ -56,10 +51,6 @@ const NewTicket = () => {
       fetch(`${API_BASE_URL}/api/users/agents`, { headers: { 'Authorization': `Bearer ${user.token}` } })
         .then(res => res.json())
         .then(data => setAgents(Array.isArray(data) ? data : []));
-
-      fetch(`${API_BASE_URL}/api/users/employees`, { headers: { 'Authorization': `Bearer ${user.token}` } })
-        .then(res => res.json())
-        .then(data => setClients(Array.isArray(data) ? data : []));
     }
   }, [user.token, user.role]);
 
@@ -70,11 +61,9 @@ const NewTicket = () => {
     priority: 'low',
     category: '',
     project: '',
-    targetClient: '',
     assignedTo: '',
   });
   const [agents, setAgents] = useState([]);
-  const [clients, setClients] = useState([]);
   const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
@@ -127,11 +116,9 @@ const NewTicket = () => {
       <header style={{ marginBottom: '2rem' }}>
         <h1 style={{ fontSize: '2rem', fontWeight: '700', letterSpacing: '-0.02em', color: 'var(--text-main)' }}>Submit a Ticket</h1>
         <p style={{ color: 'var(--text-muted)', marginTop: '0.3rem' }}>
-          {user.role === 'client'
-            ? 'Report an issue with your website or application.'
-            : user.role === 'employee' || user.role === 'team_leader'
-              ? 'Raise an internal IT support request.'
-              : 'Submit an internal issue or request.'}
+          {user.role === 'employee' || user.role === 'team_leader'
+            ? 'Raise an internal IT support request.'
+            : 'Submit an internal issue or request.'}
         </p>
       </header>
 
@@ -187,30 +174,18 @@ const NewTicket = () => {
           </div>
 
           <div className="glass-card" style={{ marginBottom: '1.5rem' }}>
-            {(user.role === 'admin' || user.role === 'team_leader') && formData.type === 'client' && (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem', marginBottom: '1.25rem' }}>
-                <div>
-                  <label style={labelStyle}>For Client</label>
-                  <select
-                    value={formData.targetClient}
-                    onChange={e => setFormData({ ...formData, targetClient: e.target.value })}
-                  >
-                    <option value="">Select Client</option>
-                    {clients.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label style={labelStyle}>Assign Employee (Solver)</label>
-                  <select
-                    value={formData.assignedTo}
-                    onChange={e => setFormData({ ...formData, assignedTo: e.target.value })}
-                  >
-                    <option value="">Unassigned</option>
-                    {agents
-                      .filter(a => user.role !== 'team_leader' || a.role === 'employee')
-                      .map(a => <option key={a._id} value={a._id}>{a.name} ({a.role.replace('_', ' ')})</option>)}
-                  </select>
-                </div>
+            {(user.role === 'admin' || user.role === 'team_leader') && formData.type === 'employee' && (
+              <div style={{ marginBottom: '1.25rem' }}>
+                <label style={labelStyle}>Assign Employee (Solver)</label>
+                <select
+                  value={formData.assignedTo}
+                  onChange={e => setFormData({ ...formData, assignedTo: e.target.value })}
+                >
+                  <option value="">Unassigned</option>
+                  {agents
+                    .filter(a => user.role !== 'team_leader' || a.role === 'employee')
+                    .map(a => <option key={a._id} value={a._id}>{a.name} ({a.role.replace('_', ' ')})</option>)}
+                </select>
               </div>
             )}
 
@@ -219,8 +194,8 @@ const NewTicket = () => {
                 <div>
                   <label style={labelStyle}>For Employee</label>
                   <select
-                    value={formData.targetClient}
-                    onChange={e => setFormData({ ...formData, targetClient: e.target.value })}
+                    value={formData.assignedTo} // Reusing assignedTo for HR solver if needed or just simplify
+                    onChange={e => setFormData({ ...formData, assignedTo: e.target.value })}
                   >
                     <option value="">Select Employee</option>
                     {agents.filter(a => a.role === 'employee').map(e => <option key={e._id} value={e._id}>{e.name}</option>)}
@@ -299,7 +274,6 @@ const NewTicket = () => {
             <h3 style={{ fontWeight: '600', marginBottom: '1rem', fontSize: '0.9rem', color: 'var(--text-main)' }}>Ticket Type</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
               {(isManagement ? [
-                { value: 'client', label: 'For Client', desc: 'External client support' },
                 { value: 'employee', label: 'For IT Support', desc: 'Internal IT/System issue' },
                 { value: 'hr', label: 'For HR', desc: 'Internal HR/Admin request' },
                 { value: 'team_leader', label: 'For Team Leader', desc: 'Management coordination' },
@@ -312,11 +286,11 @@ const NewTicket = () => {
                 { value: 'employee', label: 'IT Issue', desc: 'Internal system or software problem' },
                 BUG_TYPE_TILE
               ] : [
-                { value: user.role === 'client' ? 'client' : (TICKET_TYPE_MAP[user.role]?.value || 'hr'), ...(TICKET_TYPE_MAP[user.role] || { label: 'Request', desc: 'Submit a request' }) }
+                { value: (TICKET_TYPE_MAP[user.role]?.value || 'hr'), ...(TICKET_TYPE_MAP[user.role] || { label: 'Request', desc: 'Submit a request' }) }
               ]).map(type => (
                 <button
                   key={type.value} type="button"
-                  onClick={() => setFormData({ ...formData, type: type.value, targetClient: '', assignedTo: '' })}
+                  onClick={() => setFormData({ ...formData, type: type.value, assignedTo: '' })}
                   style={{
                     padding: '0.75rem 1rem', borderRadius: '8px', cursor: 'pointer',
                     background: formData.type === type.value ? 'rgba(99,102,241,0.12)' : 'var(--glass)',

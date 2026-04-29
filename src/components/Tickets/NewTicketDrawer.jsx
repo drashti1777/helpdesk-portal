@@ -9,7 +9,6 @@ import {
 } from 'lucide-react';
 
 const TICKET_TYPE_MAP = {
-  client: { value: 'client', label: 'Client Request', icon: Globe, color: '#0ea5e9' },
   employee: { value: 'employee', label: 'IT Support', icon: UserIcon, color: '#10b981' },
   hr: { value: 'hr', label: 'HR Request', icon: ShieldCheck, color: '#fb7185' },
   team_leader: { value: 'team_leader', label: 'Team Leader', icon: Award, color: '#c084fc' },
@@ -17,10 +16,6 @@ const TICKET_TYPE_MAP = {
 };
 
 const CATEGORIES_BY_TYPE = {
-  client: [
-    'Website / App Bug', 'Feature Request', 'Billing Issue',
-    'UI/UX Feedback', 'Content Update', 'Performance Issue', 'Other'
-  ],
   employee: [
     'Hardware Issue', 'Software Installation', 'Network / Wi-Fi',
     'Password Reset', 'Email Config', 'System Slowdown', 'Printer Issue', 'Other'
@@ -54,13 +49,11 @@ const NewTicketDrawer = ({ isOpen, onClose, onSuccess }) => {
     priority: 'low',
     category: '',
     project: '',
-    targetClient: '',
     assignedTo: '',
   });
 
   const [projects, setProjects] = useState([]);
   const [agents, setAgents] = useState([]);
-  const [clients, setClients] = useState([]);
   const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
@@ -76,10 +69,6 @@ const NewTicketDrawer = ({ isOpen, onClose, onSuccess }) => {
       fetch(`${API_BASE_URL}/api/users/agents`, { headers: { 'Authorization': `Bearer ${user.token}` } })
         .then(res => res.json())
         .then(data => setAgents(Array.isArray(data) ? data : []));
-
-      fetch(`${API_BASE_URL}/api/users/employees`, { headers: { 'Authorization': `Bearer ${user.token}` } })
-        .then(res => res.json())
-        .then(data => setClients(Array.isArray(data) ? data : []));
     }
   }, [isOpen, user.token, user.role, isManagement]);
 
@@ -109,7 +98,7 @@ const NewTicketDrawer = ({ isOpen, onClose, onSuccess }) => {
       if (res.ok) {
         onSuccess?.();
         onClose();
-        setFormData({ title: '', description: '', type: defaultType, priority: 'low', category: '', project: '', targetClient: '', assignedTo: '' });
+        setFormData({ title: '', description: '', type: defaultType, priority: 'low', category: '', project: '', assignedTo: '' });
         setFiles([]);
       }
     } catch (err) {
@@ -206,7 +195,6 @@ const NewTicketDrawer = ({ isOpen, onClose, onSuccess }) => {
               <label style={labelStyle}>Ticket Type</label>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                 {(isManagement ? [
-                  { value: 'client', label: 'Client' },
                   { value: 'employee', label: 'IT Support' },
                   { value: 'hr', label: 'HR Request' },
                   { value: 'team_leader', label: 'Team Leader' },
@@ -222,7 +210,7 @@ const NewTicketDrawer = ({ isOpen, onClose, onSuccess }) => {
                   return (
                     <button
                       key={type.value} type="button"
-                      onClick={() => setFormData({ ...formData, type: type.value, targetClient: '', assignedTo: '', category: '' })}
+                      onClick={() => setFormData({ ...formData, type: type.value, assignedTo: '', category: '' })}
                       style={{
                         padding: '0.85rem 1rem', borderRadius: '12px', cursor: 'pointer',
                         display: 'flex', alignItems: 'center', gap: '0.75rem',
@@ -317,30 +305,17 @@ const NewTicketDrawer = ({ isOpen, onClose, onSuccess }) => {
             )}
 
             {/* Assignee / Target */}
-            {isManagement && formData.type === 'client' && (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
-                <div>
-                  <label style={labelStyle}>Target Client</label>
-                  <select
-                    value={formData.targetClient}
-                    onChange={e => setFormData({ ...formData, targetClient: e.target.value })}
-                    style={inputStyle}
-                  >
-                    <option value="">Select Client</option>
-                    {clients.filter(c => c.role === 'client').map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label style={labelStyle}>Assign Solver</label>
-                  <select
-                    value={formData.assignedTo}
-                    onChange={e => setFormData({ ...formData, assignedTo: e.target.value })}
-                    style={inputStyle}
-                  >
-                    <option value="">Keep Unassigned</option>
-                    {agents.map(a => <option key={a._id} value={a._id}>{a.name} ({a.role.replace('_', ' ')})</option>)}
-                  </select>
-                </div>
+            {isManagement && formData.type === 'employee' && (
+              <div>
+                <label style={labelStyle}>Assign Solver</label>
+                <select
+                  value={formData.assignedTo}
+                  onChange={e => setFormData({ ...formData, assignedTo: e.target.value })}
+                  style={inputStyle}
+                >
+                  <option value="">Keep Unassigned</option>
+                  {agents.map(a => <option key={a._id} value={a._id}>{a.name} ({a.role.replace('_', ' ')})</option>)}
+                </select>
               </div>
             )}
 

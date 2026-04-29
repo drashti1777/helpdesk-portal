@@ -12,7 +12,6 @@ const ROLE_LABELS = {
   team_leader: 'Team Leader',
   hr: 'HR',
   admin: 'Admin',
-  client: 'Client',
 };
 
 const Leaderboard = ({ embedded = false }) => {
