@@ -1,5 +1,6 @@
 import API_BASE_URL from '../../config';
 import React, { useState, useEffect, useContext } from 'react';
+import ReactDOM from 'react-dom';
 import { AuthContext } from '../../context/AuthContext';
 import {
   Upload, X, FileText, AlertTriangle,
@@ -128,18 +129,23 @@ const NewTicketDrawer = ({ isOpen, onClose, onSuccess }) => {
 
   if (!isOpen) return null;
 
-  return (
+  return ReactDOM.createPortal(
     <>
       <div
         onClick={onClose}
-        style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(2, 6, 13, 0.6)', zIndex: 1100, backdropFilter: 'blur(8px)' }}
+        style={{ 
+          position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', 
+          background: 'rgba(2, 6, 13, 0.6)', zIndex: 1100, backdropFilter: 'blur(8px)',
+          opacity: isOpen ? 1 : 0, transition: 'opacity 0.3s ease'
+        }}
       />
       <div style={{
         position: 'fixed', top: 0, right: 0, width: '540px', height: '100%',
         background: 'var(--bg-dark)', borderLeft: '1px solid var(--border)',
         boxShadow: '-20px 0 60px rgba(0,0,0,0.6)', zIndex: 1101,
         display: 'flex', flexDirection: 'column',
-        animation: 'slideInRight 0.4s cubic-bezier(0.16, 1, 0.3, 1)'
+        transform: isOpen ? 'translateX(0)' : 'translateX(100%)',
+        transition: 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)'
       }}>
         {/* Fixed Header */}
         <div style={{
@@ -420,7 +426,8 @@ const NewTicketDrawer = ({ isOpen, onClose, onSuccess }) => {
         }
         select option { background: var(--bg-input); color: var(--text-main); }
       `}</style>
-    </>
+    </>,
+    document.body
   );
 };
 

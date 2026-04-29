@@ -1,12 +1,15 @@
-import React, { useEffect, useState, useContext } from 'react';
+import React, { useEffect, useState, useContext, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import { AuthContext } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
 import API_BASE_URL from '../config';
 import {
   Plus, Search, Briefcase, Users, Mail, Phone, Trash2, Edit2,
   RefreshCw, X, PlusCircle, ExternalLink, Globe, Layout,
   User as UserIcon, Shield, AlertCircle, CheckCircle2, Bug
+import { 
+  Plus, Search, Briefcase, Users, Mail, Phone, Trash2, Edit2, 
+  RefreshCw, X, PlusCircle, ExternalLink, Globe, Layout, 
+  User as UserIcon, Shield, CheckCircle2, FileText, Upload
 } from 'lucide-react';
 
 const Projects = () => {
@@ -19,7 +22,6 @@ const Projects = () => {
   const [toast, setToast] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
-    description: '',
     teamName: '',
     projectUrl: '',
     uatUrl: '',
@@ -33,6 +35,18 @@ const Projects = () => {
   const [showMemberDropdown, setShowMemberDropdown] = useState(false);
   const [expandedDescId, setExpandedDescId] = useState(null);
   const [bugStats, setBugStats] = useState({});
+  const [knowledgeBaseFile, setKnowledgeBaseFile] = useState(null);
+  const [isDraggingKnowledgeBase, setIsDraggingKnowledgeBase] = useState(false);
+  const knowledgeBaseInputRef = useRef(null);
+
+  const getKnowledgeBaseUrl = (project) =>
+    project?.knowledgeBase ? `${API_BASE_URL}${project.knowledgeBase}` : '';
+
+  const handleKnowledgeBaseSelect = (files) => {
+    const [file] = Array.from(files || []);
+    if (!file) return;
+    setKnowledgeBaseFile(file);
+  };
 
   const fetchProjects = async () => {
     setLoading(true);
@@ -100,13 +114,24 @@ const Projects = () => {
       : `${API_BASE_URL}/api/projects`;
 
     try {
+      const payload = new FormData();
+      payload.append('name', formData.name);
+      payload.append('teamName', formData.teamName);
+      payload.append('projectUrl', formData.projectUrl);
+      payload.append('uatUrl', formData.uatUrl);
+      payload.append('productionLink', formData.productionLink);
+      payload.append('teamLeader', formData.teamLeader);
+      payload.append('teamMembers', JSON.stringify(formData.teamMembers));
+      if (knowledgeBaseFile) {
+        payload.append('knowledgeBaseFile', knowledgeBaseFile);
+      }
+
       const res = await fetch(url, {
         method,
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${user.token}`
         },
-        body: JSON.stringify(formData)
+        body: payload
       });
       if (res.ok) {
         showToast(`Project ${editingProject ? 'updated' : 'created'} successfully`);
@@ -127,7 +152,6 @@ const Projects = () => {
   const resetForm = () => {
     setFormData({
       name: '',
-      description: '',
       teamName: '',
       projectUrl: '',
       uatUrl: '',
@@ -135,6 +159,9 @@ const Projects = () => {
       teamLeader: '',
       teamMembers: []
     });
+    setKnowledgeBaseFile(null);
+    setShowMemberDropdown(false);
+    setMemberSearch('');
     setEditingProject(null);
   };
 
@@ -142,7 +169,6 @@ const Projects = () => {
     setEditingProject(project);
     setFormData({
       name: project.name || '',
-      description: project.description || '',
       teamName: project.teamName || '',
       projectUrl: project.projectUrl || '',
       uatUrl: project.uatUrl || '',
@@ -150,6 +176,7 @@ const Projects = () => {
       teamLeader: project.teamLeader?._id || project.teamLeader || '',
       teamMembers: (project.teamMembers || []).map(m => m._id || m)
     });
+    setKnowledgeBaseFile(null);
     setShowModal(true);
   };
 
@@ -228,7 +255,7 @@ const Projects = () => {
             <span>Project & Team</span>
             <span>Project Leader</span>
             <span>Access Links</span>
-            <span>Description</span>
+            <span>Knowledge Base</span>
             <span>Info</span>
             <span>Bugs</span>
             <span style={{ textAlign: 'right' }}>Actions</span>
@@ -313,26 +340,21 @@ const Projects = () => {
                   )}
                 </div>
 
-                {/* 4. Description */}
+                {/* 4. Knowledge Base */}
                 <div>
-                  {project.description ? (
-                    <div 
-                      onClick={() => setExpandedDescId(expandedDescId === project._id ? null : project._id)} 
-                      style={{ cursor: 'pointer' }}
-                    >
-                      {expandedDescId === project._id ? (
-                        <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: '1.5' }}>
-                          {project.description}
-                          <span style={{ color: 'var(--primary)', fontWeight: '600', marginLeft: '0.3rem', fontSize: '0.7rem' }}>Show less</span>
-                        </p>
-                      ) : (
-                        <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: '1.4' }}>
-                          {project.description.length > 50 ? project.description.slice(0, 50) + '...' : project.description}
-                          {project.description.length > 50 && (
-                            <span style={{ color: 'var(--primary)', fontWeight: '600', marginLeft: '0.3rem', fontSize: '0.7rem' }}>Read more</span>
-                          )}
-                        </p>
-                      )}
+                  {project.knowledgeBase ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
+                      <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: '1.4' }}>
+                        {project.knowledgeBaseOriginalName || 'Knowledge base document uploaded'}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => window.open(getKnowledgeBaseUrl(project), '_blank', 'noopener,noreferrer')}
+                        className="btn btn-outline"
+                        style={{ alignSelf: 'flex-start', padding: '0.45rem 0.75rem', fontSize: '0.75rem' }}
+                      >
+                        <ExternalLink size={14} /> View
+                      </button>
                     </div>
                   ) : (
                     <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontStyle: 'italic', opacity: 0.5 }}>—</span>
@@ -448,11 +470,6 @@ const Projects = () => {
                 <div>
                   <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>Team Name</label>
                   <input type="text" value={formData.teamName} onChange={e => setFormData({ ...formData, teamName: e.target.value })} placeholder="e.g. Alpha Developers" />
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>Description</label>
-                  <textarea rows={3} value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} placeholder="Brief overview of the project objectives..." />
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
@@ -574,6 +591,83 @@ const Projects = () => {
                     )}
                   </div>
                 </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>Knowledge Base</label>
+                  <div
+                    onClick={() => knowledgeBaseInputRef.current?.click()}
+                    onDragEnter={e => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setIsDraggingKnowledgeBase(true);
+                    }}
+                    onDragOver={e => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setIsDraggingKnowledgeBase(true);
+                    }}
+                    onDragLeave={e => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (e.currentTarget === e.target) setIsDraggingKnowledgeBase(false);
+                    }}
+                    onDrop={e => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setIsDraggingKnowledgeBase(false);
+                      handleKnowledgeBaseSelect(e.dataTransfer.files);
+                    }}
+                    style={{
+                      border: `1px dashed ${isDraggingKnowledgeBase ? 'rgba(99,102,241,0.7)' : 'var(--border)'}`,
+                      background: isDraggingKnowledgeBase ? 'rgba(99,102,241,0.08)' : 'rgba(255,255,255,0.02)',
+                      borderRadius: '14px',
+                      padding: '1.25rem',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    <input
+                      ref={knowledgeBaseInputRef}
+                      type="file"
+                      onChange={e => {
+                        handleKnowledgeBaseSelect(e.target.files);
+                        e.target.value = '';
+                      }}
+                      style={{ display: 'none' }}
+                    />
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: '0.45rem' }}>
+                      <div style={{ width: '44px', height: '44px', borderRadius: '999px', background: 'rgba(99,102,241,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)' }}>
+                        <Upload size={18} />
+                      </div>
+                      <div>
+                        <p style={{ fontSize: '0.9rem', fontWeight: '700', color: 'var(--text-main)' }}>Drag and drop document here</p>
+                        <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>or click to browse a knowledge base file</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {(knowledgeBaseFile || editingProject?.knowledgeBase) && (
+                    <div style={{ marginTop: '0.9rem', display: 'flex', flexWrap: 'wrap', gap: '0.75rem', alignItems: 'center' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 0.75rem', borderRadius: '10px', background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.2)', color: 'var(--primary)', fontSize: '0.8rem', fontWeight: '600' }}>
+                        <FileText size={14} />
+                        <span>{knowledgeBaseFile?.name || editingProject?.knowledgeBaseOriginalName || 'Knowledge base document'}</span>
+                        {knowledgeBaseFile && (
+                          <X size={14} style={{ cursor: 'pointer', opacity: 0.7 }} onClick={(event) => { event.stopPropagation(); setKnowledgeBaseFile(null); }} />
+                        )}
+                      </div>
+                      {!knowledgeBaseFile && editingProject?.knowledgeBase && (
+                        <button
+                          type="button"
+                          onClick={() => window.open(getKnowledgeBaseUrl(editingProject), '_blank', 'noopener,noreferrer')}
+                          className="btn btn-outline"
+                        >
+                          <ExternalLink size={16} /> View
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+
                 <div style={{ height: '120px' }} />
               </form>
             </div>

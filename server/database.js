@@ -31,6 +31,8 @@ const ticketSchema = new mongoose.Schema({
   description: { type: String, required: true },
   project: { type: String },
   type: { type: String, enum: ['client', 'hr', 'employee', 'bug'], required: true },
+  // Keep legacy values (e.g. "bug") valid so existing tickets remain editable.
+  type: { type: String, enum: ['client', 'hr', 'employee', 'bug', 'team_leader'], required: true },
   priority: { type: String, enum: ['low', 'medium', 'high'], default: 'low' },
   status: { type: String, enum: ['pending', 'in_progress', 'on_hold', 'completed'], default: 'pending' },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
@@ -89,6 +91,8 @@ const systemConfigSchema = new mongoose.Schema({
 const projectSchema = new mongoose.Schema({
   name: { type: String, required: true, unique: true },
   description: { type: String },
+  knowledgeBase: { type: String },
+  knowledgeBaseOriginalName: { type: String },
   projectUrl: { type: String },
   uatUrl: { type: String },
   productionLink: { type: String },

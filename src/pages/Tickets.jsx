@@ -67,7 +67,8 @@ const Tickets = () => {
   const [activeTab, setActiveTab] = useState(() => {
     if (user.role === 'employee' || user.role === 'hr') return 'assigned';
     if (user.role === 'team_leader') return 'all_tickets';
-    if (user.role === 'admin') return 'hr_pool';
+    // Admins should land on the true all-overview tab by default.
+    if (user.role === 'admin') return 'all_tickets';
     return 'all';
   });
   const [stats, setStats] = useState(null);
@@ -181,7 +182,7 @@ const Tickets = () => {
     } else if (user.role === 'admin') {
       if (activeTab === 'hr_pool') matchCategory = t.type === 'hr';
       else if (activeTab === 'client_pool') matchCategory = t.type === 'client';
-      else if (activeTab === 'employee_pool') matchCategory = t.type === 'employee';
+      else if (activeTab === 'employee_pool') matchCategory = ['employee', 'bug'].includes(t.type);
       else if (activeTab === 'all_tickets') matchCategory = true;
       else matchCategory = (t.createdBy?._id || t.createdBy) === user?._id;
     } else {
@@ -228,7 +229,7 @@ const Tickets = () => {
             </>
           )}
           {user.role !== 'admin' && (
-            <button onClick={() => navigate('/tickets/new')} className="btn btn-primary" style={{ flexShrink: 0 }}>
+            <button onClick={() => setShowNewTicketDrawer(true)} className="btn btn-primary" style={{ flexShrink: 0 }}>
               <Plus size={18} /> New Ticket
             </button>
           )}

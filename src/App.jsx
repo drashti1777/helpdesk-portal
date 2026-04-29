@@ -146,6 +146,36 @@ const AppLayout = ({ children }) => {
   );
 };
 
+// Clean layout — sidebar only, no top header bar, no footer
+const AppLayoutClean = ({ children }) => {
+  const [isLight, setIsLight] = React.useState(() => {
+    return localStorage.getItem('theme') === 'light' || document.body.classList.contains('light-theme');
+  });
+
+  React.useEffect(() => {
+    if (isLight) {
+      document.body.classList.add('light-theme');
+      localStorage.setItem('theme', 'light');
+    } else {
+      document.body.classList.remove('light-theme');
+      localStorage.setItem('theme', 'dark');
+    }
+  }, [isLight]);
+
+  return (
+    <div style={{ display: 'flex', height: '100vh', background: 'var(--bg-dark)', overflow: 'hidden' }}>
+      <Sidebar />
+      <div style={{ flex: 1, overflowY: 'auto' }}>
+        {children}
+      </div>
+      <ConfirmModal />
+      <div style={{ position: 'fixed', bottom: '2rem', right: '2rem', zIndex: 9999 }}>
+        <NotificationToast />
+      </div>
+    </div>
+  );
+};
+
 function App() {
   const { user } = useContext(AuthContext);
 
@@ -175,10 +205,10 @@ function App() {
           </PrivateRoute>
         } />
 
-        {/* New Ticket — everyone */}
+        {/* New Ticket — everyone (clean layout, no header/footer) */}
         <Route path="/tickets/new" element={
           <PrivateRoute>
-            <AppLayout><NewTicket /></AppLayout>
+            <AppLayoutClean><NewTicket /></AppLayoutClean>
           </PrivateRoute>
         } />
 

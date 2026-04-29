@@ -187,6 +187,11 @@ const canAccessTicket = (user, ticket) => {
     const targetClientId = (ticket.targetClient?._id || ticket.targetClient)?.toString();
     return (createdById === userId || targetClientId === userId) && ticket.type === 'client';
   }
+
+  if (user.role === 'hr') {
+    // HR can access internal HR tickets, and anything they created/are assigned to.
+    return ticket.type === 'hr' || createdById === userId || assignedToId === userId;
+  }
   
   return false;
 };
@@ -446,7 +451,11 @@ app.put('/api/tickets/:id', protect, async (req, res) => {
   // Role-based update permissions
   const isAdminLevel = ['admin', 'team_leader'].includes(req.user.role);
   const isEmployee = req.user.role === 'employee';
+  const isHR = req.user.role === 'hr';
   const isOwner = ticket.createdBy.toString() === req.user._id.toString();
+  const isAssigned = ticket.assignedTo?.toString() === req.user._id.toString();
+  const hrCanManageThisTicket = isHR && ticket.type === 'hr';
+  const canWorkTicket = isAdminLevel || isEmployee || hrCanManageThisTicket;
 
   if (status) {
     if (isAdminLevel || isEmployee) {
@@ -459,7 +468,7 @@ app.put('/api/tickets/:id', protect, async (req, res) => {
       }
       ticket.status = status;
     } else {
-      return res.status(403).json({ message: 'Only administrators and employees can update ticket status' });
+      return res.status(403).json({ message: 'You are not authorized to update this ticket status' });
     }
   }
 
@@ -474,11 +483,19 @@ app.put('/api/tickets/:id', protect, async (req, res) => {
       } else {
         return res.status(403).json({ message: 'Employees can only self-assign unassigned tickets' });
       }
+    } else if (isHR) {
+      const target = assignedTo?.toString() || null;
+      const me = req.user._id.toString();
+      if (hrCanManageThisTicket && ((!ticket.assignedTo || isAssigned) && (target === null || target === me))) {
+        ticket.assignedTo = assignedTo || null;
+      } else {
+        return res.status(403).json({ message: 'HR can only self-assign HR tickets' });
+      }
     }
   }
 
   if (priority) {
-    if (isAdminLevel || isEmployee) ticket.priority = priority;
+    if (canWorkTicket) ticket.priority = priority;
   }
 
   if (rating && isOwner && ticket.status === 'completed') {
@@ -608,13 +625,17 @@ app.get('/api/projects', protect, async (req, res) => {
   res.json(projects);
 });
 
-app.post('/api/projects', protect, authorize('admin'), async (req, res) => {
-  const { name, description, teamLeader, projectUrl, uatUrl, productionLink, teamName, teamMembers } = req.body;
+app.post('/api/projects', protect, authorize('admin'), upload.single('knowledgeBaseFile'), async (req, res) => {
+  const { name, teamLeader, projectUrl, uatUrl, productionLink, teamName } = req.body;
+  const teamMembers = typeof req.body.teamMembers === 'string'
+    ? JSON.parse(req.body.teamMembers || '[]')
+    : (req.body.teamMembers || []);
   if (!name) return res.status(400).json({ message: 'Project name is required' });
   try {
     const project = await Project.create({ 
       name, 
-      description, 
+      knowledgeBase: req.file ? `/uploads/${req.file.filename}` : '',
+      knowledgeBaseOriginalName: req.file?.originalname || '',
       teamLeader: teamLeader || null,
       projectUrl,
       uatUrl,
@@ -628,20 +649,26 @@ app.post('/api/projects', protect, authorize('admin'), async (req, res) => {
   }
 });
 
-app.put('/api/projects/:id', protect, authorize('admin'), async (req, res) => {
-  const { name, description, teamLeader, projectUrl, uatUrl, productionLink, teamName, teamMembers } = req.body;
+app.put('/api/projects/:id', protect, authorize('admin'), upload.single('knowledgeBaseFile'), async (req, res) => {
+  const { name, teamLeader, projectUrl, uatUrl, productionLink, teamName } = req.body;
+  const teamMembers = req.body.teamMembers !== undefined
+    ? (typeof req.body.teamMembers === 'string' ? JSON.parse(req.body.teamMembers || '[]') : req.body.teamMembers)
+    : undefined;
   try {
     const project = await Project.findById(req.params.id);
     if (!project) return res.status(404).json({ message: 'Project not found' });
 
     if (name) project.name = name;
-    if (description !== undefined) project.description = description;
     if (teamLeader !== undefined) project.teamLeader = teamLeader || null;
     if (projectUrl !== undefined) project.projectUrl = projectUrl;
     if (uatUrl !== undefined) project.uatUrl = uatUrl;
     if (productionLink !== undefined) project.productionLink = productionLink;
     if (teamName !== undefined) project.teamName = teamName;
     if (teamMembers !== undefined) project.teamMembers = teamMembers;
+    if (req.file) {
+      project.knowledgeBase = `/uploads/${req.file.filename}`;
+      project.knowledgeBaseOriginalName = req.file.originalname;
+    }
 
     await project.save();
 

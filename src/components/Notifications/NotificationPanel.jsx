@@ -6,7 +6,7 @@ import { Bell, X, Check, Clock, Info, Trash2 } from 'lucide-react';
 import ConfirmModal from '../Layout/ConfirmModal';
 
 const NotificationPanel = () => {
-  const { user } = useContext(AuthContext);
+  const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
@@ -29,6 +29,11 @@ const NotificationPanel = () => {
         const res = await fetch(`${API_BASE_URL}/api/notifications`, {
           headers: { 'Authorization': `Bearer ${user.token}` }
         });
+        if (res.status === 401) {
+          logout();
+          navigate('/login', { replace: true });
+          return;
+        }
         const data = await res.json();
         const currentNotifications = Array.isArray(data) ? data : [];
         
@@ -111,8 +116,9 @@ const NotificationPanel = () => {
 
   const handleNotificationClick = (n) => {
     if (!n.isRead) markAsRead(n._id);
-    if (n.ticketId) {
-      navigate(`/tickets/${n.ticketId}`);
+    const ticketId = typeof n.ticketId === 'string' ? n.ticketId : n.ticketId?._id;
+    if (ticketId) {
+      navigate(`/tickets/${ticketId}`);
       setIsOpen(false);
     }
   };

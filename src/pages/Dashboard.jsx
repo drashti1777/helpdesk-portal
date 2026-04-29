@@ -14,6 +14,7 @@ import {
   ChevronRight, ArrowRight, Zap, PlusCircle, Award, Star,
   Target, Activity, BarChart2, Trophy
 } from 'lucide-react';
+import NewTicketDrawer from '../components/Tickets/NewTicketDrawer';
 
 
 
@@ -293,7 +294,7 @@ const TicketRow = ({ ticket, onStatusChange, onPriorityChange, onNavigate, showC
 };
 
 // ── Employee Dashboard (stateful, editable) ──────────────────────────────────
-const EmployeeDashboard = ({ stats: initialStats, navigate, token, user }) => {
+const EmployeeDashboard = ({ stats: initialStats, navigate, token, user, onNewTicket }) => {
   const [stats, setStats] = useState(initialStats);
   const [activeTab, setActiveTab] = useState('assigned'); // assigned | unassigned | raised
   const [toast, setToast] = useState(null);
@@ -426,7 +427,7 @@ const EmployeeDashboard = ({ stats: initialStats, navigate, token, user }) => {
           <p style={{ color: 'var(--text-muted)', marginTop: '0.25rem' }}>{user.role === 'hr' ? 'Manage internal HR tickets and track requests.' : 'Manage your tickets, claim new ones, and track your activity.'}</p>
         </div>
         <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-          <button className="btn btn-primary" onClick={() => navigate('/tickets/new')} style={{ fontSize: '0.875rem' }}>
+          <button className="btn btn-primary" onClick={() => onNewTicket()} style={{ fontSize: '0.875rem' }}>
             <PlusCircle size={15} /> New Ticket
           </button>
         </div>
@@ -578,7 +579,7 @@ const EmployeeDashboard = ({ stats: initialStats, navigate, token, user }) => {
   );
 };
 
-const ClientDashboard = ({ stats, navigate }) => {
+const ClientDashboard = ({ stats, navigate, onNewTicket }) => {
   const STATUS_COLORS = {
     pending: { color: '#ef4444', label: 'Pending' },
     in_progress: { color: '#6366f1', label: 'In Progress' },
@@ -599,7 +600,7 @@ const ClientDashboard = ({ stats, navigate }) => {
           <h1 style={{ fontSize: '2rem', fontWeight: '700', letterSpacing: '-0.02em' }}>My Support Tickets</h1>
           <p style={{ color: 'var(--text-muted)', marginTop: '0.25rem' }}>All data shown is exclusively yours — other clients' data is never shared.</p>
         </div>
-        <button className="btn btn-primary" onClick={() => navigate('/tickets/new')} style={{ fontSize: '0.875rem', flexShrink: 0 }}>
+        <button className="btn btn-primary" onClick={() => onNewTicket()} style={{ fontSize: '0.875rem', flexShrink: 0 }}>
           <PlusCircle size={15} /> New Ticket
         </button>
       </header>
@@ -733,13 +734,14 @@ const endpointMap = {
 // ── Main Dashboard Component ─────────────────────────────────────────────────
 
 const Dashboard = () => {
-  const { user } = useContext(AuthContext);
+  const { user, logout } = useContext(AuthContext);
   const [stats, setStats] = useState(null);
   const [error, setError] = useState(null);
+  const [showNewTicketDrawer, setShowNewTicketDrawer] = useState(false);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    if (!user) return;
+  const fetchStats = useCallback(() => {
+    if (!user?.token) return;
     const endpoint = endpointMap[user.role];
     if (!endpoint) return;
 
@@ -747,6 +749,11 @@ const Dashboard = () => {
       headers: { 'Authorization': `Bearer ${user.token}` }
     })
       .then(res => {
+        if (res.status === 401) {
+          logout();
+          navigate('/login', { replace: true });
+          throw new Error('Unauthorized');
+        }
         if (!res.ok) throw new Error('Failed to fetch stats');
         return res.json();
       })
@@ -755,7 +762,11 @@ const Dashboard = () => {
         console.error('Stats fetch failed:', err);
         setError('Failed to load dashboard data. Please try again later.');
       });
-  }, [user]);
+  }, [user, logout, navigate]);
+
+  useEffect(() => {
+    fetchStats();
+  }, [fetchStats]);
 
   if (error) {
     return (
@@ -783,8 +794,16 @@ const Dashboard = () => {
   return (
     <div className="main-content animate-fade-in">
       {(user.role === 'admin' || user.role === 'team_leader') && <AdminDashboard stats={stats} navigate={navigate} />}
-      {(user.role === 'employee' || user.role === 'hr') && <EmployeeDashboard stats={stats} navigate={navigate} token={user.token} user={user} />}
-      {user.role === 'client' && <ClientDashboard stats={stats} navigate={navigate} user={user} />}
+      {(user.role === 'employee' || user.role === 'hr') && <EmployeeDashboard stats={stats} navigate={navigate} token={user.token} user={user} onNewTicket={() => setShowNewTicketDrawer(true)} />}
+      {user.role === 'client' && <ClientDashboard stats={stats} navigate={navigate} user={user} onNewTicket={() => setShowNewTicketDrawer(true)} />}
+
+      <NewTicketDrawer 
+        isOpen={showNewTicketDrawer} 
+        onClose={() => setShowNewTicketDrawer(false)} 
+        onSuccess={() => {
+          fetchStats(); 
+        }}
+      />
     </div>
   );
 };

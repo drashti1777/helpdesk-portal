@@ -26,6 +26,13 @@ const avatarGradients = [
 ];
 const getGradient = (id = '') => avatarGradients[id.charCodeAt(0) % avatarGradients.length];
 const getInitials = (name = '') => name.split(' ').map(p => p[0]).join('').toUpperCase().slice(0, 2);
+const formatDateTimeParts = (value) => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  const datePart = date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  const timePart = date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
+  return { datePart, timePart };
+};
 
 const Users = () => {
   const { user } = useContext(AuthContext);
@@ -282,6 +289,7 @@ const Users = () => {
         {/* Header Row */}
         <div style={{
           display: 'grid', gridTemplateColumns: '52px 1fr 1fr 130px 160px 140px 100px',
+          display: 'grid', gridTemplateColumns: '52px 1fr 1fr 130px 170px 100px',
           alignItems: 'center', padding: '0.65rem 1.5rem',
           borderBottom: '1px solid var(--border)',
           color: 'var(--text-muted)', fontSize: '0.72rem', fontWeight: '600',
@@ -294,6 +302,7 @@ const Users = () => {
           <span>Role</span>
           <span>Achievements</span>
           <span>Last Login</span>
+          <span style={{ paddingLeft: '1rem' }}>Last Login</span>
           <span style={{ textAlign: 'right' }}>Actions</span>
         </div>
 
@@ -318,6 +327,7 @@ const Users = () => {
                 key={emp._id}
                 style={{
                   display: 'grid', gridTemplateColumns: '52px 1fr 1fr 130px 160px 140px 100px',
+                  display: 'grid', gridTemplateColumns: '52px 1fr 1fr 130px 170px 100px',
                   alignItems: 'center', padding: '0.9rem 1.5rem',
                   borderBottom: idx < filtered.length - 1 ? '1px solid var(--border)' : 'none',
                   transition: 'background 0.15s',
@@ -362,10 +372,10 @@ const Users = () => {
                 {/* Role Badge */}
                 <span style={{
                   display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
-                  padding: '0.28rem 0.7rem', borderRadius: '999px',
+                  padding: '0.26rem 0.62rem', borderRadius: '999px',
                   fontSize: '0.72rem', fontWeight: '700', textTransform: 'capitalize',
                   background: meta.bg, color: meta.color, border: `1px solid ${meta.border}`,
-                  letterSpacing: '0.02em', whiteSpace: 'nowrap'
+                  letterSpacing: '0.02em', whiteSpace: 'nowrap', justifySelf: 'start'
                 }}>
                   <Icon size={11} /> {meta.label}
                 </span>
@@ -386,10 +396,21 @@ const Users = () => {
                 </div>
 
                 {/* Last Login */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--text-muted)', fontSize: '0.78rem' }}>
-                  <Clock size={11} />
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.4rem', color: 'var(--text-muted)', fontSize: '0.78rem', paddingLeft: '1rem' }}>
                   {emp.lastLogin ? (
-                    <span>{new Date(emp.lastLogin).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })} {new Date(emp.lastLogin).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                    (() => {
+                      const parts = formatDateTimeParts(emp.lastLogin);
+                      if (!parts) return <span style={{ opacity: 0.5 }}>Never</span>;
+                      return (
+                        <span style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.2 }}>
+                          <span>{parts.datePart}</span>
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', opacity: 0.85, marginTop: '2px' }}>
+                            <Clock size={11} />
+                            <span>{parts.timePart}</span>
+                          </span>
+                        </span>
+                      );
+                    })()
                   ) : (
                     <span style={{ opacity: 0.5 }}>Never</span>
                   )}
