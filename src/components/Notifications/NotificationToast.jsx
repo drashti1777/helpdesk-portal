@@ -109,8 +109,8 @@ const NotificationToast = () => {
                       key={i}
                       className="nact-btn"
                       style={{ 
-                        background: act.isClose ? 'rgba(255,255,255,0.05)' : `${t.config.color}20`,
-                        color: act.isClose ? '#94a3b8' : t.config.color
+                        background: act.isClose ? 'var(--glass)' : `${t.config.color}20`,
+                        color: act.isClose ? 'var(--text-muted)' : t.config.color
                       }}
                       onClick={() => removeToast(t.id)}
                     >

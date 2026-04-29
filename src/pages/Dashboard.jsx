@@ -298,12 +298,12 @@ const TicketRow = ({ ticket, onStatusChange, onPriorityChange, onNavigate, showC
 const EmployeeDashboard = ({ stats: initialStats, navigate, token, user, onNewTicket }) => {
   const [stats, setStats] = useState(initialStats);
   const [activeTab, setActiveTab] = useState('assigned'); // assigned | unassigned | raised
-  const [toast, setToast] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
 
   const showToast = (msg, type = 'success') => {
-    setToast({ msg, type });
-    setTimeout(() => setToast(null), 3000);
+    window.dispatchEvent(new CustomEvent('show-notification', { 
+      detail: { type, message: msg } 
+    }));
   };
 
   const refreshStats = useCallback(async () => {
@@ -388,32 +388,7 @@ const EmployeeDashboard = ({ stats: initialStats, navigate, token, user, onNewTi
 
   return (
     <>
-      {/* Toast */}
-      {toast && (
-        <div style={{
-          position: 'fixed',
-          top: '1.5rem',
-          right: '1.5rem',
-          zIndex: 9999,
-          width: 'min(400px, calc(100vw - 3rem))',
-          background: toast.type === 'error' ? 'rgba(254, 226, 226, 0.98)' : 'rgba(220, 252, 231, 0.98)',
-          border: `1px solid ${toast.type === 'error' ? 'rgba(239,68,68,0.35)' : 'rgba(34,197,94,0.35)'}`,
-          color: '#000',
-          padding: '1rem 1.25rem',
-          borderRadius: '12px',
-          fontWeight: '600',
-          boxShadow: '0 20px 50px rgba(0,0,0,0.3)',
-          animation: 'slideInRight 0.3s ease',
-          fontSize: '0.9rem',
-          pointerEvents: 'none',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.75rem'
-        }}>
-          <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: toast.type === 'error' ? '#ef4444' : '#22c55e' }} />
-          {toast.msg}
-        </div>
-      )}
+
 
       {/* Header */}
       <header style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
@@ -615,8 +590,8 @@ const ClientDashboard = ({ stats, navigate, onNewTicket }) => {
         <StatCard label="Resolved" value={stats.completed} icon={CheckCircle2} iconColor="#10b981" onClick={() => navigate('/tickets?status=completed')} />
       </div>
 
-      {/* Two-column: Recent tickets & Feedbacks */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '1.5rem', alignItems: 'start' }}>
+      {/* Recent tickets */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.5rem', alignItems: 'start' }}>
 
         {/* Recent Tickets List */}
         <div className="glass-card" style={{ padding: 0, overflow: 'hidden' }}>
@@ -687,36 +662,7 @@ const ClientDashboard = ({ stats, navigate, onNewTicket }) => {
           )}
         </div>
 
-        {/* RIGHT — Feedbacks Panel */}
-        <div className="glass-card" style={{ padding: '1.25rem' }}>
-          <SectionTitle>My Recent Feedbacks</SectionTitle>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            {stats.recentTickets?.filter(t => t.rating)?.length === 0 ? (
-              <div style={{ padding: '1rem', textAlign: 'center', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid var(--border)' }}>
-                <Star size={24} color="var(--text-muted)" style={{ opacity: 0.2, marginBottom: '0.5rem' }} />
-                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>No feedbacks yet. Rate your tickets once they are completed!</p>
-              </div>
-            ) : (
-              stats.recentTickets?.filter(t => t.rating)?.map(t => (
-                <div key={t._id} style={{ padding: '1rem', background: 'rgba(245,158,11,0.05)', borderRadius: '12px', border: '1px solid rgba(245,158,11,0.2)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                    <div style={{ display: 'flex', gap: '2px' }}>
-                      {[1, 2, 3, 4, 5].map(star => (
-                        <Star key={star} size={12} color={star <= t.rating ? '#f59e0b' : 'rgba(255,255,255,0.1)'} fill={star <= t.rating ? '#f59e0b' : 'none'} />
-                      ))}
-                    </div>
-                    <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>#{t._id.slice(-6).toUpperCase()}</span>
-                  </div>
-                  <p style={{ fontSize: '0.75rem', fontWeight: '500', marginBottom: '0.4rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.title}</p>
-                  {t.feedback && <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontStyle: 'italic', borderTop: '1px solid rgba(245,158,11,0.1)', paddingTop: '0.4rem' }}>"{t.feedback}"</p>}
-                </div>
-              ))
-            )}
-          </div>
-          <button className="btn btn-outline" style={{ width: '100%', marginTop: '1rem', fontSize: '0.75rem', justifyContent: 'center' }}>
-            View Full History
-          </button>
-        </div>
+
 
       </div>
     </>

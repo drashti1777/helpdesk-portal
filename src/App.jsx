@@ -13,7 +13,6 @@ import AdminControl from './pages/AdminControl';
 import Help from './pages/KnowledgeBase';
 import Projects from './pages/Projects';
 import Profile from './pages/Profile';
-import Feedbacks from './pages/Feedbacks';
 import Leaderboard from './pages/Leaderboard';
 import NotificationPanel from './components/Notifications/NotificationPanel';
 import NotificationToast from './components/Notifications/NotificationToast';
@@ -139,7 +138,7 @@ const AppLayout = ({ children }) => {
       </div>
       <NotificationPanel />
       <ConfirmModal />
-      <div style={{ position: 'fixed', bottom: '2rem', right: '2rem', zIndex: 9999 }}>
+      <div style={{ position: 'fixed', top: '80px', right: '2rem', zIndex: 10001 }}>
         <NotificationToast />
       </div>
     </div>
@@ -169,7 +168,7 @@ const AppLayoutClean = ({ children }) => {
         {children}
       </div>
       <ConfirmModal />
-      <div style={{ position: 'fixed', bottom: '2rem', right: '2rem', zIndex: 9999 }}>
+      <div style={{ position: 'fixed', top: '24px', right: '2rem', zIndex: 10001 }}>
         <NotificationToast />
       </div>
     </div>
@@ -254,12 +253,7 @@ function App() {
           </RoleRoute>
         } />
 
-        {/* Feedbacks */}
-        <Route path="/feedbacks" element={
-          <RoleRoute allowedRoles={['admin', 'team_leader']}>
-            <AppLayout><Feedbacks /></AppLayout>
-          </RoleRoute>
-        } />
+
 
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />

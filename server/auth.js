@@ -11,8 +11,7 @@ const normalizeRole = (role = '') => {
     team_leader: 'team_leader',
     admin: 'admin',
     employee: 'employee',
-    hr: 'hr',
-    client: 'client'
+    hr: 'hr'
   };
   return roleMap[key] || role;
 };

@@ -475,55 +475,7 @@ const TicketDetail = () => {
             </div>
           )}
 
-          {/* Rating Section */}
-          {ticket.status === 'completed' && (
-            <div className="glass-card" style={{ padding: '1.25rem', border: '1px solid rgba(245,158,11,0.3)', background: 'rgba(245,158,11,0.05)' }}>
-              <h4 style={{ fontWeight: '600', marginBottom: '0.5rem', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Star size={15} color="#f59e0b" fill={ticket.rating ? "#f59e0b" : "none"} /> 
-                {isClient ? 'Rate Experience' : 'Client Feedback'}
-              </h4>
 
-              {ticket.rating ? (
-                /* VIEW MODE: Show rating to everyone if it exists */
-                <div>
-                  <div style={{ display: 'flex', gap: '0.25rem', marginBottom: '0.5rem' }}>
-                    {[1, 2, 3, 4, 5].map(star => (
-                      <Star key={star} size={16} color={star <= ticket.rating ? '#f59e0b' : 'var(--text-muted)'} fill={star <= ticket.rating ? '#f59e0b' : 'none'} />
-                    ))}
-                  </div>
-                  {ticket.feedback && <p style={{ fontSize: '0.85rem', color: 'var(--text-main)', fontStyle: 'italic', background: 'rgba(255,255,255,0.05)', padding: '0.75rem', borderRadius: '8px' }}>"{ticket.feedback}"</p>}
-                </div>
-              ) : isClient ? (
-                /* INPUT MODE: Only for Client if rating doesn't exist yet */
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                  <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>How was your support experience?</p>
-                  <div style={{ display: 'flex', gap: '0.25rem' }}>
-                    {[1, 2, 3, 4, 5].map(star => (
-                      <Star
-                        key={star} size={22}
-                        color={star <= ratingVal ? '#f59e0b' : 'var(--text-muted)'}
-                        fill={star <= ratingVal ? '#f59e0b' : 'none'}
-                        style={{ cursor: 'pointer', transition: 'all 0.2s' }}
-                        onMouseEnter={() => setRatingVal(star)}
-                        onClick={() => setRatingVal(star)}
-                      />
-                    ))}
-                  </div>
-                  <input 
-                    type="text" placeholder="Add optional feedback..." 
-                    value={feedbackStr} onChange={e => setFeedbackStr(e.target.value)}
-                    style={{ fontSize: '0.8rem', padding: '0.5rem', marginTop: '0.25rem' }}
-                  />
-                  <button onClick={() => updateTicket({ rating: ratingVal || 5, feedback: feedbackStr })} className="btn btn-primary" style={{ fontSize: '0.75rem', padding: '0.5rem', width: '100%', justifyContent: 'center' }}>
-                    Submit Rating
-                  </button>
-                </div>
-              ) : (
-                /* AWAITING MODE: For staff if client hasn't rated yet */
-                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>Awaiting client feedback...</p>
-              )}
-            </div>
-          )}
         </div>
       </div>
 

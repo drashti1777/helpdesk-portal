@@ -41,7 +41,6 @@ const Users = () => {
   const [search, setSearch] = useState('');
   const [filterRole, setFilterRole] = useState('all');
   const [actionMenu, setActionMenu] = useState(null);
-  const [toast, setToast] = useState(null);
 
   // Add User Modal State
   const [showAddModal, setShowAddModal] = useState(false);
@@ -73,8 +72,9 @@ const Users = () => {
   }, []);
 
   const showToast = (msg, type = 'success') => {
-    setToast({ msg, type });
-    setTimeout(() => setToast(null), 3000);
+    window.dispatchEvent(new CustomEvent('show-notification', { 
+      detail: { type, message: msg } 
+    }));
   };
 
   const handleRoleChange = async (emp, newRole) => {
@@ -183,32 +183,7 @@ const Users = () => {
 
   return (
     <div className="main-content animate-fade-in" style={{ minHeight: '100vh', position: 'relative' }}>
-      {/* Toast */}
-      {toast && (
-        <div style={{
-          position: 'fixed',
-          top: '1.5rem',
-          right: '1.5rem',
-          zIndex: 9999,
-          width: 'min(400px, calc(100vw - 3rem))',
-          background: toast.type === 'error' ? 'rgba(254, 226, 226, 0.98)' : 'rgba(220, 252, 231, 0.98)',
-          border: `1px solid ${toast.type === 'error' ? 'rgba(239,68,68,0.35)' : 'rgba(34,197,94,0.35)'}`,
-          color: '#000',
-          padding: '1rem 1.25rem',
-          borderRadius: '12px',
-          fontWeight: '600',
-          boxShadow: '0 20px 50px rgba(0,0,0,0.3)',
-          animation: 'slideInRight 0.3s ease',
-          fontSize: '0.9rem',
-          pointerEvents: 'none',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.75rem'
-        }}>
-          <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: toast.type === 'error' ? '#ef4444' : '#22c55e' }} />
-          {toast.msg}
-        </div>
-      )}
+      {/* Global notifications used instead of local toast */}
 
       {/* Header */}
       <header style={{

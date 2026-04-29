@@ -3,7 +3,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
 import {
   LayoutDashboard, Ticket, Users, LogOut,
-  PlusCircle, ShieldCheck, Headphones, Bell, Award, BookOpen, Star,
+  PlusCircle, ShieldCheck, Headphones, Bell, Award, BookOpen,
   Sun, Moon, Trophy
 } from 'lucide-react';
 import Badge from '../Badge';

@@ -5,7 +5,7 @@ const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   mobile: { type: String },
   password: { type: String, required: true },
-  role: { type: String, enum: ['client', 'employee', 'team_leader', 'hr', 'admin'], default: 'client' },
+  role: { type: String, enum: ['employee', 'team_leader', 'hr', 'admin'], default: 'employee' },
   status: { type: Number, enum: [0, 1], default: 1 },
   lastLogin: { type: Date },
   points: { type: Number, default: 0 },
@@ -30,9 +30,7 @@ const ticketSchema = new mongoose.Schema({
   title: { type: String, required: true },
   description: { type: String, required: true },
   project: { type: String },
-  type: { type: String, enum: ['client', 'hr', 'employee', 'bug'], required: true },
-  // Keep legacy values (e.g. "bug") valid so existing tickets remain editable.
-  type: { type: String, enum: ['client', 'hr', 'employee', 'bug', 'team_leader'], required: true },
+  type: { type: String, enum: ['hr', 'employee', 'bug', 'team_leader'], required: true },
   priority: { type: String, enum: ['low', 'medium', 'high'], default: 'low' },
   status: { type: String, enum: ['pending', 'in_progress', 'on_hold', 'completed'], default: 'pending' },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
@@ -79,11 +77,10 @@ const systemConfigSchema = new mongoose.Schema({
     defaultPriority: { type: String, enum: ['low', 'medium', 'high'], default: 'low' },
   },
   rolePermissions: {
-    client: [{ type: String }],
     employee: [{ type: String }],
     team_leader: [{ type: String }],
+    hr: [{ type: String }],
     admin: [{ type: String }],
-    super_admin: [{ type: String }],
   },
   updatedAt: { type: Date, default: Date.now }
 });

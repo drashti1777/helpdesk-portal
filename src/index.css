@@ -14,16 +14,18 @@
   --danger: #ef4444;
   --radius: 12px;
   --bg-input: #1e293b;
+  --modal-overlay: rgba(2, 6, 23, 0.85);
 }
 
 body.light-theme {
   --bg-dark: #f8fafc;
-  --bg-card: rgba(255, 255, 255, 0.8);
+  --bg-card: #ffffff;
   --text-main: #0f172a;
   --text-muted: #64748b;
-  --border: rgba(0, 0, 0, 0.1);
-  --glass: rgba(0, 0, 0, 0.03);
-  --bg-input: #ffffff;
+  --border: rgba(0, 0, 0, 0.08);
+  --glass: rgba(0, 0, 0, 0.04);
+  --bg-input: #f1f5f9;
+  --modal-overlay: rgba(15, 23, 42, 0.4);
 }
 
 * {
@@ -48,9 +50,9 @@ body {
 
 body.light-theme {
   background-image: 
-    radial-gradient(at 0% 0%, hsla(220, 100%, 95%, 1) 0, transparent 50%), 
-    radial-gradient(at 50% 0%, hsla(220, 100%, 90%, 0.5) 0, transparent 50%), 
-    radial-gradient(at 100% 0%, hsla(220, 100%, 85%, 0.3) 0, transparent 50%);
+    radial-gradient(at 0% 0%, #f1f5f9 0, transparent 50%), 
+    radial-gradient(at 50% 0%, #e2e8f0 0, transparent 50%), 
+    radial-gradient(at 100% 0%, #cbd5e1 0, transparent 50%);
 }
 
 .glass-card {
@@ -263,24 +265,24 @@ input:focus, select:focus, textarea:focus {
 /* ── Interactive Notifications & Modals (Stylized) ─────────────────── */
 
 .notif-stack {
-  position: fixed;
-  top: 24px; right: 24px;
-  z-index: 10000;
+  position: relative;
+  z-index: 10001;
   display: flex; flex-direction: column; gap: 12px;
   pointer-events: none;
 }
 
 .notif {
   width: 340px;
-  background: rgba(15, 23, 42, 0.95);
-  backdrop-filter: blur(12px);
+  background: var(--bg-card);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border-radius: 14px;
   overflow: hidden;
-  box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.3);
   pointer-events: all;
   animation: slideInRight 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
   position: relative;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border);
 }
 
 @keyframes slideInRight {
@@ -318,8 +320,8 @@ input:focus, select:focus, textarea:focus {
 }
 
 .notif-text { flex: 1; }
-.notif-title { font-size: 14px; font-weight: 800; margin-bottom: 3px; color: #fff; }
-.notif-msg   { font-size: 12px; color: #94a3b8; line-height: 1.5; }
+.notif-title { font-size: 14px; font-weight: 800; margin-bottom: 3px; color: var(--text-main); }
+.notif-msg   { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
 
 .notif-close {
   background: none; border: none; cursor: pointer;
@@ -364,7 +366,7 @@ input:focus, select:focus, textarea:focus {
 /* Modal Styling */
 .modal-overlay {
   position: fixed; inset: 0;
-  background: rgba(2, 6, 23, 0.85);
+  background: var(--modal-overlay);
   backdrop-filter: blur(8px);
   display: flex; align-items: center; justify-content: center;
   z-index: 11000;
@@ -372,14 +374,14 @@ input:focus, select:focus, textarea:focus {
 }
 
 .modal-content {
-  background: #1e293b;
+  background: var(--bg-input);
   border-radius: 24px;
   width: 100%;
   max-width: 380px;
   overflow: hidden;
   box-shadow: 0 30px 70px rgba(0,0,0,0.6);
   animation: modalPopIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--border);
 }
 
 @keyframes modalPopIn {
@@ -390,7 +392,7 @@ input:focus, select:focus, textarea:focus {
 .modal-top {
   padding: 2rem 1.5rem 1.5rem;
   text-align: center;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--border);
 }
 
 .modal-icon-ring {
@@ -405,8 +407,8 @@ input:focus, select:focus, textarea:focus {
   50% { transform: scale(1.05); box-shadow: 0 0 25px 0 rgba(239, 68, 68, 0.2); }
 }
 
-.modal-title { font-size: 1.25rem; font-weight: 800; color: #fff; margin-bottom: 0.5rem; }
-.modal-sub   { font-size: 0.875rem; color: #94a3b8; line-height: 1.6; }
+.modal-title { font-size: 1.25rem; font-weight: 800; color: var(--text-main); margin-bottom: 0.5rem; }
+.modal-sub   { font-size: 0.875rem; color: var(--text-muted); line-height: 1.6; }
 
 .modal-body { padding: 1.5rem; }
 
@@ -420,11 +422,11 @@ input:focus, select:focus, textarea:focus {
 .modal-btns { display: flex; gap: 12px; }
 
 .mbtn-cancel {
-  flex: 1; padding: 12px; border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.03); border-radius: 12px; font-size: 0.9rem;
-  font-weight: 700; color: #94a3b8; cursor: pointer; transition: all 0.2s;
+  flex: 1; padding: 12px; border: 1px solid var(--border);
+  background: var(--bg-input); border-radius: 12px; font-size: 0.9rem;
+  font-weight: 700; color: var(--text-muted); cursor: pointer; transition: all 0.2s;
 }
-.mbtn-cancel:hover { background: rgba(255, 255, 255, 0.08); color: #fff; }
+.mbtn-cancel:hover { background: var(--glass); color: var(--text-main); }
 
 .mbtn-confirm {
   flex: 1.5; padding: 12px; border: none; border-radius: 12px;

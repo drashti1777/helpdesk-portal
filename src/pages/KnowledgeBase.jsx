@@ -160,7 +160,7 @@ const FAQ_DATA = [
       { q: 'How do I raise a support ticket?', a: 'Click "New Ticket" → Your ticket type is automatically "Client Request" → Fill in subject, project, description, attach files if needed → Set priority → Submit.' },
       { q: 'How do I track my ticket?', a: 'Go to "My Tickets" in the sidebar → Click on any ticket to see its full details, status, SLA tracking, assigned agent, and comments.' },
       { q: 'Can I see other clients\' tickets?', a: 'No. Your data is completely private — you can only see tickets you created.' },
-      { q: 'How do I rate my support experience?', a: 'Once your ticket is marked "Completed", a star rating section appears on the ticket detail page. Click 1-5 stars, optionally add feedback, and submit.' },
+
       { q: 'What are SLA times?', a: '• High Priority — Response: 2 hours, Resolution: 8 hours.\n• Medium Priority — Response: 8 hours, Resolution: 24 hours.\n• Low Priority — Response: 24 hours, Resolution: 72 hours.' },
     ]
   },

@@ -14,10 +14,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 async function dispatchNotifications(ticket, message, initiatorId, initiatorRole) {
-  let targetRoles = [];
-  if (initiatorRole === 'client') {
-    targetRoles = ['employee', 'team_leader', 'admin'];
-  } else if (initiatorRole === 'employee') {
+  if (initiatorRole === 'employee') {
     targetRoles = ['team_leader', 'admin'];
   } else if (initiatorRole === 'team_leader') {
     targetRoles = ['admin'];
@@ -115,8 +112,8 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 const DEFAULT_ROLE_PERMISSIONS = {
-  client: ['tickets:create', 'tickets:read:own', 'tickets:comment:own', 'tickets:close:own'],
-  employee: ['tickets:create', 'tickets:read:assigned', 'tickets:update:assigned', 'tickets:comment:any'],
+  employee: ['tickets:create', 'tickets:read:own', 'tickets:comment:any'],
+  team_leader: ['tickets:read:all', 'tickets:update:all', 'tickets:comment:any'],
   hr: ['tickets:read:assigned', 'tickets:update:assigned', 'tickets:comment:any'],
   admin: ['*']
 };
@@ -171,21 +168,8 @@ const canAccessTicket = (user, ticket) => {
   if (['admin', 'team_leader'].includes(user.role)) return true;
   
   if (user.role === 'employee') {
-    // Employees can access:
-    // 1. Client tickets (to handle them)
-    // 2. Tickets they created
-    // 3. Tickets assigned to them
-    return (
-      ticket.type === 'client' ||
-      createdById === userId ||
-      assignedToId === userId
-    );
-  }
-  
-  if (user.role === 'client') {
-    // Clients can access their own tickets OR tickets created for them
-    const targetClientId = (ticket.targetClient?._id || ticket.targetClient)?.toString();
-    return (createdById === userId || targetClientId === userId) && ticket.type === 'client';
+    // Employees can access tickets they created or are assigned to
+    return createdById === userId || assignedToId === userId;
   }
 
   if (user.role === 'hr') {
@@ -210,9 +194,8 @@ app.post('/api/auth/register', async (req, res) => {
     return res.status(403).json({ message: 'Self-registration is currently disabled.' });
   }
 
-  // Self-registration is limited to end-user roles only
-  // Registration is now open to all roles as requested
-  const allowedSelfRegisterRoles = ['client', 'employee', 'team_leader', 'hr', 'admin'];
+  // Self-registration is open to all allowed roles
+  const allowedSelfRegisterRoles = ['employee', 'team_leader', 'hr', 'admin'];
   if (normalizedRole && !allowedSelfRegisterRoles.includes(normalizedRole)) {
     return res.status(403).json({ message: 'Invalid role specified.' });
   }
@@ -226,7 +209,7 @@ app.post('/api/auth/register', async (req, res) => {
       const hashedPassword = await bcrypt.hash(password, 10);
       userExists.name = name;
       userExists.password = hashedPassword;
-      userExists.role = allowedSelfRegisterRoles.includes(normalizedRole) ? normalizedRole : 'client';
+      userExists.role = allowedSelfRegisterRoles.includes(normalizedRole) ? normalizedRole : 'employee';
       userExists.status = 1;
       await userExists.save();
       return res.status(201).json({
@@ -245,7 +228,7 @@ app.post('/api/auth/register', async (req, res) => {
     name,
     email: cleanEmail,
     password: hashedPassword,
-    role: allowedSelfRegisterRoles.includes(normalizedRole) ? normalizedRole : 'client',
+    role: allowedSelfRegisterRoles.includes(normalizedRole) ? normalizedRole : 'employee',
     status: 1
   });
 
@@ -330,43 +313,27 @@ app.post('/api/auth/seed-super-admin', async (req, res) => {
 app.get('/api/tickets', protect, async (req, res) => {
   let query = {};
 
-  if (req.user.role === 'client') {
-    // Clients see tickets they created OR tickets created FOR them
+  if (req.user.role === 'employee') {
+    // Employees see tickets they raised or are assigned to
     query.$or = [
-      { createdBy: req.user._id, type: 'client' },
-      { targetClient: req.user._id, type: 'client' }
+      { createdBy: req.user._id }, 
+      { assignedTo: req.user._id }
     ];
-
-  } else if (req.user.role === 'employee') {
-    // Employees see:
-    //   1. ALL tickets of type 'client' (unassigned or assigned to them)
-    //   2. Tickets they raised themselves (regardless of type)
-    query.$or = [
-      { createdBy: req.user._id }, // My requests
-      { assignedTo: req.user._id } // Tickets assigned to me to solve
-    ];
+  } else if (req.user.role === 'team_leader') {
 
   } else if (req.user.role === 'team_leader') {
     // Team Leaders see everything except maybe some restricted internal notes if we had them.
     // For now, same as Admin visibility but focused on oversight.
     query.$or = [
-      { type: 'client' }, // TLs manage all client tickets
-      { type: 'hr' },     // TLs manage employee internal tickets to assign to HR
+      { type: 'hr' },     // TLs manage employee internal tickets
       { type: 'bug' },    // TLs verify bug reports for points
+      { type: 'employee' },
       { createdBy: req.user._id },
       { assignedTo: req.user._id }
     ];
 
   } else if (req.user.role === 'admin') {
-    // Admins see everything
-    query.$or = [
-      { type: 'hr' },      // Admins manage all HR tickets
-      { type: 'employee' }, // Admins oversee everything
-      { type: 'client' },
-      { type: 'bug' },     // Admins verify bug reports for points
-      { createdBy: req.user._id },
-      { assignedTo: req.user._id }
-    ];
+    query = {}; // Admin sees everything
 
   } else if (req.user.role === 'hr') {
     // HR sees tickets assigned to them and tickets they created
@@ -378,7 +345,6 @@ app.get('/api/tickets', protect, async (req, res) => {
 
   const tickets = await Ticket.find(query)
     .populate('createdBy', 'name role')
-    .populate('targetClient', 'name role')
     .populate('assignedTo', 'name role')
     .sort({ createdAt: -1 });
 
@@ -391,12 +357,7 @@ app.post('/api/tickets', protect, upload.array('files'), async (req, res) => {
   const attachments = req.files ? req.files.map(f => ({ filename: f.filename, path: f.path })) : [];
   const config = await getSystemConfig();
 
-  // Derive ticket type if not explicitly set
-  let ticketType = type;
-  if (!ticketType) {
-    if (req.user.role === 'client') ticketType = 'client';
-    else ticketType = 'hr'; // Employee/Admin internal issues go to HR
-  }
+  let ticketType = type || 'employee';
 
   // SLA Logic
   const now = new Date();
@@ -416,22 +377,12 @@ app.post('/api/tickets', protect, upload.array('files'), async (req, res) => {
 
   await dispatchNotifications(ticket, `New ticket raised: ${title}`, req.user._id, req.user.role);
 
-  // Notify the target client if ticket was created on their behalf
-  if (targetClient) {
-    await Notification.create({
-      userId: targetClient,
-      message: `A support ticket has been created for you: ${title}`,
-      ticketId: ticket._id
-    });
-  }
-
   res.status(201).json(ticket);
 });
 
 app.get('/api/tickets/:id', protect, async (req, res) => {
   const ticket = await Ticket.findById(req.params.id)
     .populate('createdBy', 'name email role')
-    .populate('targetClient', 'name email role')
     .populate('assignedTo', 'name email role');
   if (!ticket) return res.status(404).json({ message: 'Ticket not found' });
   if (!canAccessTicket(req.user, ticket)) {
@@ -527,10 +478,8 @@ app.delete('/api/tickets/:id', protect, authorize('admin', 'team_leader'), async
   const ticket = await Ticket.findById(req.params.id);
   if (!ticket) return res.status(404).json({ message: 'Ticket not found' });
   
-  if (req.user.role === 'team_leader' && (ticket.type === 'hr' || ticket.type === 'employee')) {
-    if (ticket.type !== 'client') {
-      return res.status(403).json({ message: 'Team Leaders can only delete Client tickets.' });
-    }
+  if (req.user.role === 'team_leader' && ticket.type === 'hr') {
+    return res.status(403).json({ message: 'Team Leaders cannot delete HR tickets.' });
   }
 
   await Ticket.findByIdAndDelete(req.params.id);
@@ -705,7 +654,6 @@ app.get('/api/stats/admin', protect, authorize('admin', 'team_leader'), async (r
   const unassigned = await Ticket.countDocuments({ ...ticketQuery, assignedTo: null, status: { $ne: 'completed' } });
 
   const totalUsers = await User.countDocuments();
-  const totalClients = await User.countDocuments({ role: 'client' });
   const totalEmployees = await User.countDocuments({ role: 'employee' });
   const totalHR = await User.countDocuments({ role: 'hr' });
   const totalTeamLeaders = await User.countDocuments({ role: 'team_leader' });
@@ -785,7 +733,7 @@ app.get('/api/stats/admin', protect, authorize('admin', 'team_leader'), async (r
 
   res.json({ 
     total, pending, inProgress, onHold, completed, unassigned, 
-    totalUsers, totalClients, totalEmployees, totalHR, totalTeamLeaders,
+    totalUsers, totalEmployees, totalHR, totalTeamLeaders,
     byPriority, byType, byStatus, dailyTrend: filledTrend,
     topAssignees, avgResolutionHrs,
     recentTickets, userRole: req.user.role
@@ -836,8 +784,8 @@ app.get('/api/stats/employee', protect, authorize('employee', 'hr'), async (req,
     // HR handles ONLY HR-type internal tickets
     unassignedQuery.type = 'hr';
   } else {
-    // Employees handle Client-type support tickets AND Employee IT issues
-    unassignedQuery.type = { $in: ['client', 'employee'] };
+    // Employees handle Employee IT issues
+    unassignedQuery.type = { $in: ['employee'] };
   }
 
 
