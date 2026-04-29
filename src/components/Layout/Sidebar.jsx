@@ -67,36 +67,26 @@ const Sidebar = () => {
       {role === 'client' ? 'My Tickets' : role === 'employee' ? 'All Tickets' : 'Tickets'}
     </NavLink>
 
-
+    {/* Project */}
+    {role === 'admin' && (
+      <NavLink to="/projects" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+        <PlusCircle size={18} /> Project
+      </NavLink>
+    )}
 
     {/* Users — admin, team_leader */}
     {(role === 'admin' || role === 'team_leader') && (
-      <>
-        <NavLink to="/users" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-          <Users size={18} /> Manage Team
-        </NavLink>
-        <NavLink to="/feedbacks" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-          <Star size={18} /> Reviews
-        </NavLink>
-      </>
+      <NavLink to="/users" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+        <Users size={18} /> Manage Team
+      </NavLink>
     )}
 
     {/* Admin Control */}
     {role === 'admin' && (
-      <>
-        <NavLink to="/admin" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-          <ShieldCheck size={18} /> Admin Control
-        </NavLink>
-        <NavLink to="/projects" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-          <PlusCircle size={18} /> Projects
-        </NavLink>
-      </>
+      <NavLink to="/admin" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+        <ShieldCheck size={18} /> Admin Control
+      </NavLink>
     )}
-
-    {/* Leaderboard — everyone */}
-    <NavLink to="/leaderboard" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-      <Trophy size={18} /> Leaderboard
-    </NavLink>
 
     {/* Help — everyone */}
     <NavLink to="/knowledge-base" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>

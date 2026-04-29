@@ -300,7 +300,6 @@ const Users = () => {
           <span>Email</span>
           <span>Role</span>
           <span>Achievements</span>
-          <span>Last Login</span>
           <span style={{ paddingLeft: '1rem' }}>Last Login</span>
           <span style={{ textAlign: 'right' }}>Actions</span>
         </div>
@@ -433,11 +432,11 @@ const Users = () => {
                       </button>
 
                       {actionMenu === emp._id && (
-                        <div
+                          <div
                           onClick={e => e.stopPropagation()}
                           style={{
                             position: 'absolute', right: 0, top: 'calc(100% + 6px)',
-                            background: 'rgba(12,18,35,0.98)', border: '1px solid var(--border)',
+                            background: 'var(--bg-card)', border: '1px solid var(--border)',
                             borderRadius: '10px', minWidth: '175px', zIndex: 999,
                             boxShadow: '0 16px 48px rgba(0,0,0,0.5)',
                             backdropFilter: 'blur(16px)', overflow: 'hidden',

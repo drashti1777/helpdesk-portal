@@ -220,8 +220,8 @@ const Tickets = () => {
         <div style={{ display: 'flex', gap: '0.75rem' }}>
           {user.role === 'admin' && (
             <>
-              <button onClick={() => setShowReportSidebar(true)} className="btn btn-outline" style={{ flexShrink: 0 }}>
-                <Download size={18} /> Export CSV
+              <button onClick={handleExportCSV} className="btn btn-outline" disabled={exporting} style={{ flexShrink: 0 }}>
+                <Download size={18} /> {exporting ? 'Exporting...' : 'Export CSV'}
               </button>
               <button onClick={() => setShowNewTicketDrawer(true)} className="btn btn-primary" style={{ flexShrink: 0 }}>
                 <PlusCircle size={18} /> New Ticket

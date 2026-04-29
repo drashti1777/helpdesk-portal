@@ -15,6 +15,7 @@ import {
   Target, Activity, BarChart2, Trophy
 } from 'lucide-react';
 import NewTicketDrawer from '../components/Tickets/NewTicketDrawer';
+import Leaderboard from './Leaderboard';
 
 
 
@@ -68,7 +69,7 @@ const PriorityChart = ({ data }) => {
         <XAxis dataKey="name" stroke="var(--text-muted)" fontSize={11} tickLine={false} axisLine={false} />
         <YAxis stroke="var(--text-muted)" fontSize={11} tickLine={false} axisLine={false} allowDecimals={false} />
         <Tooltip
-          contentStyle={{ background: '#0f172a', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '0.85rem' }}
+          contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '0.85rem' }}
           itemStyle={{ color: 'var(--text-main)' }}
         />
         <Bar dataKey="count" radius={[6, 6, 0, 0]}>
@@ -796,6 +797,10 @@ const Dashboard = () => {
       {(user.role === 'admin' || user.role === 'team_leader') && <AdminDashboard stats={stats} navigate={navigate} />}
       {(user.role === 'employee' || user.role === 'hr') && <EmployeeDashboard stats={stats} navigate={navigate} token={user.token} user={user} onNewTicket={() => setShowNewTicketDrawer(true)} />}
       {user.role === 'client' && <ClientDashboard stats={stats} navigate={navigate} user={user} onNewTicket={() => setShowNewTicketDrawer(true)} />}
+
+      <div style={{ marginTop: '3rem', paddingTop: '2rem', borderTop: '1px solid var(--border)' }}>
+        <Leaderboard embedded={true} />
+      </div>
 
       <NewTicketDrawer 
         isOpen={showNewTicketDrawer} 

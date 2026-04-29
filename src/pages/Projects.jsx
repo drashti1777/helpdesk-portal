@@ -8,6 +8,7 @@ import {
   User as UserIcon, Shield, AlertCircle, CheckCircle2, Bug,
   FileText, Upload
 } from 'lucide-react';
+import ConfirmModal from '../components/Layout/ConfirmModal';
 
 const Projects = () => {
   const { user } = useContext(AuthContext);
@@ -15,6 +16,7 @@ const Projects = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [showModal, setShowModal] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, projectId: null });
   const [editingProject, setEditingProject] = useState(null);
   const [toast, setToast] = useState(null);
   const [formData, setFormData] = useState({
@@ -177,10 +179,13 @@ const Projects = () => {
     setShowModal(true);
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this project?')) return;
+  const handleDelete = (id) => {
+    setDeleteConfirm({ isOpen: true, projectId: id });
+  };
+
+  const executeDelete = async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/projects/${id}`, {
+      const res = await fetch(`${API_BASE_URL}/api/projects/${deleteConfirm.projectId}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${user.token}` }
       });
@@ -190,6 +195,8 @@ const Projects = () => {
       }
     } catch (err) {
       showToast('Delete failed', 'error');
+    } finally {
+      setDeleteConfirm({ isOpen: false, projectId: null });
     }
   };
 
@@ -685,6 +692,15 @@ const Projects = () => {
         .animate-spin { animation: spin 1s linear infinite; }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
       `}</style>
+      <ConfirmModal
+        isOpen={deleteConfirm.isOpen}
+        onConfirm={executeDelete}
+        onCancel={() => setDeleteConfirm({ isOpen: false, projectId: null })}
+        title="Delete Project"
+        message="Are you sure you want to delete this project? This action cannot be undone."
+        confirmText="Delete"
+      />
+
     </div>
   );
 };

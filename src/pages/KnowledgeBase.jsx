@@ -195,7 +195,6 @@ const FAQ_DATA = [
 const Help = () => {
   const { user } = useContext(AuthContext);
   const [expanded, setExpanded] = useState({});
-  const [searchQuery, setSearchQuery] = useState('');
 
   const role = user?.role || 'client';
 
@@ -204,16 +203,12 @@ const Help = () => {
     setExpanded(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
-  // Filter by role first, then by search
+  // Filter by role
   const roleFiltered = FAQ_DATA.filter(cat => cat.roles.includes(role));
 
   const filteredFAQ = roleFiltered.map(cat => ({
     ...cat,
-    items: cat.items.filter(item => {
-      if (!searchQuery) return true;
-      const q = searchQuery.toLowerCase();
-      return item.q.toLowerCase().includes(q) || item.a.toLowerCase().includes(q);
-    })
+    items: cat.items
   })).filter(cat => cat.items.length > 0);
 
   const totalTopics = roleFiltered.reduce((sum, c) => sum + c.items.length, 0);
@@ -259,16 +254,7 @@ const Help = () => {
         </div>
       </header>
 
-      {/* Search */}
-      <div style={{ marginBottom: '2rem' }}>
-        <input
-          type="text"
-          placeholder={`Search help topics for ${roleLabel}...`}
-          value={searchQuery}
-          onChange={e => setSearchQuery(e.target.value)}
-          style={{ paddingLeft: '1rem', fontSize: '0.95rem', width: '100%' }}
-        />
-      </div>
+
 
       {/* Quick Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '1rem', marginBottom: '2.5rem' }}>
@@ -291,8 +277,7 @@ const Help = () => {
         {filteredFAQ.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
             <HelpCircle size={40} style={{ opacity: 0.2, marginBottom: '1rem' }} />
-            <p style={{ fontWeight: '500' }}>No results found for "{searchQuery}"</p>
-            <p style={{ fontSize: '0.85rem', marginTop: '0.3rem' }}>Try different keywords or clear the search.</p>
+            <p style={{ fontWeight: '500' }}>No help topics available for your role.</p>
           </div>
         ) : (
           filteredFAQ.map((cat, cIdx) => {

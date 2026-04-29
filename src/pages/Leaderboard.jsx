@@ -15,7 +15,7 @@ const ROLE_LABELS = {
   client: 'Client',
 };
 
-const Leaderboard = () => {
+const Leaderboard = ({ embedded = false }) => {
   const { user } = useContext(AuthContext);
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -41,7 +41,7 @@ const Leaderboard = () => {
   const rest = rows.slice(3);
 
   return (
-    <div className="main-content animate-fade-in" style={{ maxWidth: '1400px', margin: '0 auto' }}>
+    <div className={embedded ? "animate-fade-in" : "main-content animate-fade-in"} style={{ maxWidth: '1400px', margin: '0 auto' }}>
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
           <h1 style={{ fontSize: '2.25rem', fontWeight: '800', letterSpacing: '-0.03em', display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--text-main)' }}>
