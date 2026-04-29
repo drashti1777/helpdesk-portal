@@ -129,7 +129,7 @@ const AdminControl = () => {
   );
 
   return (
-    <div className="main-content animate-fade-in" style={{ maxWidth: '1000px', margin: '0 auto' }}>
+    <div className="main-content animate-fade-in" style={{ maxWidth: '2000px', margin: '0 auto' }}>
       {/* Premium Toast */}
       {toast.message && (
         <div style={{ 

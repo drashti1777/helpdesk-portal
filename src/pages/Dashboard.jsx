@@ -4,12 +4,15 @@ import { useNavigate } from 'react-router-dom';
 import API_BASE_URL from '../config';
 
 import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
+  LineChart, Line, CartesianGrid, PieChart, Pie, Legend,
+  AreaChart, Area
 } from 'recharts';
 import {
   AlertCircle, CheckCircle2, Clock, ListTodo, ShieldCheck, Users,
   UserCheck, TrendingUp, Globe, Briefcase, Inbox, RefreshCw,
-  ChevronRight, ArrowRight, Zap, PlusCircle, Award, Star
+  ChevronRight, ArrowRight, Zap, PlusCircle, Award, Star,
+  Target, Activity, BarChart2, Trophy
 } from 'lucide-react';
 
 
@@ -160,11 +163,11 @@ const AdminDashboard = ({ stats, navigate }) => (
           <SectionTitle>Overall Priority</SectionTitle>
           <PriorityChart data={stats.byPriority} />
         </div>
-        
+
         <div className="glass-card" style={{ padding: '1.25rem', background: 'rgba(99,102,241,0.04)', border: '1px solid rgba(99,102,241,0.2)' }}>
           <p style={{ fontWeight: '600', fontSize: '0.85rem', marginBottom: '0.6rem', color: '#a5b4fc' }}>📊 System Status</p>
           <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>
-            The system is currently monitoring {stats.total} total tickets. 
+            The system is currently monitoring {stats.total} total tickets.
             {stats.unassigned > 0 ? ` There are ${stats.unassigned} tickets awaiting assignment.` : ' All tickets are assigned.'}
           </p>
         </div>
@@ -175,10 +178,10 @@ const AdminDashboard = ({ stats, navigate }) => (
 
 // ── Status & Priority config ─────────────────────────────────────────────────
 const STATUS_CFG = {
-  pending:     { color: '#ef4444', bg: 'rgba(239,68,68,0.1)',    label: 'Pending'     },
+  pending: { color: '#ef4444', bg: 'rgba(239,68,68,0.1)', label: 'Pending' },
   in_progress: { color: '#6366f1', bg: 'rgba(99,102,241,0.12)', label: 'In Progress' },
-  on_hold:     { color: '#f59e0b', bg: 'rgba(245,158,11,0.1)',  label: 'On Hold'     },
-  completed:   { color: '#10b981', bg: 'rgba(16,185,129,0.1)',  label: 'Completed'   },
+  on_hold: { color: '#f59e0b', bg: 'rgba(245,158,11,0.1)', label: 'On Hold' },
+  completed: { color: '#10b981', bg: 'rgba(16,185,129,0.1)', label: 'Completed' },
 };
 
 const PriorityDot = ({ p }) => (
@@ -376,9 +379,9 @@ const EmployeeDashboard = ({ stats: initialStats, navigate, token, user }) => {
   }[activeTab];
 
   const tabConfig = [
-    { key: 'assigned',   label: 'Assigned to Me',   count: stats.total,           color: '#6366f1' },
+    { key: 'assigned', label: 'Assigned to Me', count: stats.total, color: '#6366f1' },
     { key: 'unassigned', label: stats.userRole === 'hr' ? 'Employee Issues' : 'Client Pool', count: stats.unassigned, color: '#f59e0b' },
-    { key: 'raised',     label: 'My Requests',      count: stats.myRaisedTickets, color: '#0ea5e9' },
+    { key: 'raised', label: 'My Requests', count: stats.myRaisedTickets, color: '#0ea5e9' },
   ];
 
   return (
@@ -577,10 +580,10 @@ const EmployeeDashboard = ({ stats: initialStats, navigate, token, user }) => {
 
 const ClientDashboard = ({ stats, navigate }) => {
   const STATUS_COLORS = {
-    pending:     { color: '#ef4444', label: 'Pending'     },
+    pending: { color: '#ef4444', label: 'Pending' },
     in_progress: { color: '#6366f1', label: 'In Progress' },
-    on_hold:     { color: '#f59e0b', label: 'On Hold'     },
-    completed:   { color: '#10b981', label: 'Completed'   },
+    on_hold: { color: '#f59e0b', label: 'On Hold' },
+    completed: { color: '#10b981', label: 'Completed' },
   };
 
   return (
@@ -603,11 +606,11 @@ const ClientDashboard = ({ stats, navigate }) => {
 
       {/* Stat Cards */}
       <div className="dashboard-grid" style={{ marginBottom: '2rem' }}>
-        <StatCard label="Total Raised" value={stats.total}      icon={ListTodo}    iconColor="#6366f1" onClick={() => navigate('/tickets')} accent="#6366f1" />
-        <StatCard label="Pending"      value={stats.pending}    icon={AlertCircle} iconColor="#ef4444" onClick={() => navigate('/tickets?status=pending')} />
-        <StatCard label="In Progress"  value={stats.inProgress} icon={Clock}       iconColor="#6366f1" onClick={() => navigate('/tickets?status=in_progress')} />
-        <StatCard label="On Hold"      value={stats.onHold}     icon={AlertCircle} iconColor="#f59e0b" onClick={() => navigate('/tickets?status=on_hold')} />
-        <StatCard label="Resolved"     value={stats.completed}  icon={CheckCircle2} iconColor="#10b981" onClick={() => navigate('/tickets?status=completed')} />
+        <StatCard label="Total Raised" value={stats.total} icon={ListTodo} iconColor="#6366f1" onClick={() => navigate('/tickets')} accent="#6366f1" />
+        <StatCard label="Pending" value={stats.pending} icon={AlertCircle} iconColor="#ef4444" onClick={() => navigate('/tickets?status=pending')} />
+        <StatCard label="In Progress" value={stats.inProgress} icon={Clock} iconColor="#6366f1" onClick={() => navigate('/tickets?status=in_progress')} />
+        <StatCard label="On Hold" value={stats.onHold} icon={AlertCircle} iconColor="#f59e0b" onClick={() => navigate('/tickets?status=on_hold')} />
+        <StatCard label="Resolved" value={stats.completed} icon={CheckCircle2} iconColor="#10b981" onClick={() => navigate('/tickets?status=completed')} />
       </div>
 
       {/* Two-column: Recent tickets & Feedbacks */}
@@ -739,8 +742,8 @@ const Dashboard = () => {
     if (!user) return;
     const endpoint = endpointMap[user.role];
     if (!endpoint) return;
-    
-        fetch(`${API_BASE_URL}${endpoint}`, {
+
+    fetch(`${API_BASE_URL}${endpoint}`, {
       headers: { 'Authorization': `Bearer ${user.token}` }
     })
       .then(res => {
@@ -781,7 +784,7 @@ const Dashboard = () => {
     <div className="main-content animate-fade-in">
       {(user.role === 'admin' || user.role === 'team_leader') && <AdminDashboard stats={stats} navigate={navigate} />}
       {(user.role === 'employee' || user.role === 'hr') && <EmployeeDashboard stats={stats} navigate={navigate} token={user.token} user={user} />}
-      {user.role === 'client'      && <ClientDashboard     stats={stats} navigate={navigate} user={user} />}
+      {user.role === 'client' && <ClientDashboard stats={stats} navigate={navigate} user={user} />}
     </div>
   );
 };

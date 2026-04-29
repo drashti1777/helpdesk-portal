@@ -16,7 +16,7 @@ import Profile from './pages/Profile';
 import Feedbacks from './pages/Feedbacks';
 import NotificationPanel from './components/Notifications/NotificationPanel';
 import NotificationToast from './components/Notifications/NotificationToast';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, Sun, Moon } from 'lucide-react';
 
 // Redirect unauthenticated users to login
 const PrivateRoute = ({ children }) => {
@@ -36,6 +36,21 @@ import ConfirmModal from './components/Layout/ConfirmModal';
 
 const AppLayout = ({ children }) => {
   const [unreadCount, setUnreadCount] = React.useState(0);
+  const [isLight, setIsLight] = React.useState(() => {
+    return localStorage.getItem('theme') === 'light' || document.body.classList.contains('light-theme');
+  });
+
+  React.useEffect(() => {
+    if (isLight) {
+      document.body.classList.add('light-theme');
+      localStorage.setItem('theme', 'light');
+    } else {
+      document.body.classList.remove('light-theme');
+      localStorage.setItem('theme', 'dark');
+    }
+  }, [isLight]);
+
+  const toggleTheme = () => setIsLight(!isLight);
 
   React.useEffect(() => {
     const handleCountChange = (e) => setUnreadCount(e.detail.count);
@@ -48,21 +63,36 @@ const AppLayout = ({ children }) => {
       <Sidebar />
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
         {/* Top Header Bar */}
-        <header style={{ 
+        <header style={{
           height: '64px', minHeight: '64px', borderBottom: '1px solid var(--border)',
           display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
-          padding: '0 2rem', background: 'rgba(15, 23, 42, 0.85)', backdropFilter: 'blur(16px)',
+          padding: '0 2rem', background: 'var(--bg-card)', backdropFilter: 'blur(16px)',
           position: 'sticky', top: 0, zIndex: 1000, gap: '1.5rem'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginLeft: 'auto' }}>
             <button 
-              onClick={() => window.location.reload()} 
-              className="btn btn-outline" 
-              style={{ height: '40px', padding: '0 1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem' }}
+              onClick={toggleTheme}
+              style={{
+                background: 'var(--glass)', border: '1px solid var(--border)',
+                width: '40px', height: '40px', borderRadius: '12px',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                cursor: 'pointer', color: 'var(--text-main)', transition: 'all 0.2s'
+              }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--primary)'; e.currentTarget.style.background = 'rgba(99,102,241,0.1)'; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = 'var(--glass)'; }}
+              title="Toggle Theme"
             >
-              <RefreshCw size={16} /> Refresh
+              {isLight ? <Moon size={18} /> : <Sun size={18} />}
             </button>
-            <button 
+            <button
+              onClick={() => window.location.reload()}
+              className="btn btn-outline"
+              style={{ width: '40px', height: '40px', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              title="Refresh"
+            >
+              <RefreshCw size={18} />
+            </button>
+            <button
               onClick={() => window.dispatchEvent(new CustomEvent('toggle-notifications'))}
               style={{
                 background: 'var(--glass)', border: '1px solid var(--border)',
@@ -90,17 +120,17 @@ const AppLayout = ({ children }) => {
             </button>
           </div>
         </header>
-        
+
         {/* Page Content */}
         <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
           <div style={{ flex: 1 }}>
             {children}
           </div>
           {/* Footer */}
-          <footer style={{ 
-            padding: '1.5rem 3rem', borderTop: '1px solid var(--border)', 
+          <footer style={{
+            padding: '1.5rem 3rem', borderTop: '1px solid var(--border)',
             textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.8rem',
-            background: 'rgba(15, 23, 42, 0.2)', flexShrink: 0
+            background: 'var(--glass)', flexShrink: 0
           }}>
             &copy; {new Date().getFullYear()} Unified Helpdesk Portal. All rights reserved.
           </footer>

@@ -13,6 +13,17 @@
   --warning: #f59e0b;
   --danger: #ef4444;
   --radius: 12px;
+  --bg-input: #1e293b;
+}
+
+body.light-theme {
+  --bg-dark: #f8fafc;
+  --bg-card: rgba(255, 255, 255, 0.8);
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --border: rgba(0, 0, 0, 0.1);
+  --glass: rgba(0, 0, 0, 0.03);
+  --bg-input: #ffffff;
 }
 
 * {
@@ -32,6 +43,14 @@ body {
     radial-gradient(at 50% 0%, hsla(225,39%,30%,0.1) 0, transparent 50%), 
     radial-gradient(at 100% 0%, hsla(339,49%,30%,0.05) 0, transparent 50%);
   min-height: 100vh;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+body.light-theme {
+  background-image: 
+    radial-gradient(at 0% 0%, hsla(220, 100%, 95%, 1) 0, transparent 50%), 
+    radial-gradient(at 50% 0%, hsla(220, 100%, 90%, 0.5) 0, transparent 50%), 
+    radial-gradient(at 100% 0%, hsla(220, 100%, 85%, 0.3) 0, transparent 50%);
 }
 
 .glass-card {
@@ -82,7 +101,7 @@ body {
 input, select, textarea {
   width: 100%;
   padding: 0.75rem 1rem;
-  background: #1e293b; /* More solid background for inputs/selects */
+  background: var(--bg-input);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   color: var(--text-main);
@@ -93,7 +112,7 @@ input, select, textarea {
 }
 
 select option {
-  background-color: #1e293b;
+  background-color: var(--bg-input);
   color: var(--text-main);
   padding: 10px;
 }
@@ -125,7 +144,7 @@ input:focus, select:focus, textarea:focus {
   width: 260px;
   min-width: 260px;
   height: 100vh;
-  background: rgba(15, 23, 42, 0.8);
+  background: var(--bg-card);
   border-right: 1px solid var(--border);
   padding: 2rem 1.5rem;
   display: flex;

@@ -5,35 +5,38 @@ import { AuthContext } from '../context/AuthContext';
 import { ArrowLeft, Upload, X, FileText, AlertTriangle } from 'lucide-react';
 
 const TICKET_TYPE_MAP = {
-  client:   { value: 'client',   label: 'Client Request',      desc: 'Issue with your website or application' },
-  employee: { value: 'employee', label: 'Employee IT Issue',   desc: 'Internal system or software problem' },
-  hr:       { value: 'hr',       label: 'HR Request',          desc: 'Internal HR or administrative request' },
-  admin:    { value: 'hr',       label: 'HR Request',          desc: 'Internal HR or administrative request' },
-  team_leader: { value: 'hr',    label: 'HR Request',          desc: 'Internal HR or administrative request' },
+  client: { value: 'client', label: 'Client Request', desc: 'Issue with your website or application' },
+  employee: { value: 'employee', label: 'Employee IT Issue', desc: 'Internal system or software problem' },
+  hr: { value: 'hr', label: 'HR Request', desc: 'Internal HR or administrative request' },
+  team_leader: { value: 'team_leader', label: 'Team Leader Request', desc: 'Management or high-level coordination issue' },
 };
 
 const CATEGORIES_BY_TYPE = {
   client: [
-    'Website / App Bug', 'Feature Request', 'Billing Issue', 
+    'Website / App Bug', 'Feature Request', 'Billing Issue',
     'UI/UX Feedback', 'Content Update', 'Performance Issue', 'Other'
   ],
   employee: [
-    'Hardware Issue', 'Software Installation', 'Network / Wi-Fi', 
+    'Hardware Issue', 'Software Installation', 'Network / Wi-Fi',
     'Password Reset', 'Email Config', 'System Slowdown', 'Printer Issue', 'Other'
   ],
   hr: [
-    'Leave Application', 'Payroll / Salary', 'Policy Query', 
-    'Recruitment / Hiring', 'Onboarding', 'Documents / Letters', 
+    'Leave Application', 'Payroll / Salary', 'Policy Query',
+    'Recruitment / Hiring', 'Onboarding', 'Documents / Letters',
     'Desk / Facility Issue', 'Employee Grievance', 'Other'
+  ],
+  team_leader: [
+    'Team Coordination', 'Resource Request', 'Project Escalation',
+    'Policy Implementation', 'Training Request', 'Other'
   ]
 };
-
 
 const NewTicket = () => {
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
   const isAdmin = user.role === 'admin';
   const isTeamLeader = user.role === 'team_leader';
+  const isManagement = isAdmin || isTeamLeader;
 
   const defaultType = TICKET_TYPE_MAP[user.role]?.value || 'hr';
   const [projects, setProjects] = useState([]);
@@ -47,8 +50,7 @@ const NewTicket = () => {
       fetch(`${API_BASE_URL}/api/users/agents`, { headers: { 'Authorization': `Bearer ${user.token}` } })
         .then(res => res.json())
         .then(data => setAgents(Array.isArray(data) ? data : []));
-      
-      // We need a route for clients, but let's use the employees list and filter for now if no specific route exists
+
       fetch(`${API_BASE_URL}/api/users/employees`, { headers: { 'Authorization': `Bearer ${user.token}` } })
         .then(res => res.json())
         .then(data => setClients(Array.isArray(data) ? data : []));
@@ -103,9 +105,9 @@ const NewTicket = () => {
   };
 
   const priorityOptions = [
-    { value: 'low',    label: 'Low',    desc: 'No immediate impact', color: '#10b981' },
-    { value: 'medium', label: 'Medium', desc: 'Moderate disruption',  color: '#f59e0b' },
-    { value: 'high',   label: 'High',   desc: 'Critical / urgent',    color: '#ef4444' },
+    { value: 'low', label: 'Low', desc: 'No immediate impact', color: 'var(--success)' },
+    { value: 'medium', label: 'Medium', desc: 'Moderate disruption', color: 'var(--warning)' },
+    { value: 'high', label: 'High', desc: 'Critical / urgent', color: 'var(--danger)' },
   ];
 
   const labelStyle = { display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-muted)' };
@@ -117,13 +119,13 @@ const NewTicket = () => {
       </button>
 
       <header style={{ marginBottom: '2rem' }}>
-        <h1 style={{ fontSize: '2rem', fontWeight: '700', letterSpacing: '-0.02em' }}>Submit a Ticket</h1>
+        <h1 style={{ fontSize: '2rem', fontWeight: '700', letterSpacing: '-0.02em', color: 'var(--text-main)' }}>Submit a Ticket</h1>
         <p style={{ color: 'var(--text-muted)', marginTop: '0.3rem' }}>
           {user.role === 'client'
             ? 'Report an issue with your website or application.'
             : user.role === 'employee' || user.role === 'team_leader'
-            ? 'Raise an internal IT support request.'
-            : 'Submit an internal issue or request.'}
+              ? 'Raise an internal IT support request.'
+              : 'Submit an internal issue or request.'}
         </p>
       </header>
 
@@ -131,7 +133,7 @@ const NewTicket = () => {
         {/* Main Form */}
         <form onSubmit={handleSubmit}>
           <div className="glass-card" style={{ marginBottom: '1.5rem' }}>
-            <h3 style={{ fontWeight: '600', marginBottom: '1.25rem', fontSize: '0.95rem' }}>Ticket Details</h3>
+            <h3 style={{ fontWeight: '600', marginBottom: '1.25rem', fontSize: '0.95rem', color: 'var(--text-main)' }}>Ticket Details</h3>
 
             <label style={labelStyle}>Subject *</label>
             <input
@@ -178,9 +180,7 @@ const NewTicket = () => {
             />
           </div>
 
-          {/* Attachments */}
           <div className="glass-card" style={{ marginBottom: '1.5rem' }}>
-            {/* Extra Fields for Admin/TL - Client Workflow */}
             {(user.role === 'admin' || user.role === 'team_leader') && formData.type === 'client' && (
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem', marginBottom: '1.25rem' }}>
                 <div>
@@ -208,7 +208,6 @@ const NewTicket = () => {
               </div>
             )}
 
-            {/* Extra Fields for Admin/TL - Internal HR Workflow */}
             {(user.role === 'admin' || user.role === 'team_leader') && formData.type === 'hr' && (
               <div style={{ display: 'grid', gridTemplateColumns: user.role === 'admin' ? '1fr 1fr' : '1fr', gap: '1.25rem', marginBottom: '1.25rem' }}>
                 <div>
@@ -238,7 +237,7 @@ const NewTicket = () => {
               </div>
             )}
 
-            <h3 style={{ fontWeight: '600', marginBottom: '1.25rem', fontSize: '0.95rem' }}>Attachments</h3>
+            <h3 style={{ fontWeight: '600', marginBottom: '1.25rem', fontSize: '0.95rem', color: 'var(--text-main)' }}>Attachments</h3>
             <div
               onDragOver={e => { e.preventDefault(); setDragOver(true); }}
               onDragLeave={() => setDragOver(false)}
@@ -254,7 +253,6 @@ const NewTicket = () => {
               <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>
                 Drag & drop files here, or <span style={{ color: 'var(--primary)', cursor: 'pointer', fontWeight: '600' }}>browse</span>
               </p>
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: '0.25rem' }}>PNG, JPG, PDF, ZIP up to 10MB each</p>
               <input
                 type="file" multiple
                 style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }}
@@ -271,8 +269,7 @@ const NewTicket = () => {
                     border: '1px solid var(--border)'
                   }}>
                     <FileText size={15} color="var(--primary)" />
-                    <span style={{ flex: 1, fontSize: '0.85rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.name}</span>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{(f.size / 1024).toFixed(0)} KB</span>
+                    <span style={{ flex: 1, fontSize: '0.85rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--text-main)' }}>{f.name}</span>
                     <button type="button" onClick={() => removeFile(f.name)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 0 }}>
                       <X size={15} />
                     </button>
@@ -292,18 +289,17 @@ const NewTicket = () => {
 
         {/* Right Sidebar — Priority + Info */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-          {/* Ticket Type Selector */}
           <div className="glass-card" style={{ padding: '1.25rem' }}>
-            <h3 style={{ fontWeight: '600', marginBottom: '1rem', fontSize: '0.9rem' }}>Ticket Type</h3>
+            <h3 style={{ fontWeight: '600', marginBottom: '1rem', fontSize: '0.9rem', color: 'var(--text-main)' }}>Ticket Type</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              {(isTeamLeader ? [
-                { value: 'client', label: 'For Client', desc: 'Create ticket for a client' },
-                { value: 'hr',     label: 'For Employee', desc: 'Create internal ticket for employee' }
-              ] : isAdmin ? [
-                { value: 'client', label: 'Client Request', desc: 'External client issue' }
+              {(isManagement ? [
+                { value: 'client', label: 'For Client', desc: 'External client support' },
+                { value: 'employee', label: 'For IT Support', desc: 'Internal IT/System issue' },
+                { value: 'hr', label: 'For HR', desc: 'Internal HR/Admin request' },
+                { value: 'team_leader', label: 'For Team Leader', desc: 'Management coordination' }
               ] : user.role === 'hr' ? [
-                { value: 'hr', label: 'HR Issue', desc: 'Your issue will be sent to Admin for resolution' },
-                { value: 'employee', label: 'For Employee', desc: 'Suggest or communicate something to an employee' }
+                { value: 'hr', label: 'HR Issue', desc: 'Sent to Admin for resolution' },
+                { value: 'employee', label: 'For Employee', desc: 'Suggest to an employee' }
               ] : [
                 { value: user.role === 'client' ? 'client' : (TICKET_TYPE_MAP[user.role]?.value || 'hr'), ...(TICKET_TYPE_MAP[user.role] || { label: 'Request', desc: 'Submit a request' }) }
               ]).map(type => (
@@ -324,9 +320,8 @@ const NewTicket = () => {
             </div>
           </div>
 
-          {/* Priority Selector */}
           <div className="glass-card" style={{ padding: '1.25rem' }}>
-            <h3 style={{ fontWeight: '600', marginBottom: '1rem', fontSize: '0.9rem' }}>Priority Level</h3>
+            <h3 style={{ fontWeight: '600', marginBottom: '1rem', fontSize: '0.9rem', color: 'var(--text-main)' }}>Priority Level</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
               {priorityOptions.map(opt => (
                 <button
@@ -351,24 +346,23 @@ const NewTicket = () => {
             </div>
           </div>
 
-          {/* SLA info */}
-          <div className="glass-card" style={{ padding: '1.25rem', background: 'rgba(245,158,11,0.04)', border: '1px solid rgba(245,158,11,0.2)' }}>
+          <div className="glass-card" style={{ padding: '1.25rem', background: 'var(--glass)', border: '1px solid var(--border)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
-              <AlertTriangle size={15} color="#f59e0b" />
-              <h3 style={{ fontWeight: '600', fontSize: '0.9rem', color: '#f59e0b' }}>SLA Response Times</h3>
+              <AlertTriangle size={15} color="var(--warning)" />
+              <h3 style={{ fontWeight: '600', fontSize: '0.9rem', color: 'var(--warning)' }}>SLA Protocols</h3>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: '#ef4444' }}>🔴 High</span>
-                <span>Response 2h · Resolution 8h</span>
+                <span style={{ color: 'var(--danger)' }}>🔴 High</span>
+                <span>2h Response</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: '#f59e0b' }}>🟡 Medium</span>
-                <span>Response 8h · Resolution 24h</span>
+                <span style={{ color: 'var(--warning)' }}>🟡 Medium</span>
+                <span>8h Response</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: '#10b981' }}>🟢 Low</span>
-                <span>Response 24h · Resolution 72h</span>
+                <span style={{ color: 'var(--success)' }}>🟢 Low</span>
+                <span>24h Response</span>
               </div>
             </div>
           </div>

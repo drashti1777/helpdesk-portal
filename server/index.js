@@ -183,6 +183,7 @@ app.post('/api/auth/register', async (req, res) => {
         _id: userExists._id,
         name: userExists.name,
         email: userExists.email,
+        mobile: userExists.mobile,
         role: normalizeRole(userExists.role),
         token: generateToken(userExists._id)
       });
@@ -203,6 +204,7 @@ app.post('/api/auth/register', async (req, res) => {
       _id: user._id,
       name: user.name,
       email: user.email,
+      mobile: user.mobile,
       role: normalizeRole(user.role),
       token: generateToken(user._id)
     });
@@ -226,6 +228,7 @@ app.post('/api/auth/login', async (req, res) => {
         _id: user._id,
         name: user.name,
         email: user.email,
+        mobile: user.mobile,
         role: normalizedRole,
         token: generateToken(user._id)
       });
@@ -540,18 +543,56 @@ app.post('/api/tickets/:id/comments', protect, async (req, res) => {
 // ─────────────────────────────────────────────
 
 app.get('/api/projects', protect, async (req, res) => {
-  const projects = await Project.find().populate('teamLeader', 'name').sort({ name: 1 });
+  const projects = await Project.find()
+    .populate('teamLeader', 'name email mobile')
+    .populate('teamMembers', 'name email role mobile')
+    .sort({ name: 1 });
   res.json(projects);
 });
 
 app.post('/api/projects', protect, authorize('admin'), async (req, res) => {
-  const { name, description, teamLeader } = req.body;
+  const { name, description, teamLeader, projectUrl, uatUrl, productionLink, teamName, teamMembers } = req.body;
   if (!name) return res.status(400).json({ message: 'Project name is required' });
   try {
-    const project = await Project.create({ name, description, teamLeader: teamLeader || null });
+    const project = await Project.create({ 
+      name, 
+      description, 
+      teamLeader: teamLeader || null,
+      projectUrl,
+      uatUrl,
+      productionLink,
+      teamName,
+      teamMembers: teamMembers || []
+    });
     res.status(201).json(project);
   } catch (err) {
-    res.status(400).json({ message: 'Project already exists' });
+    res.status(400).json({ message: 'Project already exists or invalid data' });
+  }
+});
+
+app.put('/api/projects/:id', protect, authorize('admin'), async (req, res) => {
+  const { name, description, teamLeader, projectUrl, uatUrl, productionLink, teamName, teamMembers } = req.body;
+  try {
+    const project = await Project.findById(req.params.id);
+    if (!project) return res.status(404).json({ message: 'Project not found' });
+
+    if (name) project.name = name;
+    if (description !== undefined) project.description = description;
+    if (teamLeader !== undefined) project.teamLeader = teamLeader || null;
+    if (projectUrl !== undefined) project.projectUrl = projectUrl;
+    if (uatUrl !== undefined) project.uatUrl = uatUrl;
+    if (productionLink !== undefined) project.productionLink = productionLink;
+    if (teamName !== undefined) project.teamName = teamName;
+    if (teamMembers !== undefined) project.teamMembers = teamMembers;
+
+    await project.save();
+
+    const populated = await Project.findById(project._id)
+      .populate('teamLeader', 'name email mobile')
+      .populate('teamMembers', 'name email role mobile');
+    res.json(populated);
+  } catch (err) {
+    res.status(400).json({ message: 'Update failed' });
   }
 });
 
@@ -567,9 +608,6 @@ app.delete('/api/projects/:id', protect, authorize('admin'), async (req, res) =>
 // Admin — team & ticket overview (Super Admin merged here)
 app.get('/api/stats/admin', protect, authorize('admin', 'team_leader'), async (req, res) => {
   const isTL = req.user.role === 'team_leader';
-  
-  // Base query for tickets
-  // TL sees: tickets they created OR tickets of type client/employee
   const ticketQuery = isTL 
     ? { $or: [{ createdBy: req.user._id }, { type: { $in: ['client', 'employee'] } }] }
     : {};
@@ -597,6 +635,63 @@ app.get('/api/stats/admin', protect, authorize('admin', 'team_leader'), async (r
     { $group: { _id: '$type', count: { $sum: 1 } } }
   ]);
 
+  const byStatus = await Ticket.aggregate([
+    { $match: ticketQuery },
+    { $group: { _id: '$status', count: { $sum: 1 } } }
+  ]);
+
+  // Last 7 days daily ticket creation trend
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
+  sevenDaysAgo.setHours(0,0,0,0);
+
+  const dailyTrend = await Ticket.aggregate([
+    { $match: { ...ticketQuery, createdAt: { $gte: sevenDaysAgo } } },
+    {
+      $group: {
+        _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+        created: { $sum: 1 },
+        resolved: { $sum: { $cond: [{ $eq: ['$status', 'completed'] }, 1, 0] } }
+      }
+    },
+    { $sort: { _id: 1 } }
+  ]);
+
+  // Fill missing days
+  const trendMap = {};
+  dailyTrend.forEach(d => { trendMap[d._id] = d; });
+  const filledTrend = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const key = d.toISOString().split('T')[0];
+    const shortDay = d.toLocaleDateString('en-US', { weekday: 'short' });
+    filledTrend.push({
+      day: shortDay,
+      date: key,
+      created: trendMap[key]?.created || 0,
+      resolved: trendMap[key]?.resolved || 0,
+    });
+  }
+
+  // Top 5 assignees by resolved tickets
+  const topAssignees = await Ticket.aggregate([
+    { $match: { ...ticketQuery, assignedTo: { $ne: null }, status: 'completed' } },
+    { $group: { _id: '$assignedTo', resolved: { $sum: 1 } } },
+    { $sort: { resolved: -1 } },
+    { $limit: 5 },
+    { $lookup: { from: 'users', localField: '_id', foreignField: '_id', as: 'user' } },
+    { $unwind: '$user' },
+    { $project: { name: '$user.name', role: '$user.role', resolved: 1 } }
+  ]);
+
+  // Average resolution time (ms → hours)
+  const completedWithDates = await Ticket.find({ ...ticketQuery, status: 'completed', updatedAt: { $exists: true } })
+    .select('createdAt updatedAt').limit(100);
+  const avgResolutionHrs = completedWithDates.length > 0
+    ? Math.round(completedWithDates.reduce((sum, t) => sum + (new Date(t.updatedAt) - new Date(t.createdAt)), 0) / completedWithDates.length / 3600000)
+    : null;
+
   const recentTickets = await Ticket.find(ticketQuery)
     .populate('createdBy', 'name role')
     .populate('assignedTo', 'name')
@@ -606,8 +701,9 @@ app.get('/api/stats/admin', protect, authorize('admin', 'team_leader'), async (r
   res.json({ 
     total, pending, inProgress, onHold, completed, unassigned, 
     totalUsers, totalClients, totalEmployees, totalHR, totalTeamLeaders,
-    byPriority, byType, recentTickets,
-    userRole: req.user.role
+    byPriority, byType, byStatus, dailyTrend: filledTrend,
+    topAssignees, avgResolutionHrs,
+    recentTickets, userRole: req.user.role
   });
 });
 
@@ -703,11 +799,12 @@ app.get('/api/stats/client', protect, authorize('client'), async (req, res) => {
 // ─────────────────────────────────────────────
 
 app.put('/api/users/profile', protect, async (req, res) => {
-  const { name, email, password } = req.body;
+  const { name, email, mobile, password } = req.body;
   const user = await User.findById(req.user._id);
   if (!user) return res.status(404).json({ message: 'User not found' });
 
   if (name) user.name = name;
+  if (mobile !== undefined) user.mobile = mobile;
   if (email) {
     const existing = await User.findOne({ email, _id: { $ne: user._id } });
     if (existing) return res.status(400).json({ message: 'Email already in use' });
@@ -742,7 +839,7 @@ app.get('/api/users/employees', protect, authorize('admin', 'team_leader'), asyn
 // Assignable agents — ONLY employees/team_leaders
 app.get('/api/users/agents', protect, authorize('admin', 'super_admin', 'team_leader'), async (req, res) => {
   const query = { status: 1, role: { $in: ['employee', 'team_leader', 'hr', 'admin'] } };
-  const agents = await User.find(query).select('name email role');
+  const agents = await User.find(query).select('name email role mobile');
   res.json(agents);
 });
 

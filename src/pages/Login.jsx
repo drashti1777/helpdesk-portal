@@ -7,10 +7,10 @@ import API_BASE_URL from '../config';
 
 
 const ROLE_INFO = {
-  admin:       { label: 'Admin',             desc: 'Manage team & all tickets',     color: '#a5b4fc' },
-  team_leader: { label: 'Team Leader',       desc: 'Oversee team and client support', color: '#c084fc' },
-  employee:    { label: 'Employee (Internal)',   desc: 'Raise internal IT support tickets', color: '#6ee7b7' },
-  client:      { label: 'Client (External)',    desc: 'Report website or app issues', color: '#94a3b8' },
+  admin: { label: 'Admin', desc: 'Manage team & all tickets', color: '#a5b4fc' },
+  team_leader: { label: 'Team Leader', desc: 'Oversee team and client support', color: '#c084fc' },
+  employee: { label: 'Employee (Internal)', desc: 'Raise internal IT support tickets', color: '#6ee7b7' },
+  client: { label: 'Client (External)', desc: 'Report website or app issues', color: '#94a3b8' },
 };
 
 const Login = () => {
@@ -29,9 +29,9 @@ const Login = () => {
     const endpoint = isRegister ? '/api/auth/register' : '/api/auth/login';
 
     try {
-      const payload = { 
-        ...formData, 
-        email: formData.email.trim() 
+      const payload = {
+        ...formData,
+        email: formData.email.trim()
       };
       const res = await fetch(`${API_BASE_URL}${endpoint}`, {
         method: 'POST',
@@ -74,8 +74,8 @@ const Login = () => {
       {/* Left Panel — Branding */}
       <div style={{
         flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
-        padding: '3rem', 
-        background: '#f8fafc', 
+        padding: '3rem',
+        background: '#f8fafc',
         borderRight: '1px solid #e2e8f0',
         position: 'relative', overflow: 'hidden'
       }} className="hide-mobile">
@@ -92,7 +92,7 @@ const Login = () => {
           backgroundImage: 'radial-gradient(#6366f1 0.5px, transparent 0.5px)',
           backgroundSize: '30px 30px', opacity: 0.1, zIndex: 1
         }} />
-        
+
         {/* Vibrant Animated Blobs */}
         <div style={{
           position: 'absolute', top: '-10%', left: '-5%', width: '60%', height: '60%',
@@ -109,7 +109,7 @@ const Login = () => {
           background: 'radial-gradient(circle, rgba(99,102,241,0.15) 0%, rgba(99,102,241,0) 70%)',
           borderRadius: '50%', filter: 'blur(60px)', animation: 'mesh-3 12s infinite alternate ease-in-out'
         }} />
-        
+
         {/* Floating "Data Points" (Particles) */}
         {[...Array(6)].map((_, i) => (
           <div key={i} style={{
@@ -129,21 +129,21 @@ const Login = () => {
         {/* Floating Glass Circles for depth */}
         <div style={{
           position: 'absolute', top: '10%', left: '15%', width: '140px', height: '140px',
-          background: 'rgba(255,255,255,0.4)', borderRadius: '30% 70% 70% 30% / 30% 30% 70% 70%', 
-          backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.5)', 
+          background: 'rgba(255,255,255,0.4)', borderRadius: '30% 70% 70% 30% / 30% 30% 70% 70%',
+          backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.5)',
           animation: 'morph 15s infinite ease-in-out'
         }} />
         <div style={{
           position: 'absolute', bottom: '15%', right: '10%', width: '100px', height: '100px',
-          background: 'rgba(255,255,255,0.3)', borderRadius: '60% 40% 30% 70% / 60% 30% 70% 40%', 
-          backdropFilter: 'blur(5px)', border: '1px solid rgba(255,255,255,0.4)', 
+          background: 'rgba(255,255,255,0.3)', borderRadius: '60% 40% 30% 70% / 60% 30% 70% 40%',
+          backdropFilter: 'blur(5px)', border: '1px solid rgba(255,255,255,0.4)',
           animation: 'morph 18s infinite ease-in-out reverse'
         }} />
 
-        <div style={{ 
+        <div style={{
           maxWidth: '800px', width: '100%', height: '100%',
-          display: 'flex', flexDirection: 'column', justifyContent: 'center', 
-          position: 'relative', zIndex: 1, padding: '2rem 1rem' 
+          display: 'flex', flexDirection: 'column', justifyContent: 'center',
+          position: 'relative', zIndex: 1, padding: '2rem 1rem'
         }}>
           {/* Top Logo & Title */}
           <div style={{ textAlign: 'center', marginBottom: 'clamp(1rem, 4vh, 2.5rem)' }} className="animate-fade-in">
@@ -177,8 +177,8 @@ const Login = () => {
                   padding: '12px', boxShadow: '0 50px 100px rgba(0,0,0,0.2), inset 0 2px 5px rgba(255,255,255,0.1)', zIndex: 10, border: '1px solid #334155'
                 }}>
                   {/* Screen - Realistic Glass Effect */}
-                  <div style={{ 
-                    background: '#fff', width: '100%', height: '100%', borderRadius: '12px', 
+                  <div style={{
+                    background: '#fff', width: '100%', height: '100%', borderRadius: '12px',
                     overflow: 'hidden', display: 'flex', position: 'relative'
                   }}>
                     {/* Screen Reflection Overlay */}
@@ -187,7 +187,7 @@ const Login = () => {
                       background: 'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 50%)',
                       pointerEvents: 'none', zIndex: 5
                     }} />
-                    
+
                     {/* Sidebar Mockup */}
                     <div style={{ width: '90px', background: '#f1f5f9', borderRight: '1px solid #e2e8f0', padding: '12px' }}>
                       <div style={{ width: '20px', height: '20px', background: '#4f46e5', borderRadius: '6px', marginBottom: '15px' }} />
@@ -226,10 +226,10 @@ const Login = () => {
                     </div>
                   </div>
                   {/* Laptop Base - Better Shadow */}
-                  <div style={{ 
-                    position: 'absolute', bottom: '-15px', left: '50%', transform: 'translateX(-50%)', 
-                    width: '520px', height: '14px', background: '#2d3343', borderRadius: '0 0 20px 20px', 
-                    boxShadow: '0 15px 30px rgba(0,0,0,0.2)' 
+                  <div style={{
+                    position: 'absolute', bottom: '-15px', left: '50%', transform: 'translateX(-50%)',
+                    width: '520px', height: '14px', background: '#2d3343', borderRadius: '0 0 20px 20px',
+                    boxShadow: '0 15px 30px rgba(0,0,0,0.2)'
                   }}>
                     <div style={{ width: '100px', height: '4px', background: '#475569', borderRadius: '2px', margin: '3px auto' }} />
                   </div>
@@ -316,14 +316,14 @@ const Login = () => {
         overflowY: 'auto', display: 'flex', flexDirection: 'column',
         boxShadow: '-10px 0 30px rgba(0,0,0,0.05)'
       }}>
-        <div style={{ 
-          width: '100%', 
+        <div style={{
+          width: '100%',
           padding: '4rem 3.5rem',
           color: '#ffffff',
           flex: 1,
           display: 'flex',
           flexDirection: 'column',
-          justifyContent: 'center' 
+          justifyContent: 'center'
         }} className="animate-fade-in">
           {/* Mobile brand */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '2rem' }}>
@@ -432,7 +432,7 @@ const Login = () => {
 
           {!isRegister && (
             <p style={{ marginTop: '1.25rem', textAlign: 'center', fontSize: '0.85rem' }}>
-              <span 
+              <span
                 style={{ color: 'var(--text-muted)', cursor: 'pointer', transition: 'color 0.2s' }}
                 onClick={() => alert('Please contact the IT administrator or your Team Leader to reset your password.')}
                 onMouseEnter={e => e.currentTarget.style.color = 'var(--primary)'}

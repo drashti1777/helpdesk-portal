@@ -1,17 +1,18 @@
-import React, { useContext } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
 import {
   LayoutDashboard, Ticket, Users, LogOut,
-  PlusCircle, ShieldCheck, Headphones, Bell, Award, BookOpen, Star
+  PlusCircle, ShieldCheck, Headphones, Bell, Award, BookOpen, Star,
+  Sun, Moon
 } from 'lucide-react';
 
 const ROLE_META = {
-  admin:       { label: 'Admin',       color: '#a5b4fc', bg: 'rgba(99,102,241,0.15)' },
+  admin: { label: 'Admin', color: '#a5b4fc', bg: 'rgba(99,102,241,0.15)' },
   team_leader: { label: 'Team Leader', color: '#c084fc', bg: 'rgba(168,85,247,0.15)' },
-  employee:    { label: 'Employee',    color: '#6ee7b7', bg: 'rgba(16,185,129,0.12)' },
-  hr:          { label: 'HR',          color: '#fb7185', bg: 'rgba(251,113,133,0.15)' },
-  client:      { label: 'Client',      color: '#94a3b8', bg: 'rgba(148,163,184,0.1)'  },
+  employee: { label: 'Employee', color: '#6ee7b7', bg: 'rgba(16,185,129,0.12)' },
+  hr: { label: 'HR', color: '#fb7185', bg: 'rgba(251,113,133,0.15)' },
+  client: { label: 'Client', color: '#94a3b8', bg: 'rgba(148,163,184,0.1)' },
 
 };
 
@@ -24,6 +25,8 @@ const Sidebar = () => {
   const role = user?.role;
   const meta = ROLE_META[role] || ROLE_META.client;
 
+  // Theme state moved to AppLayout
+
   const handleLogout = () => {
     logout();
     navigate('/login');
@@ -32,7 +35,7 @@ const Sidebar = () => {
   return (
     <div className="sidebar" style={{ display: 'flex', flexDirection: 'column' }}>
       {/* Brand */}
-      <div style={{ marginBottom: '2.5rem', padding: '0 0.5rem' }}>
+      <div style={{ marginBottom: '2rem', padding: '0 0.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <div style={{
             width: '36px', height: '36px', borderRadius: '10px',
@@ -49,110 +52,106 @@ const Sidebar = () => {
         </div>
       </div>
 
-      {/* Nav */}
-      <nav style={{ flex: 1 }}>
+      {/* Nav */ }
+  <nav style={{ flex: 1 }}>
 
-        {/* Dashboard — all roles */}
-        <NavLink to="/" end className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-          <LayoutDashboard size={18} /> Dashboard
+    {/* Dashboard — all roles */}
+    <NavLink to="/" end className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+      <LayoutDashboard size={18} /> Dashboard
+    </NavLink>
+
+    {/* Tickets — everyone */}
+    <NavLink to="/tickets" end className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+      <Ticket size={18} />
+      {role === 'client' ? 'My Tickets' : role === 'employee' ? 'All Tickets' : 'Tickets'}
+    </NavLink>
+
+
+
+    {/* Users — admin, team_leader */}
+    {(role === 'admin' || role === 'team_leader') && (
+      <>
+        <NavLink to="/users" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+          <Users size={18} /> Manage Team
         </NavLink>
-
-        {/* Tickets — everyone */}
-        <NavLink to="/tickets" end className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-          <Ticket size={18} />
-          {role === 'client' ? 'My Tickets' : role === 'employee' ? 'All Tickets' : 'Tickets'}
+        <NavLink to="/feedbacks" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+          <Star size={18} /> Reviews
         </NavLink>
+      </>
+    )}
 
-        {/* New Ticket — everyone can raise tickets except admins */}
-        {role !== 'admin' && (
-          <NavLink to="/tickets/new" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-            <PlusCircle size={18} /> New Ticket
-          </NavLink>
-        )}
-
-        {/* Users — admin, team_leader */}
-        {(role === 'admin' || role === 'team_leader') && (
-          <>
-            <NavLink to="/users" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-              <Users size={18} /> Manage Team
-            </NavLink>
-            <NavLink to="/feedbacks" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-              <Star size={18} /> Reviews
-            </NavLink>
-          </>
-        )}
-
-        {/* Admin Control */}
-        {role === 'admin' && (
-          <>
-            <NavLink to="/admin" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-              <ShieldCheck size={18} /> Admin Control
-            </NavLink>
-            <NavLink to="/projects" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-              <PlusCircle size={18} /> Projects
-            </NavLink>
-          </>
-        )}
-
-        {/* Help — everyone */}
-        <NavLink to="/knowledge-base" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-          <BookOpen size={18} /> Help
+    {/* Admin Control */}
+    {role === 'admin' && (
+      <>
+        <NavLink to="/admin" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+          <ShieldCheck size={18} /> Admin Control
         </NavLink>
-      </nav>
+        <NavLink to="/projects" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+          <PlusCircle size={18} /> Projects
+        </NavLink>
+      </>
+    )}
 
-      {/* User Card */}
-      <div style={{ marginTop: 'auto', paddingTop: '1.5rem', borderTop: '1px solid var(--border)' }}>
-        <div 
-          onClick={() => navigate('/profile')}
-          style={{
-            padding: '0.85rem 1rem',
-            background: 'var(--glass)',
-            borderRadius: 'var(--radius)',
-            marginBottom: '0.75rem',
-            display: 'flex', alignItems: 'center', gap: '0.75rem',
-            cursor: 'pointer',
-            transition: 'transform 0.2s ease',
-            border: '1px solid transparent'
-          }}
-          onMouseEnter={e => {
-            e.currentTarget.style.transform = 'translateY(-2px)';
-            e.currentTarget.style.borderColor = 'var(--primary)';
-          }}
-          onMouseLeave={e => {
-            e.currentTarget.style.transform = '';
-            e.currentTarget.style.borderColor = 'transparent';
-          }}
-        >
-          <div style={{
-            width: '36px', height: '36px', borderRadius: '50%',
-            background: 'linear-gradient(135deg,#6366f1,#8b5cf6)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontWeight: '700', fontSize: '0.8rem', color: '#fff', flexShrink: 0
-          }}>
-            {getInitials(user?.name)}
-          </div>
-          <div style={{ overflow: 'hidden' }}>
-            <p style={{ fontSize: '0.85rem', fontWeight: '600', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {user?.name}
-            </p>
-            <span style={{
-              fontSize: '0.68rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.06em',
-              padding: '0.15rem 0.55rem', borderRadius: '999px',
-              background: meta.bg, color: meta.color, display: 'inline-block', marginTop: '2px'
-            }}>
-              {meta.label}
-            </span>
-          </div>
-        </div>
-        <button
-          onClick={handleLogout}
-          className="btn btn-outline"
-          style={{ width: '100%', justifyContent: 'center', fontSize: '0.875rem', padding: '0.6rem 1rem' }}
-        >
-          <LogOut size={16} /> Sign Out
-        </button>
+    {/* Help — everyone */}
+    <NavLink to="/knowledge-base" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+      <BookOpen size={18} /> Help
+    </NavLink>
+  </nav>
+
+  {/* User Card */ }
+  <div style={{ marginTop: 'auto', paddingTop: '1.5rem', borderTop: '1px solid var(--border)' }}>
+    <div
+      onClick={() => navigate('/profile')}
+      style={{
+        padding: '0.85rem 1rem',
+        background: 'var(--glass)',
+        borderRadius: 'var(--radius)',
+        marginBottom: '0.75rem',
+        display: 'flex', alignItems: 'center', gap: '0.75rem',
+        cursor: 'pointer',
+        transition: 'transform 0.2s ease',
+        border: '1px solid transparent'
+      }}
+      onMouseEnter={e => {
+        e.currentTarget.style.transform = 'translateY(-2px)';
+        e.currentTarget.style.borderColor = 'var(--primary)';
+      }}
+      onMouseLeave={e => {
+        e.currentTarget.style.transform = '';
+        e.currentTarget.style.borderColor = 'transparent';
+      }}
+    >
+      <div style={{
+        width: '36px', height: '36px', borderRadius: '50%',
+        background: 'linear-gradient(135deg,#6366f1,#8b5cf6)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontWeight: '700', fontSize: '0.8rem', color: '#fff', flexShrink: 0
+      }}>
+        {getInitials(user?.name)}
+      </div>
+      <div style={{ overflow: 'hidden' }}>
+        <p style={{ fontSize: '0.85rem', fontWeight: '600', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          {user?.name}
+        </p>
+        <span style={{
+          fontSize: '0.68rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.06em',
+          padding: '0.15rem 0.55rem', borderRadius: '999px',
+          background: meta.bg, color: meta.color, display: 'inline-block', marginTop: '2px'
+        }}>
+          {meta.label}
+        </span>
       </div>
     </div>
+    <button
+      onClick={handleLogout}
+      className="btn btn-outline"
+      style={{ width: '100%', justifyContent: 'center', fontSize: '0.875rem', padding: '0.6rem 1rem' }}
+    >
+      <LogOut size={16} /> Sign Out
+    </button>
+  </div>
+    </div >
   );
 };
+
 export default Sidebar;

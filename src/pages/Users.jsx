@@ -8,11 +8,11 @@ import {
 import ConfirmModal from '../components/Layout/ConfirmModal';
 
 const ROLE_META = {
-  admin:       { label: 'Admin',       color: '#a5b4fc', bg: 'rgba(99,102,241,0.15)', border: 'rgba(99,102,241,0.3)',  icon: Shield },
+  admin: { label: 'Admin', color: '#a5b4fc', bg: 'rgba(99,102,241,0.15)', border: 'rgba(99,102,241,0.3)', icon: Shield },
   team_leader: { label: 'Team Leader', color: '#c084fc', bg: 'rgba(168,85,247,0.15)', border: 'rgba(168,85,247,0.3)', icon: Award },
-  hr:          { label: 'HR Role',     color: '#fb7185', bg: 'rgba(251,113,133,0.15)', border: 'rgba(251,113,133,0.3)', icon: ShieldCheck },
-  employee:    { label: 'Employee',    color: '#6ee7b7', bg: 'rgba(16,185,129,0.12)', border: 'rgba(16,185,129,0.25)', icon: UserCheck },
-  client:      { label: 'Client',      color: '#94a3b8', bg: 'rgba(148,163,184,0.1)', border: 'rgba(148,163,184,0.2)', icon: Globe },
+  hr: { label: 'HR Role', color: '#fb7185', bg: 'rgba(251,113,133,0.15)', border: 'rgba(251,113,133,0.3)', icon: ShieldCheck },
+  employee: { label: 'Employee', color: '#6ee7b7', bg: 'rgba(16,185,129,0.12)', border: 'rgba(16,185,129,0.25)', icon: UserCheck },
+  client: { label: 'Client', color: '#94a3b8', bg: 'rgba(148,163,184,0.1)', border: 'rgba(148,163,184,0.2)', icon: Globe },
 };
 
 const avatarGradients = [
@@ -34,12 +34,12 @@ const Users = () => {
   const [filterRole, setFilterRole] = useState('all');
   const [actionMenu, setActionMenu] = useState(null);
   const [toast, setToast] = useState(null);
-  
+
   // Add User Modal State
   const [showAddModal, setShowAddModal] = useState(false);
-  const [addForm, setAddForm] = useState({ name: '', email: '', password: '', role: 'client' });
+  const [addForm, setAddForm] = useState({ name: '', email: '', mobile: '', password: '', role: 'client' });
   const [addLoading, setAddLoading] = useState(false);
-  
+
   // Delete Confirmation State
   const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, emp: null });
 
@@ -109,9 +109,9 @@ const Users = () => {
   const handleAddUser = async (e) => {
     e.preventDefault();
     setAddLoading(true);
-    const payload = { 
-      ...addForm, 
-      email: addForm.email.trim() 
+    const payload = {
+      ...addForm,
+      email: addForm.email.trim()
     };
     try {
       const res = await fetch(`${API_BASE_URL}/api/users`, {
@@ -123,7 +123,7 @@ const Users = () => {
       if (res.ok) {
         setUsers(prev => [data, ...prev]);
         setShowAddModal(false);
-        setAddForm({ name: '', email: '', password: '', role: 'client' });
+        setAddForm({ name: '', email: '', mobile: '', password: '', role: 'client' });
         showToast(`${data.name} added successfully as ${data.role}`);
       } else {
         showToast(data.message || 'Failed to add user', 'error');
@@ -203,9 +203,9 @@ const Users = () => {
       )}
 
       {/* Header */}
-      <header style={{ 
-        marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', 
-        alignItems: 'center', flexWrap: 'wrap', gap: '1.5rem' 
+      <header style={{
+        marginBottom: '2rem', display: 'flex', justifyContent: 'space-between',
+        alignItems: 'center', flexWrap: 'wrap', gap: '1.5rem'
       }}>
         <div>
           <h1 style={{ fontSize: '2rem', fontWeight: '700', letterSpacing: '-0.02em' }}>
@@ -367,7 +367,7 @@ const Users = () => {
                 }}>
                   <Icon size={11} /> {meta.label}
                 </span>
-                
+
                 {/* Last Login */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--text-muted)', fontSize: '0.78rem' }}>
                   <Clock size={11} />
@@ -438,7 +438,7 @@ const Users = () => {
                               })}
                             </>
                           )}
-                          
+
                           <div style={{ borderTop: getAssignableRolesForUser(emp).length > 0 ? '1px solid var(--border)' : 'none' }}>
                             <button
                               onClick={(e) => { e.stopPropagation(); setDeleteConfirm({ isOpen: true, emp }); setActionMenu(null); }}
@@ -474,56 +474,81 @@ const Users = () => {
         </p>
       )}
 
-      {/* Add User Modal */}
-      {showAddModal && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
-          background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999,
-          animation: 'fadeIn 0.2s ease'
-        }}>
-          <div style={{
-            background: 'var(--bg-dark)', border: '1px solid var(--border)',
-            padding: '2rem', borderRadius: '16px', width: '100%', maxWidth: '400px',
-            boxShadow: '0 24px 48px rgba(0,0,0,0.5)', position: 'relative'
-          }}>
+      {/* Add User Drawer */}
+      <div style={{
+        position: 'fixed', top: 0, right: 0, width: '100%', height: '100%',
+        background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)',
+        display: 'flex', justifyContent: 'flex-end', zIndex: 9999,
+        opacity: showAddModal ? 1 : 0, pointerEvents: showAddModal ? 'all' : 'none',
+        transition: 'opacity 0.3s ease'
+      }} onClick={() => setShowAddModal(false)}>
+        <div
+          onClick={e => e.stopPropagation()}
+          style={{
+            background: 'var(--bg-dark)', borderLeft: '1px solid var(--border)',
+            width: '100%', maxWidth: '450px', height: '100%',
+            boxShadow: '-10px 0 50px rgba(0,0,0,0.5)', position: 'relative',
+            display: 'flex', flexDirection: 'column',
+            transform: showAddModal ? 'translateX(0)' : 'translateX(100%)',
+            transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+          }}
+        >
+          {/* Drawer Header */}
+          <div style={{ padding: '1.5rem 2rem', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <h2 style={{ fontSize: '1.5rem', fontWeight: '800', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <PlusCircle size={24} color="var(--primary)" /> Add New User
+              </h2>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Register a new member to the platform.</p>
+            </div>
             <button
               onClick={() => setShowAddModal(false)}
-              style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
+              style={{ background: 'var(--glass)', border: '1px solid var(--border)', color: 'var(--text-muted)', cursor: 'pointer', padding: '0.5rem', borderRadius: '10px' }}
             >
               <X size={20} />
             </button>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '1.5rem' }}>Add New User</h2>
-            <form onSubmit={handleAddUser}>
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.4rem' }}>Full Name</label>
+          </div>
+
+          {/* Drawer Body */}
+          <div style={{ flex: 1, overflowY: 'auto', padding: '2rem' }}>
+            <form onSubmit={handleAddUser} id="add-user-form" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>Full Name</label>
                 <input
                   type="text" required
                   value={addForm.name} onChange={e => setAddForm({ ...addForm, name: e.target.value })}
-                  style={{ width: '100%', padding: '0.75rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--text-main)' }}
+                  placeholder="e.g. John Doe"
                 />
               </div>
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.4rem' }}>Email Address</label>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>Email Address</label>
                 <input
                   type="email" required
                   value={addForm.email} onChange={e => setAddForm({ ...addForm, email: e.target.value })}
-                  style={{ width: '100%', padding: '0.75rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--text-main)' }}
+                  placeholder="john@example.com"
                 />
               </div>
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.4rem' }}>Temporary Password</label>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>Mobile Number</label>
+                <input
+                  type="tel"
+                  value={addForm.mobile} onChange={e => setAddForm({ ...addForm, mobile: e.target.value })}
+                  placeholder="+1 234 567 890"
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>Temporary Password</label>
                 <input
                   type="password" required minLength={6}
                   value={addForm.password} onChange={e => setAddForm({ ...addForm, password: e.target.value })}
-                  style={{ width: '100%', padding: '0.75rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--text-main)' }}
+                  placeholder="••••••••"
                 />
               </div>
-              <div style={{ marginBottom: '1.5rem' }}>
-                <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.4rem' }}>Role</label>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>System Role</label>
                 <select
                   value={addForm.role} onChange={e => setAddForm({ ...addForm, role: e.target.value })}
-                  style={{ width: '100%', padding: '0.75rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--text-main)', cursor: 'pointer' }}
+                  style={{ cursor: 'pointer' }}
                 >
                   <option value="client">Client</option>
                   <option value="employee">Employee</option>
@@ -534,18 +559,19 @@ const Users = () => {
                   )}
                 </select>
               </div>
-              <button
-                type="submit" disabled={addLoading}
-                className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', padding: '0.75rem' }}
-              >
-                {addLoading ? 'Adding...' : 'Create User'}
-              </button>
             </form>
           </div>
-        </div>
-      )}
 
-      {/* Delete Confirmation Modal */}
+          {/* Drawer Footer */}
+          <div style={{ padding: '1.5rem 2rem', borderTop: '1px solid var(--border)', display: 'flex', gap: '1rem', background: 'rgba(0,0,0,0.1)' }}>
+            <button type="button" onClick={() => setShowAddModal(false)} className="btn btn-outline" style={{ flex: 1 }}>Cancel</button>
+            <button type="submit" form="add-user-form" disabled={addLoading} className="btn btn-primary" style={{ flex: 2 }}>
+              {addLoading ? 'Creating...' : 'Create User'}
+            </button>
+          </div>
+        </div>
+      </div>
+
       <ConfirmModal
         isOpen={deleteConfirm.isOpen}
         onConfirm={handleDelete}
@@ -561,6 +587,7 @@ const Users = () => {
           from { transform: translateX(100%); opacity: 0; }
           to { transform: translateX(0); opacity: 1; }
         }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
       `}</style>
     </div>
   );

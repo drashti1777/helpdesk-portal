@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 const userSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
+  mobile: { type: String },
   password: { type: String, required: true },
   role: { type: String, enum: ['client', 'employee', 'team_leader', 'hr', 'admin'], default: 'client' },
   status: { type: Number, enum: [0, 1], default: 1 },
@@ -66,6 +67,11 @@ const systemConfigSchema = new mongoose.Schema({
 const projectSchema = new mongoose.Schema({
   name: { type: String, required: true, unique: true },
   description: { type: String },
+  projectUrl: { type: String },
+  uatUrl: { type: String },
+  productionLink: { type: String },
+  teamName: { type: String },
+  teamMembers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   teamLeader: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   createdAt: { type: Date, default: Date.now }
 });

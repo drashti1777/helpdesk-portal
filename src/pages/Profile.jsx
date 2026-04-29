@@ -1,18 +1,39 @@
 import API_BASE_URL from '../config';
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { AuthContext } from '../context/AuthContext';
-import { User, Mail, Lock, Save, Camera, Shield, CheckCircle2, AlertCircle } from 'lucide-react';
+import { 
+  User, Mail, Lock, Save, Camera, Shield, CheckCircle2, 
+  AlertCircle, Sun, Moon, Eye, EyeOff 
+} from 'lucide-react';
 
 const Profile = () => {
   const { user, login } = useContext(AuthContext);
   const [formData, setFormData] = useState({
-    name: user?.name || '',
+    firstName: user?.name ? user.name.split(' ')[0] : '',
+    lastName: user?.name ? user.name.split(' ').slice(1).join(' ') : '',
     email: user?.email || '',
+    mobile: user?.mobile || '',
     password: '',
     confirmPassword: ''
   });
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState(null);
+  
+  const [showPass, setShowPass] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+
+  // Theme state synced with Sidebar/Body
+  const [isLight, setIsLight] = useState(() => localStorage.getItem('theme') === 'light');
+
+  useEffect(() => {
+    if (isLight) {
+      document.body.classList.add('light-theme');
+      localStorage.setItem('theme', 'light');
+    } else {
+      document.body.classList.remove('light-theme');
+      localStorage.setItem('theme', 'dark');
+    }
+  }, [isLight]);
 
   const showToast = (msg, type = 'success') => {
     setToast({ msg, type });
@@ -34,8 +55,9 @@ const Profile = () => {
           'Authorization': `Bearer ${user.token}`
         },
         body: JSON.stringify({
-          name: formData.name,
+          name: `${formData.firstName} ${formData.lastName}`.trim(),
           email: formData.email,
+          mobile: formData.mobile,
           password: formData.password || undefined
         })
       });
@@ -43,7 +65,6 @@ const Profile = () => {
       const data = await res.json();
       if (res.ok) {
         showToast('Profile updated successfully!');
-        // Update local context/storage with new user data
         login({ ...data.user, token: user.token });
         setFormData(prev => ({ ...prev, password: '', confirmPassword: '' }));
       } else {
@@ -60,12 +81,12 @@ const Profile = () => {
     name.split(' ').map(p => p[0]).join('').toUpperCase().slice(0, 2);
 
   return (
-    <div className="main-content animate-fade-in" style={{ maxWidth: '800px', margin: '0 auto' }}>
+    <div className="main-content animate-fade-in" style={{ maxWidth: '2000px', margin: '0 auto' }}>
       {/* Toast */}
       {toast && (
         <div style={{
           position: 'fixed', top: '2rem', right: '2rem', zIndex: 1000,
-          background: toast.type === 'error' ? 'rgba(239,68,68,0.95)' : 'rgba(16,185,129,0.95)',
+          background: toast.type === 'error' ? 'var(--danger)' : 'var(--success)',
           color: '#fff', padding: '1rem 1.5rem', borderRadius: '12px',
           boxShadow: '0 10px 30px rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', gap: '0.75rem',
           animation: 'slideInRight 0.3s ease'
@@ -76,106 +97,177 @@ const Profile = () => {
       )}
 
       <header style={{ marginBottom: '2.5rem' }}>
-        <h1 style={{ fontSize: '2.25rem', fontWeight: '800', letterSpacing: '-0.03em', marginBottom: '0.5rem' }}>Profile Settings</h1>
-        <p style={{ color: 'var(--text-muted)', fontSize: '1.05rem' }}>Manage your account details and security preferences.</p>
+        <h1 style={{ fontSize: '2.25rem', fontWeight: '800', letterSpacing: '-0.03em', marginBottom: '0.5rem', color: 'var(--text-main)' }}>Account Settings</h1>
+        <p style={{ color: 'var(--text-muted)', fontSize: '1.05rem' }}>Manage your profile details and application preferences.</p>
       </header>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '2rem' }}>
-        {/* Left Panel - Avatar & Info */}
-        <div className="glass-card" style={{ padding: '2rem', textAlign: 'center', height: 'fit-content' }}>
-          <div style={{ position: 'relative', width: '120px', height: '120px', margin: '0 auto 1.5rem' }}>
-            <div style={{
-              width: '100%', height: '100%', borderRadius: '50%',
-              background: 'linear-gradient(135deg, #6366f1, #a855f7)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: '2.5rem', fontWeight: '700', color: '#fff',
-              boxShadow: '0 10px 25px rgba(99,102,241,0.3)'
-            }}>
-              {getInitials(user?.name)}
+      <div style={{ display: 'grid', gridTemplateColumns: '350px 1fr', gap: '2rem' }}>
+        {/* Left Panel */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          <div className="glass-card" style={{ padding: '2rem', textAlign: 'center' }}>
+            <div style={{ position: 'relative', width: '100px', height: '100px', margin: '0 auto 1.25rem' }}>
+              <div style={{
+                width: '100%', height: '100%', borderRadius: '50%',
+                background: 'linear-gradient(135deg, var(--primary), #a855f7)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: '2rem', fontWeight: '700', color: '#fff',
+                boxShadow: '0 10px 25px rgba(99,102,241,0.3)'
+              }}>
+                {getInitials(user?.name)}
+              </div>
+              <button style={{
+                position: 'absolute', bottom: '2px', right: '2px',
+                width: '30px', height: '30px', borderRadius: '50%',
+                background: 'var(--bg-input)', border: '1px solid var(--border)', color: 'var(--text-main)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                cursor: 'pointer', boxShadow: '0 4px 10px rgba(0,0,0,0.1)'
+              }}>
+                <Camera size={14} />
+              </button>
             </div>
-            <button style={{
-              position: 'absolute', bottom: '5px', right: '5px',
-              width: '32px', height: '32px', borderRadius: '50%',
-              background: '#fff', border: 'none', color: '#1a1d24',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              cursor: 'pointer', boxShadow: '0 4px 10px rgba(0,0,0,0.2)'
+            <h2 style={{ fontSize: '1.15rem', fontWeight: '700', marginBottom: '0.2rem', color: 'var(--text-main)' }}>{user?.name}</h2>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '1.25rem' }}>{user?.email}</p>
+            
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
+              padding: '0.35rem 0.85rem', borderRadius: '999px',
+              background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)',
+              color: 'var(--primary)', fontSize: '0.7rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.06em'
             }}>
-              <Camera size={16} />
-            </button>
+              <Shield size={12} />
+              {user?.role?.replace('_', ' ')}
+            </div>
           </div>
-          <h2 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '0.25rem' }}>{user?.name}</h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>{user?.email}</p>
-          
-          <div style={{
-            display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
-            padding: '0.4rem 1rem', borderRadius: '999px',
-            background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)',
-            color: '#a5b4fc', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em'
-          }}>
-            <Shield size={14} />
-            {user?.role?.replace('_', ' ')}
+
+          <div className="glass-card" style={{ padding: '1.5rem' }}>
+            <h3 style={{ fontSize: '0.9rem', fontWeight: '700', marginBottom: '1rem', color: 'var(--text-main)' }}>Preferences</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Theme Mode</span>
+                <button 
+                  onClick={() => setIsLight(!isLight)}
+                  style={{
+                    background: 'var(--glass)', border: '1px solid var(--border)',
+                    padding: '0.4rem 0.8rem', borderRadius: '8px', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-main)',
+                    fontSize: '0.8rem', fontWeight: '600'
+                  }}
+                >
+                  {isLight ? <><Sun size={14} /> Light</> : <><Moon size={14} /> Dark</>}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Right Panel - Form */}
-        <div className="glass-card" style={{ padding: '2rem' }}>
+        <div className="glass-card" style={{ padding: '2.5rem' }}>
           <form onSubmit={handleSubmit}>
-            <div style={{ marginBottom: '1.5rem' }}>
-              <label style={{ display: 'block', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: '600', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Full Name</label>
-              <div style={{ position: 'relative' }}>
-                <User size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.3)' }} />
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={e => setFormData({...formData, name: e.target.value})}
-                  required
-                  style={{ width: '100%', padding: '0.75rem 1rem 0.75rem 2.75rem', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border)', borderRadius: '12px', color: '#fff', outline: 'none' }}
-                />
-              </div>
-            </div>
-
-            <div style={{ marginBottom: '1.5rem' }}>
-              <label style={{ display: 'block', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: '600', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Email Address</label>
-              <div style={{ position: 'relative' }}>
-                <Mail size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.3)' }} />
-                <input
-                  type="email"
-                  value={formData.email}
-                  onChange={e => setFormData({...formData, email: e.target.value})}
-                  required
-                  style={{ width: '100%', padding: '0.75rem 1rem 0.75rem 2.75rem', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border)', borderRadius: '12px', color: '#fff', outline: 'none' }}
-                />
-              </div>
-            </div>
-
-            <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: '2rem 0' }} />
-            <h3 style={{ fontSize: '1rem', fontWeight: '700', marginBottom: '1.25rem' }}>Change Password</h3>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '1.5rem' }}>
               <div>
-                <label style={{ display: 'block', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: '600', marginBottom: '0.5rem' }}>New Password</label>
+                <label style={{ display: 'block', color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: '700', marginBottom: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>First Name</label>
                 <div style={{ position: 'relative' }}>
-                  <Lock size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.3)' }} />
+                  <User size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', opacity: 0.5 }} />
                   <input
-                    type="password"
-                    placeholder="••••••••"
-                    value={formData.password}
-                    onChange={e => setFormData({...formData, password: e.target.value})}
-                    style={{ width: '100%', padding: '0.75rem 1rem 0.75rem 2.75rem', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border)', borderRadius: '12px', color: '#fff', outline: 'none' }}
+                    type="text"
+                    value={formData.firstName}
+                    onChange={e => setFormData({...formData, firstName: e.target.value})}
+                    required
+                    style={{ width: '100%', padding: '0.85rem 1rem 0.85rem 2.85rem', background: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: '12px', color: 'var(--text-main)', outline: 'none' }}
                   />
                 </div>
               </div>
+
               <div>
-                <label style={{ display: 'block', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: '600', marginBottom: '0.5rem' }}>Confirm Password</label>
+                <label style={{ display: 'block', color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: '700', marginBottom: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Last Name</label>
                 <div style={{ position: 'relative' }}>
-                  <Lock size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.3)' }} />
+                  <User size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', opacity: 0.5 }} />
                   <input
-                    type="password"
-                    placeholder="••••••••"
-                    value={formData.confirmPassword}
-                    onChange={e => setFormData({...formData, confirmPassword: e.target.value})}
-                    style={{ width: '100%', padding: '0.75rem 1rem 0.75rem 2.75rem', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border)', borderRadius: '12px', color: '#fff', outline: 'none' }}
+                    type="text"
+                    value={formData.lastName}
+                    onChange={e => setFormData({...formData, lastName: e.target.value})}
+                    required
+                    style={{ width: '100%', padding: '0.85rem 1rem 0.85rem 2.85rem', background: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: '12px', color: 'var(--text-main)', outline: 'none' }}
                   />
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '1.5rem' }}>
+              <div>
+                <label style={{ display: 'block', color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: '700', marginBottom: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Contact No</label>
+                <div style={{ position: 'relative' }}>
+                  <User size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', opacity: 0.5 }} />
+                  <input
+                    type="text"
+                    value={formData.mobile}
+                    onChange={e => setFormData({...formData, mobile: e.target.value})}
+                    style={{ width: '100%', padding: '0.85rem 1rem 0.85rem 2.85rem', background: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: '12px', color: 'var(--text-main)', outline: 'none' }}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: '700', marginBottom: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Email Address</label>
+                <div style={{ position: 'relative' }}>
+                  <Mail size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', opacity: 0.5 }} />
+                  <input
+                    type="email"
+                    value={formData.email}
+                    onChange={e => setFormData({...formData, email: e.target.value})}
+                    required
+                    style={{ width: '100%', padding: '0.85rem 1rem 0.85rem 2.85rem', background: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: '12px', color: 'var(--text-main)', outline: 'none' }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div style={{ margin: '2.5rem 0', padding: '1.5rem', background: 'var(--glass)', borderRadius: '16px', border: '1px solid var(--border)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
+                <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(99,102,241,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Lock size={16} color="var(--primary)" />
+                </div>
+                <h3 style={{ fontSize: '1rem', fontWeight: '700', color: 'var(--text-main)' }}>Security & Password</h3>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
+                <div>
+                  <label style={{ display: 'block', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: '600', marginBottom: '0.5rem' }}>New Password</label>
+                  <div style={{ position: 'relative' }}>
+                    <input
+                      type={showPass ? "text" : "password"}
+                      placeholder="New Password"
+                      value={formData.password}
+                      onChange={e => setFormData({...formData, password: e.target.value})}
+                      style={{ width: '100%', padding: '0.85rem 3rem 0.85rem 1.1rem', background: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: '12px', color: 'var(--text-main)', outline: 'none' }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPass(!showPass)}
+                      style={{ position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}
+                    >
+                      {showPass ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <label style={{ display: 'block', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: '600', marginBottom: '0.5rem' }}>Confirm Password</label>
+                  <div style={{ position: 'relative' }}>
+                    <input
+                      type={showConfirm ? "text" : "password"}
+                      placeholder="Confirm Password"
+                      value={formData.confirmPassword}
+                      onChange={e => setFormData({...formData, confirmPassword: e.target.value})}
+                      style={{ width: '100%', padding: '0.85rem 3rem 0.85rem 1.1rem', background: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: '12px', color: 'var(--text-main)', outline: 'none' }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirm(!showConfirm)}
+                      style={{ position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}
+                    >
+                      {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -184,19 +276,13 @@ const Profile = () => {
               type="submit"
               disabled={loading}
               className="btn btn-primary"
-              style={{ width: '100%', justifyContent: 'center', padding: '0.9rem', fontSize: '1rem', borderRadius: '12px', marginTop: '1rem' }}
+              style={{ width: '100%', justifyContent: 'center', padding: '1rem', fontSize: '1rem', borderRadius: '12px', gap: '0.75rem' }}
             >
-              {loading ? 'Saving Changes...' : <><Save size={18} /> Update Profile</>}
+              {loading ? 'Saving Changes...' : <><Save size={20} /> Save Profile Changes</>}
             </button>
           </form>
         </div>
       </div>
-      <style>{`
-        @keyframes slideInRight {
-          from { transform: translateX(100%); opacity: 0; }
-          to { transform: translateX(0); opacity: 1; }
-        }
-      `}</style>
     </div>
   );
 };
