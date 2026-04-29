@@ -8,6 +8,7 @@ import { fileURLToPath } from 'url';
 import bcrypt from 'bcryptjs';
 import { connectDB, User, Ticket, Comment, Notification, SystemConfig, Project } from './database.js';
 import { generateToken, protect, authorize, normalizeRole } from './auth.js';
+import { POINT_VALUES, ELIGIBLE_ROLES, TIER_RANK, computeTier } from './gamification.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -52,6 +53,50 @@ async function dispatchNotifications(ticket, message, initiatorId, initiatorRole
   if (notificationDocs.length > 0) {
     await Notification.insertMany(notificationDocs);
   }
+}
+
+async function awardBugPoints(ticketId) {
+  // Atomic claim — prevents double-award under concurrent close requests.
+  const claim = await Ticket.findOneAndUpdate(
+    { _id: ticketId, type: 'bug', status: 'completed', pointsAwarded: { $ne: true } },
+    { $set: { pointsAwarded: true, pointsAwardedAt: new Date() } },
+    { new: true }
+  );
+  if (!claim) return null;
+
+  const reporter = await User.findById(claim.createdBy);
+  if (!reporter || !ELIGIBLE_ROLES.includes(reporter.role)) {
+    // Flag stays set so we don't retry on every status change.
+    return null;
+  }
+
+  const amount = POINT_VALUES[claim.priority] || 0;
+  claim.pointsAwardedAmount = amount;
+  claim.pointsAwardedTo = reporter._id;
+  claim.pointsAwardedPriority = claim.priority;
+  await claim.save();
+
+  reporter.points = (reporter.points || 0) + amount;
+  const newTier = computeTier(reporter.points);
+  const oldTier = reporter.currentBadge || 'none';
+  let unlockedTier = null;
+  if (TIER_RANK[newTier] > TIER_RANK[oldTier]) {
+    reporter.currentBadge = newTier;
+    reporter.badgesEarned.push({ tier: newTier, earnedAt: new Date() });
+    reporter.rewardsClaimed.push({ tier: newTier, unlockedAt: new Date(), fulfilled: false });
+    unlockedTier = newTier;
+  }
+  await reporter.save();
+
+  if (unlockedTier) {
+    await Notification.create({
+      userId: reporter._id,
+      message: `🏆 You unlocked the ${unlockedTier} badge! Keep finding bugs.`,
+      ticketId: claim._id
+    });
+  }
+
+  return { amount, newTier: unlockedTier };
 }
 
 const app = express();
@@ -230,6 +275,8 @@ app.post('/api/auth/login', async (req, res) => {
         email: user.email,
         mobile: user.mobile,
         role: normalizedRole,
+        points: user.points || 0,
+        currentBadge: user.currentBadge || 'none',
         token: generateToken(user._id)
       });
     } else {
@@ -300,6 +347,7 @@ app.get('/api/tickets', protect, async (req, res) => {
     query.$or = [
       { type: 'client' }, // TLs manage all client tickets
       { type: 'hr' },     // TLs manage employee internal tickets to assign to HR
+      { type: 'bug' },    // TLs verify bug reports for points
       { createdBy: req.user._id },
       { assignedTo: req.user._id }
     ];
@@ -310,6 +358,7 @@ app.get('/api/tickets', protect, async (req, res) => {
       { type: 'hr' },      // Admins manage all HR tickets
       { type: 'employee' }, // Admins oversee everything
       { type: 'client' },
+      { type: 'bug' },     // Admins verify bug reports for points
       { createdBy: req.user._id },
       { assignedTo: req.user._id }
     ];
@@ -404,6 +453,10 @@ app.put('/api/tickets/:id', protect, async (req, res) => {
     if (req.user.role === 'admin' && ticket.type === 'hr') {
         return res.status(403).json({ message: 'Admins cannot manage HR tickets directly if they are sensitive.' });
       }
+      // Bug tickets can only be marked completed by admin/team_leader to prevent point self-award.
+      if (ticket.type === 'bug' && status === 'completed' && !isAdminLevel) {
+        return res.status(403).json({ message: 'Only admins or team leaders can verify bug reports as completed.' });
+      }
       ticket.status = status;
     } else {
       return res.status(403).json({ message: 'Only administrators and employees can update ticket status' });
@@ -435,6 +488,11 @@ app.put('/api/tickets/:id', protect, async (req, res) => {
 
   ticket.updatedAt = Date.now();
   await ticket.save();
+
+  // Award bug-bounty points if a bug ticket was just verified as completed.
+  if (ticket.type === 'bug' && ticket.status === 'completed' && !ticket.pointsAwarded) {
+    await awardBugPoints(ticket._id);
+  }
 
   // Role-based notification for ticket update
   await dispatchNotifications(ticket, `Ticket updated: ${ticket.title}`, req.user._id, req.user.role);
@@ -829,7 +887,7 @@ app.put('/api/users/profile', protect, async (req, res) => {
 app.get('/api/users/employees', protect, authorize('admin', 'team_leader'), async (req, res) => {
   try {
     const query = { status: 1 };
-    const users = await User.find(query).select('name email role createdAt lastLogin').sort({ createdAt: -1 });
+    const users = await User.find(query).select('name email role createdAt lastLogin points currentBadge').sort({ createdAt: -1 });
     res.json(users);
   } catch (err) {
     res.status(500).json({ message: 'Server error' });
@@ -944,6 +1002,181 @@ app.delete('/api/users/:id', protect, authorize('admin', 'team_leader'), async (
     await targetUser.save();
     res.json({ message: 'User removed successfully' });
   } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// ─────────────────────────────────────────────
+// GAMIFICATION / BUG BOUNTY
+// ─────────────────────────────────────────────
+
+app.get('/api/leaderboard', protect, async (req, res) => {
+  try {
+    const limit = Math.min(parseInt(req.query.limit, 10) || 20, 100);
+    const top = await User.find({
+      status: 1,
+      role: { $in: ELIGIBLE_ROLES },
+      points: { $gt: 0 }
+    })
+      .select('name email role points currentBadge')
+      .sort({ points: -1 })
+      .limit(limit);
+
+    const enriched = await Promise.all(top.map(async (u) => {
+      const reported = await Ticket.countDocuments({ type: 'bug', createdBy: u._id });
+      const resolved = await Ticket.countDocuments({ type: 'bug', createdBy: u._id, status: 'completed', pointsAwarded: true });
+      return {
+        _id: u._id,
+        name: u.name,
+        email: u.email,
+        role: u.role,
+        points: u.points || 0,
+        currentBadge: u.currentBadge || 'none',
+        bugsReported: reported,
+        bugsResolved: resolved
+      };
+    }));
+
+    res.json(enriched);
+  } catch (err) {
+    console.error('Leaderboard error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+app.get('/api/users/me/gamification', protect, async (req, res) => {
+  try {
+    const me = await User.findById(req.user._id).select('points currentBadge badgesEarned rewardsClaimed role');
+    if (!me) return res.status(404).json({ message: 'User not found' });
+
+    const recentAwards = await Ticket.find({ pointsAwardedTo: me._id, pointsAwarded: true })
+      .select('title pointsAwardedAmount pointsAwardedAt pointsAwardedPriority project')
+      .sort({ pointsAwardedAt: -1 })
+      .limit(5);
+
+    const bugsReported = await Ticket.countDocuments({ type: 'bug', createdBy: me._id });
+    const bugsResolved = await Ticket.countDocuments({ type: 'bug', createdBy: me._id, status: 'completed', pointsAwarded: true });
+
+    res.json({
+      points: me.points || 0,
+      currentBadge: me.currentBadge || 'none',
+      badgesEarned: me.badgesEarned || [],
+      rewardsClaimed: me.rewardsClaimed || [],
+      role: me.role,
+      eligible: ELIGIBLE_ROLES.includes(me.role),
+      bugsReported,
+      bugsResolved,
+      recentAwards
+    });
+  } catch (err) {
+    console.error('Gamification error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+app.get('/api/projects/:id/bug-stats', protect, async (req, res) => {
+  try {
+    const project = await Project.findById(req.params.id);
+    if (!project) return res.status(404).json({ message: 'Project not found' });
+
+    const baseQuery = { type: 'bug', project: project.name };
+    const total = await Ticket.countDocuments(baseQuery);
+    const completed = await Ticket.countDocuments({ ...baseQuery, status: 'completed' });
+    const open = total - completed;
+
+    const byPriorityRaw = await Ticket.aggregate([
+      { $match: baseQuery },
+      { $group: { _id: '$priority', count: { $sum: 1 } } }
+    ]);
+    const byPriority = byPriorityRaw.reduce((acc, row) => {
+      acc[row._id] = row.count;
+      return acc;
+    }, { low: 0, medium: 0, high: 0 });
+
+    res.json({ total, open, completed, byPriority });
+  } catch (err) {
+    console.error('Bug stats error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+app.get('/api/admin/rewards/pending', protect, authorize('admin'), async (req, res) => {
+  try {
+    const users = await User.find({
+      'rewardsClaimed.fulfilled': false,
+      status: 1
+    }).select('name email role points currentBadge rewardsClaimed');
+
+    const rows = [];
+    users.forEach(u => {
+      (u.rewardsClaimed || []).forEach(r => {
+        if (!r.fulfilled) {
+          rows.push({
+            userId: u._id,
+            name: u.name,
+            email: u.email,
+            role: u.role,
+            points: u.points || 0,
+            currentBadge: u.currentBadge,
+            tier: r.tier,
+            unlockedAt: r.unlockedAt
+          });
+        }
+      });
+    });
+    rows.sort((a, b) => new Date(a.unlockedAt) - new Date(b.unlockedAt));
+    res.json(rows);
+  } catch (err) {
+    console.error('Pending rewards error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+app.put('/api/admin/rewards/:userId/:tier/fulfill', protect, authorize('admin'), async (req, res) => {
+  try {
+    const { userId, tier } = req.params;
+    const { note } = req.body;
+    const target = await User.findById(userId);
+    if (!target) return res.status(404).json({ message: 'User not found' });
+
+    const reward = (target.rewardsClaimed || []).find(r => r.tier === tier && !r.fulfilled);
+    if (!reward) return res.status(404).json({ message: 'No pending reward for this tier' });
+
+    reward.fulfilled = true;
+    reward.fulfilledAt = new Date();
+    reward.fulfilledBy = req.user._id;
+    if (note) reward.note = note;
+    await target.save();
+
+    await Notification.create({
+      userId: target._id,
+      message: `🎁 Your ${tier} tier reward has been fulfilled!`
+    });
+
+    res.json({ message: 'Reward marked fulfilled', tier, userId });
+  } catch (err) {
+    console.error('Fulfill error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+app.post('/api/admin/gamification/backfill', protect, authorize('admin'), async (req, res) => {
+  try {
+    const candidates = await Ticket.find({
+      type: 'bug',
+      status: 'completed',
+      pointsAwarded: { $ne: true }
+    }).select('_id');
+
+    let awarded = 0;
+    let skipped = 0;
+    for (const c of candidates) {
+      const result = await awardBugPoints(c._id);
+      if (result) awarded += 1; else skipped += 1;
+    }
+    res.json({ processed: candidates.length, awarded, skipped });
+  } catch (err) {
+    console.error('Backfill error:', err);
     res.status(500).json({ message: 'Server error' });
   }
 });

@@ -1,10 +1,12 @@
 import API_BASE_URL from '../config';
 import React, { useState, useContext, useEffect } from 'react';
 import { AuthContext } from '../context/AuthContext';
-import { 
-  User, Mail, Lock, Save, Camera, Shield, CheckCircle2, 
-  AlertCircle, Sun, Moon, Eye, EyeOff 
+import {
+  User, Mail, Lock, Save, Camera, Shield, CheckCircle2,
+  AlertCircle, Sun, Moon, Eye, EyeOff, Bug, Trophy, Gift
 } from 'lucide-react';
+import Badge from '../components/Badge';
+import { TIERS, nextTier, tierProgress, ELIGIBLE_ROLES } from '../utils/gamification';
 
 const Profile = () => {
   const { user, login } = useContext(AuthContext);
@@ -21,6 +23,19 @@ const Profile = () => {
   
   const [showPass, setShowPass] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+
+  // Gamification data
+  const [gamification, setGamification] = useState(null);
+
+  useEffect(() => {
+    if (!user?.token) return;
+    fetch(`${API_BASE_URL}/api/users/me/gamification`, {
+      headers: { Authorization: `Bearer ${user.token}` }
+    })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => setGamification(data))
+      .catch(() => setGamification(null));
+  }, [user?.token]);
 
   // Theme state synced with Sidebar/Body
   const [isLight, setIsLight] = useState(() => localStorage.getItem('theme') === 'light');
@@ -144,7 +159,7 @@ const Profile = () => {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Theme Mode</span>
-                <button 
+                <button
                   onClick={() => setIsLight(!isLight)}
                   style={{
                     background: 'var(--glass)', border: '1px solid var(--border)',
@@ -158,6 +173,10 @@ const Profile = () => {
               </div>
             </div>
           </div>
+
+          {gamification && ELIGIBLE_ROLES.includes(gamification.role) && (
+            <AchievementsCard data={gamification} />
+          )}
         </div>
 
         {/* Right Panel - Form */}
@@ -281,6 +300,84 @@ const Profile = () => {
               {loading ? 'Saving Changes...' : <><Save size={20} /> Save Profile Changes</>}
             </button>
           </form>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const AchievementsCard = ({ data }) => {
+  const points = data.points || 0;
+  const next = nextTier(points);
+  const progress = tierProgress(points);
+  const earnedTiers = new Set((data.badgesEarned || []).map(b => b.tier));
+  const pendingReward = (data.rewardsClaimed || []).find(r => !r.fulfilled);
+
+  return (
+    <div className="glass-card" style={{ padding: '1.5rem' }}>
+      <h3 style={{ fontSize: '0.9rem', fontWeight: '700', marginBottom: '1rem', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        <Trophy size={16} color="#fbbf24" /> Achievements
+      </h3>
+
+      <div style={{ textAlign: 'center', marginBottom: '1.25rem' }}>
+        <Badge tier={data.currentBadge} size="lg" />
+        <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--primary)', marginTop: '0.85rem', lineHeight: 1 }}>
+          {points}
+        </div>
+        <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: '0.25rem' }}>
+          Total Points
+        </p>
+      </div>
+
+      {next && (
+        <div style={{ marginBottom: '1.25rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.4rem' }}>
+            <span>Next: {next.label}</span>
+            <span>{points} / {next.threshold}</span>
+          </div>
+          <div style={{ height: '8px', background: 'rgba(255,255,255,0.05)', borderRadius: '999px', overflow: 'hidden' }}>
+            <div style={{
+              width: `${Math.round(progress * 100)}%`,
+              height: '100%',
+              background: `linear-gradient(90deg, var(--primary), ${next.color})`,
+              transition: 'width 0.4s ease'
+            }} />
+          </div>
+        </div>
+      )}
+
+      <div style={{ display: 'flex', justifyContent: 'space-around', padding: '0.85rem 0', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)', marginBottom: '1.25rem' }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-main)' }}>{data.bugsReported || 0}</div>
+          <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Reported</p>
+        </div>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#10b981' }}>{data.bugsResolved || 0}</div>
+          <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Verified</p>
+        </div>
+      </div>
+
+      {pendingReward && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: '0.6rem',
+          padding: '0.7rem 0.85rem', borderRadius: '10px',
+          background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.25)',
+          marginBottom: '1rem'
+        }}>
+          <Gift size={16} color="#fbbf24" />
+          <div>
+            <p style={{ fontSize: '0.78rem', fontWeight: 700, color: '#fbbf24', textTransform: 'capitalize' }}>{pendingReward.tier} reward unlocked</p>
+            <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Pending fulfillment from admin.</p>
+          </div>
+        </div>
+      )}
+
+      <div>
+        <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '0.6rem' }}>All Tiers</p>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.45rem' }}>
+          {TIERS.filter(t => t.name !== 'none').map(t => (
+            <Badge key={t.name} tier={t.name} size="sm" dim={!earnedTiers.has(t.name)} />
+          ))}
         </div>
       </div>
     </div>

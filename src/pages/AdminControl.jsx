@@ -1,20 +1,24 @@
 import API_BASE_URL from '../config';
 import React, { useCallback, useContext, useEffect, useState } from 'react';
 import { AuthContext } from '../context/AuthContext';
-import { 
-  ShieldCheck, 
-  Settings, 
-  Clock, 
-  Lock, 
-  Save, 
-  AlertTriangle, 
-  UserPlus, 
-  Power, 
+import {
+  ShieldCheck,
+  Settings,
+  Clock,
+  Lock,
+  Save,
+  AlertTriangle,
+  UserPlus,
+  Power,
   Database,
   CheckCircle2,
   ChevronRight,
-  XCircle
+  XCircle,
+  Gift,
+  Trophy,
+  RefreshCw
 } from 'lucide-react';
+import Badge from '../components/Badge';
 
 const AdminControl = () => {
   const { user } = useContext(AuthContext);
@@ -24,6 +28,51 @@ const AdminControl = () => {
   const [backingUp, setBackingUp] = useState(false);
   const [activeTab, setActiveTab] = useState('general');
   const [toast, setToast] = useState({ message: '', type: '' });
+  const [pendingRewards, setPendingRewards] = useState([]);
+  const [rewardsLoading, setRewardsLoading] = useState(false);
+  const [rewardNotes, setRewardNotes] = useState({});
+
+  const fetchPendingRewards = useCallback(async () => {
+    setRewardsLoading(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/admin/rewards/pending`, {
+        headers: { Authorization: `Bearer ${user.token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setPendingRewards(Array.isArray(data) ? data : []);
+      }
+    } catch (_) { /* ignore */ }
+    finally { setRewardsLoading(false); }
+  }, [user.token]);
+
+  useEffect(() => {
+    if (activeTab === 'rewards') fetchPendingRewards();
+  }, [activeTab, fetchPendingRewards]);
+
+  const handleFulfill = async (row) => {
+    const key = `${row.userId}_${row.tier}`;
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/admin/rewards/${row.userId}/${row.tier}/fulfill`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${user.token}`
+        },
+        body: JSON.stringify({ note: rewardNotes[key] || '' })
+      });
+      if (res.ok) {
+        showToast(`${row.tier} reward marked fulfilled for ${row.name}`);
+        setRewardNotes(prev => { const { [key]: _, ...rest } = prev; return rest; });
+        fetchPendingRewards();
+      } else {
+        const data = await res.json();
+        showToast(data.message || 'Failed to fulfill reward', 'error');
+      }
+    } catch (_) {
+      showToast('Connection error', 'error');
+    }
+  };
 
   const fetchConfig = useCallback(async () => {
     setLoading(true);
@@ -161,6 +210,7 @@ const AdminControl = () => {
             { id: 'general', icon: Settings, label: 'General' },
             { id: 'sla', icon: Clock, label: 'SLA & Priority' },
             { id: 'permissions', icon: Lock, label: 'Permissions' },
+            { id: 'rewards', icon: Gift, label: 'Rewards' },
           ].map(tab => (
             <button
               key={tab.id}
@@ -325,11 +375,81 @@ const AdminControl = () => {
           </div>
         )}
 
+        {/* REWARDS / GAMIFICATION */}
+        {activeTab === 'rewards' && (
+          <div className="animate-fade-in">
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <Trophy size={20} color="#fbbf24" />
+                <h2 style={{ fontSize: '1.2rem', fontWeight: '700' }}>Bug Bounty Rewards</h2>
+              </div>
+              <button onClick={fetchPendingRewards} className="btn btn-outline" style={{ fontSize: '0.85rem' }}>
+                <RefreshCw size={14} /> Refresh
+              </button>
+            </div>
+
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '1.5rem' }}>
+              Employees who reach a badge tier are listed here. Mark each reward fulfilled once the gift has been delivered.
+            </p>
+
+            {rewardsLoading ? (
+              <div style={{ padding: '3rem', textAlign: 'center' }}>
+                <RefreshCw size={28} className="animate-spin" style={{ opacity: 0.5 }} />
+              </div>
+            ) : pendingRewards.length === 0 ? (
+              <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+                <Gift size={36} style={{ opacity: 0.3, marginBottom: '0.75rem' }} />
+                <p style={{ fontWeight: 600 }}>No pending rewards.</p>
+                <p style={{ fontSize: '0.8rem', marginTop: '0.4rem' }}>All earned tiers have been fulfilled — nice work!</p>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                {pendingRewards.map(row => {
+                  const key = `${row.userId}_${row.tier}`;
+                  return (
+                    <div key={key} style={{
+                      padding: '1rem 1.25rem',
+                      borderRadius: '14px',
+                      background: 'rgba(255,255,255,0.02)',
+                      border: '1px solid var(--border)',
+                      display: 'grid',
+                      gridTemplateColumns: '1fr 130px 100px 1fr 130px',
+                      gap: '1rem',
+                      alignItems: 'center'
+                    }}>
+                      <div>
+                        <p style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-main)' }}>{row.name}</p>
+                        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{row.email} · <span style={{ textTransform: 'capitalize' }}>{row.role.replace('_', ' ')}</span></p>
+                      </div>
+                      <Badge tier={row.tier} size="md" />
+                      <div style={{ textAlign: 'center' }}>
+                        <div style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--primary)' }}>{row.points}</div>
+                        <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Points</p>
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="Optional note (gift item, tracking, etc.)"
+                        value={rewardNotes[key] || ''}
+                        onChange={e => setRewardNotes(prev => ({ ...prev, [key]: e.target.value }))}
+                        style={{ marginBottom: 0, fontSize: '0.85rem' }}
+                      />
+                      <button onClick={() => handleFulfill(row)} className="btn btn-primary" style={{ fontSize: '0.85rem', justifyContent: 'center' }}>
+                        <CheckCircle2 size={14} /> Mark Fulfilled
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Action Footer */}
+        {activeTab !== 'rewards' && (
         <div style={{ marginTop: '3rem', paddingTop: '2rem', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end' }}>
-          <button 
-            className="btn btn-primary" 
-            disabled={saving} 
+          <button
+            className="btn btn-primary"
+            disabled={saving}
             onClick={() => handleSave(activeTab === 'permissions' ? 'permissions' : 'settings')}
             style={{ 
               padding: '0.8rem 2.5rem', borderRadius: '12px', fontSize: '0.95rem', fontWeight: '700',
@@ -348,6 +468,7 @@ const AdminControl = () => {
             )}
           </button>
         </div>
+        )}
       </div>
 
       <style>{`

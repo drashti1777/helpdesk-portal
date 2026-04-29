@@ -19,7 +19,12 @@ const normalizeRole = (role = '') => {
 
 const normalizeUser = (userData) => {
   if (!userData) return null;
-  return { ...userData, role: normalizeRole(userData.role) };
+  return {
+    ...userData,
+    role: normalizeRole(userData.role),
+    points: typeof userData.points === 'number' ? userData.points : 0,
+    currentBadge: userData.currentBadge || 'none',
+  };
 };
 
 export const AuthProvider = ({ children }) => {

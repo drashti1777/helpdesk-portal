@@ -8,14 +8,29 @@ const userSchema = new mongoose.Schema({
   role: { type: String, enum: ['client', 'employee', 'team_leader', 'hr', 'admin'], default: 'client' },
   status: { type: Number, enum: [0, 1], default: 1 },
   lastLogin: { type: Date },
+  points: { type: Number, default: 0 },
+  currentBadge: { type: String, enum: ['none', 'bronze', 'silver', 'gold', 'platinum', 'diamond'], default: 'none' },
+  badgesEarned: [{
+    tier: { type: String },
+    earnedAt: { type: Date, default: Date.now }
+  }],
+  rewardsClaimed: [{
+    tier: { type: String, enum: ['bronze', 'silver', 'gold', 'platinum', 'diamond'] },
+    unlockedAt: { type: Date, default: Date.now },
+    fulfilled: { type: Boolean, default: false },
+    fulfilledAt: { type: Date },
+    fulfilledBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    note: { type: String }
+  }],
   createdAt: { type: Date, default: Date.now }
 });
+userSchema.index({ points: -1 });
 
 const ticketSchema = new mongoose.Schema({
   title: { type: String, required: true },
   description: { type: String, required: true },
   project: { type: String },
-  type: { type: String, enum: ['client', 'hr', 'employee'], required: true },
+  type: { type: String, enum: ['client', 'hr', 'employee', 'bug'], required: true },
   priority: { type: String, enum: ['low', 'medium', 'high'], default: 'low' },
   status: { type: String, enum: ['pending', 'in_progress', 'on_hold', 'completed'], default: 'pending' },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
@@ -27,9 +42,16 @@ const ticketSchema = new mongoose.Schema({
   rating: { type: Number, min: 1, max: 5 },
   feedback: { type: String },
   attachments: [{ filename: String, path: String }],
+  pointsAwarded: { type: Boolean, default: false },
+  pointsAwardedAt: { type: Date },
+  pointsAwardedAmount: { type: Number },
+  pointsAwardedTo: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  pointsAwardedPriority: { type: String },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }
 });
+ticketSchema.index({ type: 1, status: 1, project: 1 });
+ticketSchema.index({ type: 1, pointsAwarded: 1 });
 
 const commentSchema = new mongoose.Schema({
   ticketId: { type: mongoose.Schema.Types.ObjectId, ref: 'Ticket', required: true },

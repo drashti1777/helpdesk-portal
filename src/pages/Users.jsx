@@ -3,9 +3,10 @@ import React, { useEffect, useState, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import {
   User, Shield, Trash2, Search, UserCheck, Users as UsersIcon,
-  RefreshCw, ChevronDown, Globe, ShieldCheck, PlusCircle, X, Award, Clock
+  RefreshCw, ChevronDown, Globe, ShieldCheck, PlusCircle, X, Award, Clock, Trophy
 } from 'lucide-react';
 import ConfirmModal from '../components/Layout/ConfirmModal';
+import Badge from '../components/Badge';
 
 const ROLE_META = {
   admin: { label: 'Admin', color: '#a5b4fc', bg: 'rgba(99,102,241,0.15)', border: 'rgba(99,102,241,0.3)', icon: Shield },
@@ -280,7 +281,7 @@ const Users = () => {
       <div className="glass-card" style={{ padding: 0, overflow: 'visible' }}>
         {/* Header Row */}
         <div style={{
-          display: 'grid', gridTemplateColumns: '52px 1fr 1fr 130px 140px 100px',
+          display: 'grid', gridTemplateColumns: '52px 1fr 1fr 130px 160px 140px 100px',
           alignItems: 'center', padding: '0.65rem 1.5rem',
           borderBottom: '1px solid var(--border)',
           color: 'var(--text-muted)', fontSize: '0.72rem', fontWeight: '600',
@@ -291,6 +292,7 @@ const Users = () => {
           <span>Member</span>
           <span>Email</span>
           <span>Role</span>
+          <span>Achievements</span>
           <span>Last Login</span>
           <span style={{ textAlign: 'right' }}>Actions</span>
         </div>
@@ -315,7 +317,7 @@ const Users = () => {
               <div
                 key={emp._id}
                 style={{
-                  display: 'grid', gridTemplateColumns: '52px 1fr 1fr 130px 140px 100px',
+                  display: 'grid', gridTemplateColumns: '52px 1fr 1fr 130px 160px 140px 100px',
                   alignItems: 'center', padding: '0.9rem 1.5rem',
                   borderBottom: idx < filtered.length - 1 ? '1px solid var(--border)' : 'none',
                   transition: 'background 0.15s',
@@ -367,6 +369,21 @@ const Users = () => {
                 }}>
                   <Icon size={11} /> {meta.label}
                 </span>
+
+                {/* Achievements */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  {['employee', 'team_leader', 'hr'].includes(emp.role) ? (
+                    <>
+                      <Badge tier={emp.currentBadge || 'none'} size="sm" />
+                      <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                        <Trophy size={11} color="#fbbf24" />
+                        {emp.points || 0}
+                      </span>
+                    </>
+                  ) : (
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontStyle: 'italic', opacity: 0.6 }}>—</span>
+                  )}
+                </div>
 
                 {/* Last Login */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--text-muted)', fontSize: '0.78rem' }}>

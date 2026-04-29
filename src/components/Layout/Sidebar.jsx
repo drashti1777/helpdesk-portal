@@ -4,8 +4,9 @@ import { AuthContext } from '../../context/AuthContext';
 import {
   LayoutDashboard, Ticket, Users, LogOut,
   PlusCircle, ShieldCheck, Headphones, Bell, Award, BookOpen, Star,
-  Sun, Moon
+  Sun, Moon, Trophy
 } from 'lucide-react';
+import Badge from '../Badge';
 
 const ROLE_META = {
   admin: { label: 'Admin', color: '#a5b4fc', bg: 'rgba(99,102,241,0.15)' },
@@ -92,6 +93,11 @@ const Sidebar = () => {
       </>
     )}
 
+    {/* Leaderboard — everyone */}
+    <NavLink to="/leaderboard" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+      <Trophy size={18} /> Leaderboard
+    </NavLink>
+
     {/* Help — everyone */}
     <NavLink to="/knowledge-base" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
       <BookOpen size={18} /> Help
@@ -133,13 +139,18 @@ const Sidebar = () => {
         <p style={{ fontSize: '0.85rem', fontWeight: '600', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
           {user?.name}
         </p>
-        <span style={{
-          fontSize: '0.68rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.06em',
-          padding: '0.15rem 0.55rem', borderRadius: '999px',
-          background: meta.bg, color: meta.color, display: 'inline-block', marginTop: '2px'
-        }}>
-          {meta.label}
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', marginTop: '2px', flexWrap: 'wrap' }}>
+          <span style={{
+            fontSize: '0.68rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.06em',
+            padding: '0.15rem 0.55rem', borderRadius: '999px',
+            background: meta.bg, color: meta.color, display: 'inline-block'
+          }}>
+            {meta.label}
+          </span>
+          {['employee', 'team_leader', 'hr'].includes(role) && user?.currentBadge && user.currentBadge !== 'none' && (
+            <Badge tier={user.currentBadge} size="sm" showLabel={false} />
+          )}
+        </div>
       </div>
     </div>
     <button

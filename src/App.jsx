@@ -14,6 +14,7 @@ import Help from './pages/KnowledgeBase';
 import Projects from './pages/Projects';
 import Profile from './pages/Profile';
 import Feedbacks from './pages/Feedbacks';
+import Leaderboard from './pages/Leaderboard';
 import NotificationPanel from './components/Notifications/NotificationPanel';
 import NotificationToast from './components/Notifications/NotificationToast';
 import { RefreshCw, Sun, Moon } from 'lucide-react';
@@ -192,6 +193,13 @@ function App() {
         <Route path="/knowledge-base" element={
           <PrivateRoute>
             <AppLayout><Help /></AppLayout>
+          </PrivateRoute>
+        } />
+
+        {/* Leaderboard — everyone */}
+        <Route path="/leaderboard" element={
+          <PrivateRoute>
+            <AppLayout><Leaderboard /></AppLayout>
           </PrivateRoute>
         } />
 

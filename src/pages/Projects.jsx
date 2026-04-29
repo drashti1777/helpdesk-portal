@@ -3,10 +3,10 @@ import ReactDOM from 'react-dom';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import API_BASE_URL from '../config';
-import { 
-  Plus, Search, Briefcase, Users, Mail, Phone, Trash2, Edit2, 
-  RefreshCw, X, PlusCircle, ExternalLink, Globe, Layout, 
-  User as UserIcon, Shield, AlertCircle, CheckCircle2
+import {
+  Plus, Search, Briefcase, Users, Mail, Phone, Trash2, Edit2,
+  RefreshCw, X, PlusCircle, ExternalLink, Globe, Layout,
+  User as UserIcon, Shield, AlertCircle, CheckCircle2, Bug
 } from 'lucide-react';
 
 const Projects = () => {
@@ -32,6 +32,7 @@ const Projects = () => {
   const [memberSearch, setMemberSearch] = useState('');
   const [showMemberDropdown, setShowMemberDropdown] = useState(false);
   const [expandedDescId, setExpandedDescId] = useState(null);
+  const [bugStats, setBugStats] = useState({});
 
   const fetchProjects = async () => {
     setLoading(true);
@@ -64,6 +65,26 @@ const Projects = () => {
     fetchProjects();
     fetchUsers();
   }, [user.token]);
+
+  useEffect(() => {
+    if (!projects.length) return;
+    let cancelled = false;
+    (async () => {
+      const results = {};
+      await Promise.all(projects.map(async (p) => {
+        try {
+          const res = await fetch(`${API_BASE_URL}/api/projects/${p._id}/bug-stats`, {
+            headers: { Authorization: `Bearer ${user.token}` }
+          });
+          if (res.ok) {
+            results[p._id] = await res.json();
+          }
+        } catch (_) { /* ignore */ }
+      }));
+      if (!cancelled) setBugStats(results);
+    })();
+    return () => { cancelled = true; };
+  }, [projects, user.token]);
 
   const showToast = (msg, type = 'success') => {
     setToast({ msg, type });
@@ -194,7 +215,7 @@ const Projects = () => {
         <div className="glass-card" style={{ padding: 0, overflow: 'hidden' }}>
           <div style={{
             display: 'grid',
-            gridTemplateColumns: '180px 220px 160px 1fr 130px 90px',
+            gridTemplateColumns: '180px 220px 160px 1fr 130px 130px 90px',
             padding: '0.75rem 1.5rem',
             background: 'rgba(255,255,255,0.03)',
             borderBottom: '1px solid var(--border)',
@@ -209,6 +230,7 @@ const Projects = () => {
             <span>Access Links</span>
             <span>Description</span>
             <span>Info</span>
+            <span>Bugs</span>
             <span style={{ textAlign: 'right' }}>Actions</span>
           </div>
 
@@ -226,7 +248,7 @@ const Projects = () => {
             filteredProjects.map((project, idx) => (
               <div key={project._id} style={{
                 display: 'grid',
-                gridTemplateColumns: '180px 220px 160px 1fr 130px 90px',
+                gridTemplateColumns: '180px 220px 160px 1fr 130px 130px 90px',
                 alignItems: 'center',
                 padding: '1.25rem 1.5rem',
                 borderBottom: idx < filteredProjects.length - 1 ? '1px solid var(--border)' : 'none',
@@ -323,6 +345,37 @@ const Projects = () => {
                     <Users size={12} color="var(--text-muted)" />
                     <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{project.teamMembers?.length || 0} members</span>
                   </div>
+                </div>
+
+                {/* 6. Bug Stats */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                  {(() => {
+                    const s = bugStats[project._id];
+                    if (!s) {
+                      return <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontStyle: 'italic', opacity: 0.5 }}>—</span>;
+                    }
+                    if (s.total === 0) {
+                      return (
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                          <Bug size={12} style={{ display: 'inline', marginRight: '0.3rem', verticalAlign: '-2px' }} />
+                          No bugs
+                        </span>
+                      );
+                    }
+                    return (
+                      <>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                          <Bug size={12} color="#ef4444" />
+                          <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-main)' }}>{s.total} total</span>
+                        </div>
+                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                          <span style={{ color: '#ef4444', fontWeight: 600 }}>{s.open} open</span>
+                          <span> · </span>
+                          <span style={{ color: '#10b981', fontWeight: 600 }}>{s.completed} fixed</span>
+                        </div>
+                      </>
+                    );
+                  })()}
                 </div>
 
                 {/* Actions */}

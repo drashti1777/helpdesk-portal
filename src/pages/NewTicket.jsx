@@ -11,6 +11,8 @@ const TICKET_TYPE_MAP = {
   team_leader: { value: 'team_leader', label: 'Team Leader Request', desc: 'Management or high-level coordination issue' },
 };
 
+const BUG_TYPE_TILE = { value: 'bug', label: 'Bug Report', desc: 'Earn points by reporting verified bugs' };
+
 const CATEGORIES_BY_TYPE = {
   client: [
     'Website / App Bug', 'Feature Request', 'Billing Issue',
@@ -28,6 +30,10 @@ const CATEGORIES_BY_TYPE = {
   team_leader: [
     'Team Coordination', 'Resource Request', 'Project Escalation',
     'Policy Implementation', 'Training Request', 'Other'
+  ],
+  bug: [
+    'UI Bug', 'Functional Bug', 'Performance', 'Security',
+    'Data Integrity', 'Crash / Error', 'Compatibility', 'Other'
   ]
 };
 
@@ -152,11 +158,11 @@ const NewTicket = () => {
             </select>
 
 
-            {!['employee', 'hr'].includes(user.role) && (
+            {(formData.type === 'bug' || !['employee', 'hr'].includes(user.role)) && (
               <>
-                <label style={labelStyle}>Project {user.role !== 'hr' && '*'}</label>
+                <label style={labelStyle}>Project {(formData.type === 'bug' || user.role !== 'hr') && '*'}</label>
                 <select
-                  required={user.role !== 'hr'}
+                  required={formData.type === 'bug' || user.role !== 'hr'}
                   value={formData.project}
                   onChange={e => setFormData({ ...formData, project: e.target.value })}
                 >
@@ -296,10 +302,15 @@ const NewTicket = () => {
                 { value: 'client', label: 'For Client', desc: 'External client support' },
                 { value: 'employee', label: 'For IT Support', desc: 'Internal IT/System issue' },
                 { value: 'hr', label: 'For HR', desc: 'Internal HR/Admin request' },
-                { value: 'team_leader', label: 'For Team Leader', desc: 'Management coordination' }
+                { value: 'team_leader', label: 'For Team Leader', desc: 'Management coordination' },
+                BUG_TYPE_TILE
               ] : user.role === 'hr' ? [
                 { value: 'hr', label: 'HR Issue', desc: 'Sent to Admin for resolution' },
-                { value: 'employee', label: 'For Employee', desc: 'Suggest to an employee' }
+                { value: 'employee', label: 'For Employee', desc: 'Suggest to an employee' },
+                BUG_TYPE_TILE
+              ] : user.role === 'employee' ? [
+                { value: 'employee', label: 'IT Issue', desc: 'Internal system or software problem' },
+                BUG_TYPE_TILE
               ] : [
                 { value: user.role === 'client' ? 'client' : (TICKET_TYPE_MAP[user.role]?.value || 'hr'), ...(TICKET_TYPE_MAP[user.role] || { label: 'Request', desc: 'Submit a request' }) }
               ]).map(type => (
