@@ -13,6 +13,7 @@ const TICKET_TYPE_MAP = {
   employee: { value: 'employee', label: 'IT Support', icon: UserIcon, color: '#10b981' },
   hr: { value: 'hr', label: 'HR Request', icon: ShieldCheck, color: '#fb7185' },
   team_leader: { value: 'team_leader', label: 'Team Leader', icon: Award, color: '#c084fc' },
+  bug: { value: 'bug', label: 'Bug Report', icon: AlertTriangle, color: '#ef4444' },
 };
 
 const CATEGORIES_BY_TYPE = {
@@ -32,6 +33,9 @@ const CATEGORIES_BY_TYPE = {
   team_leader: [
     'Team Coordination', 'Resource Request', 'Project Escalation',
     'Policy Implementation', 'Training Request', 'Other'
+  ],
+  bug: [
+    'UI/UX Issue', 'Functionality Broken', 'Performance Issue', 'Security Vulnerability', 'Other'
   ]
 };
 
@@ -205,10 +209,12 @@ const NewTicketDrawer = ({ isOpen, onClose, onSuccess }) => {
                   { value: 'client', label: 'Client' },
                   { value: 'employee', label: 'IT Support' },
                   { value: 'hr', label: 'HR Request' },
-                  { value: 'team_leader', label: 'Team Leader' }
+                  { value: 'team_leader', label: 'Team Leader' },
+                  { value: 'bug', label: 'Bug Report' }
                 ] : [
                   { value: 'hr', label: 'HR Request' },
-                  { value: 'employee', label: 'IT Issue' }
+                  { value: 'employee', label: 'IT Issue' },
+                  { value: 'bug', label: 'Bug Report' }
                 ]).map(type => {
                   const cfg = TICKET_TYPE_MAP[type.value];
                   const Icon = cfg.icon;

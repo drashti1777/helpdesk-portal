@@ -289,7 +289,6 @@ const Users = () => {
         {/* Header Row */}
         <div style={{
           display: 'grid', gridTemplateColumns: '52px 1fr 1fr 130px 160px 140px 100px',
-          display: 'grid', gridTemplateColumns: '52px 1fr 1fr 130px 170px 100px',
           alignItems: 'center', padding: '0.65rem 1.5rem',
           borderBottom: '1px solid var(--border)',
           color: 'var(--text-muted)', fontSize: '0.72rem', fontWeight: '600',
@@ -327,7 +326,6 @@ const Users = () => {
                 key={emp._id}
                 style={{
                   display: 'grid', gridTemplateColumns: '52px 1fr 1fr 130px 160px 140px 100px',
-                  display: 'grid', gridTemplateColumns: '52px 1fr 1fr 130px 170px 100px',
                   alignItems: 'center', padding: '0.9rem 1.5rem',
                   borderBottom: idx < filtered.length - 1 ? '1px solid var(--border)' : 'none',
                   transition: 'background 0.15s',

@@ -5,11 +5,8 @@ import API_BASE_URL from '../config';
 import {
   Plus, Search, Briefcase, Users, Mail, Phone, Trash2, Edit2,
   RefreshCw, X, PlusCircle, ExternalLink, Globe, Layout,
-  User as UserIcon, Shield, AlertCircle, CheckCircle2, Bug
-import { 
-  Plus, Search, Briefcase, Users, Mail, Phone, Trash2, Edit2, 
-  RefreshCw, X, PlusCircle, ExternalLink, Globe, Layout, 
-  User as UserIcon, Shield, CheckCircle2, FileText, Upload
+  User as UserIcon, Shield, AlertCircle, CheckCircle2, Bug,
+  FileText, Upload
 } from 'lucide-react';
 
 const Projects = () => {
