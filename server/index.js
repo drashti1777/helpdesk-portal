@@ -905,6 +905,31 @@ app.put('/api/users/profile', protect, async (req, res) => {
 // All users for management page:
 app.get('/api/users/employees', protect, authorize('admin', 'team_leader'), async (req, res) => {
   try {
+    if (req.user.role === 'team_leader') {
+      // Find all projects where this user is the team leader
+      const myProjects = await Project.find({ teamLeader: req.user._id, status: 1 }).select('teamMembers');
+      // Collect unique team member IDs across all projects
+      const memberIdSet = new Set();
+      myProjects.forEach(p => {
+        (p.teamMembers || []).forEach(id => memberIdSet.add(id.toString()));
+      });
+      // Always include the TL themselves
+      memberIdSet.add(req.user._id.toString());
+      const memberIds = Array.from(memberIdSet);
+      // Only show the TL themselves + employees from their team (exclude other TLs, admins, HR)
+      const users = await User.find({
+        _id: { $in: memberIds },
+        status: 1,
+        $or: [
+          { _id: req.user._id },          // The logged-in TL
+          { role: 'employee' }             // Only employees from their team
+        ]
+      })
+        .select('name email role createdAt lastLogin points currentBadge')
+        .sort({ createdAt: -1 });
+      return res.json(users);
+    }
+    // Admin: return all active users
     const query = { status: 1 };
     const users = await User.find(query).select('name email role createdAt lastLogin points currentBadge').sort({ createdAt: -1 });
     res.json(users);

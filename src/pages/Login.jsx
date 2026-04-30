@@ -382,18 +382,18 @@ const Login = () => {
 
             <div>
               <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.85rem', fontWeight: '500', color: 'var(--text-muted)' }}>Password</label>
-              <div style={{ position: 'relative' }}>
+              <div style={{ position: 'relative', marginBottom: '1rem' }}>
                 <input
                   type={showPassword ? 'text' : 'password'} placeholder="••••••••" required
                   value={formData.password}
                   onChange={e => setFormData({ ...formData, password: e.target.value })}
-                  style={{ ...inputStyle, paddingRight: '3rem' }}
+                  style={{ ...inputStyle, paddingRight: '3rem', marginBottom: 0 }}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   style={{
-                    position: 'absolute', right: '0.9rem', top: '50%', transform: 'translateY(-60%)',
+                    position: 'absolute', right: '0.9rem', top: '50%', transform: 'translateY(-50%)',
                     background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 0
                   }}
                 >

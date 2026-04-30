@@ -125,7 +125,7 @@ const NewTicketDrawer = ({ isOpen, onClose, onSuccess }) => {
     background: 'var(--bg-input)',
     border: '1px solid var(--border)',
     borderRadius: '12px', color: 'var(--text-main)',
-    fontSize: '0.9rem', outline: 'none',
+    fontSize: '0.9rem', outline: 'none', marginBottom: 0,
     transition: 'all 0.2s ease',
     boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.05)'
   };
