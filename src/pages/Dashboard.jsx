@@ -58,6 +58,15 @@ const SectionTitle = ({ children }) => (
 );
 
 const PriorityChart = ({ data }) => {
+  if (!data || data.length === 0) {
+    return (
+      <div style={{ height: 220, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', color: 'var(--text-muted)' }}>
+        <BarChart2 size={32} style={{ opacity: 0.2, marginBottom: '0.5rem' }} />
+        <p style={{ fontSize: '0.9rem', fontWeight: '500' }}>No priority data found</p>
+      </div>
+    );
+  }
+
   const chartData = (data || []).map(item => ({
     name: item._id ? item._id.toUpperCase() : 'N/A',
     count: item.count,
@@ -97,9 +106,9 @@ const AdminDashboard = ({ stats, navigate }) => (
     <div className="dashboard-grid" style={{ marginBottom: '2rem' }}>
       <StatCard label="Total Tickets" value={stats.total} icon={ListTodo} iconColor="#6366f1" onClick={() => navigate('/tickets')} accent="#6366f1" />
       <StatCard label="Pending" value={stats.pending} icon={AlertCircle} iconColor="#ef4444" onClick={() => navigate('/tickets?status=pending')} accent="#ef4444" />
-      <StatCard label="In Progress" value={stats.inProgress} icon={Clock} iconColor="#6366f1" onClick={() => navigate('/tickets?status=in_progress')} />
-      <StatCard label="On Hold" value={stats.onHold} icon={AlertCircle} iconColor="#f59e0b" onClick={() => navigate('/tickets?status=on_hold')} />
-      <StatCard label="Completed" value={stats.completed} icon={CheckCircle2} iconColor="#10b981" onClick={() => navigate('/tickets?status=completed')} />
+      <StatCard label="In Progress" value={stats.inProgress} icon={Clock} iconColor="#6366f1" onClick={() => navigate('/tickets?status=in_progress')} accent="#6366f1" />
+      <StatCard label="On Hold" value={stats.onHold} icon={AlertCircle} iconColor="#f59e0b" onClick={() => navigate('/tickets?status=on_hold')} accent="#f59e0b" />
+      <StatCard label="Completed" value={stats.completed} icon={CheckCircle2} iconColor="#10b981" onClick={() => navigate('/tickets?status=completed')} accent="#10b981" />
       <StatCard label="Unassigned" value={stats.unassigned} icon={Inbox} iconColor="#ef4444" onClick={() => navigate('/tickets')} accent="#ef4444" />
     </div>
 
@@ -111,23 +120,35 @@ const AdminDashboard = ({ stats, navigate }) => (
         {/* Tickets by Type */}
         <div className="glass-card">
           <SectionTitle>Tickets by Type</SectionTitle>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginTop: '0.5rem' }}>
-            {(stats.byType || []).map(item => (
-              <div key={item._id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.5rem 1rem', background: 'var(--glass)', borderRadius: '8px', border: '1px solid var(--border)' }}>
-                <span style={{ color: 'var(--text-muted)', textTransform: 'capitalize', fontSize: '0.9rem' }}>{item._id} tickets</span>
-                <span style={{ fontWeight: '700', fontSize: '1.1rem' }}>{item.count}</span>
-              </div>
-            ))}
-          </div>
+          {!(stats.byType?.length > 0) ? (
+            <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+              <ListTodo size={32} style={{ opacity: 0.2, margin: '0 auto 0.5rem' }} />
+              <p style={{ fontSize: '0.9rem', fontWeight: '500' }}>No ticket data available</p>
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginTop: '0.5rem' }}>
+              {stats.byType.map(item => (
+                <div key={item._id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.5rem 1rem', background: 'var(--glass)', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                  <span style={{ color: 'var(--text-muted)', textTransform: 'capitalize', fontSize: '0.9rem' }}>{item._id} tickets</span>
+                  <span style={{ fontWeight: '700', fontSize: '1.1rem' }}>{item.count}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Recent Tickets */}
-        {stats.recentTickets?.length > 0 && (
-          <div className="glass-card" style={{ padding: 0 }}>
-            <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--border)' }}>
-              <SectionTitle>Recent Tickets</SectionTitle>
+        <div className="glass-card" style={{ padding: 0 }}>
+          <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--border)' }}>
+            <SectionTitle>Recent Tickets</SectionTitle>
+          </div>
+          {!(stats.recentTickets?.length > 0) ? (
+            <div style={{ padding: '3rem 2rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+              <ListTodo size={40} style={{ opacity: 0.2, margin: '0 auto 1rem' }} />
+              <p style={{ fontSize: '0.95rem', fontWeight: '500' }}>No recent tickets</p>
             </div>
-            {stats.recentTickets.map((t, i) => (
+          ) : (
+            stats.recentTickets.map((t, i) => (
               <div
                 key={t._id}
                 onClick={() => navigate(`/tickets/${t._id}`)}
@@ -154,9 +175,9 @@ const AdminDashboard = ({ stats, navigate }) => (
                   {t.status.replace('_', ' ')}
                 </span>
               </div>
-            ))}
-          </div>
-        )}
+            ))
+          )}
+        </div>
       </div>
 
       {/* Sidebar Column */}
@@ -412,11 +433,11 @@ const EmployeeDashboard = ({ stats: initialStats, navigate, token, user, onNewTi
       {/* Stat Cards */}
       <div className="dashboard-grid" style={{ marginBottom: '2rem' }}>
         <StatCard label="Assigned to Me" value={stats.total} icon={ListTodo} iconColor="#6366f1" onClick={() => setActiveTab('assigned')} accent="#6366f1" />
-        <StatCard label="Pending" value={stats.pending} icon={AlertCircle} iconColor="#ef4444" onClick={() => setActiveTab('assigned')} />
-        <StatCard label="In Progress" value={stats.inProgress} icon={Clock} iconColor="#6366f1" />
-        <StatCard label="Resolved" value={stats.completed} icon={CheckCircle2} iconColor="#10b981" />
+        <StatCard label="Pending" value={stats.pending} icon={AlertCircle} iconColor="#ef4444" onClick={() => setActiveTab('assigned')} accent="#ef4444" />
+        <StatCard label="In Progress" value={stats.inProgress} icon={Clock} iconColor="#6366f1" accent="#6366f1" />
+        <StatCard label="Resolved" value={stats.completed} icon={CheckCircle2} iconColor="#10b981" accent="#10b981" />
         <StatCard label="Unassigned Pool" value={stats.unassigned} icon={Inbox} iconColor="#ef4444" onClick={() => setActiveTab('unassigned')} accent="#ef4444" />
-        <StatCard label="My Raised" value={stats.myRaisedTickets} icon={Award} iconColor="#0ea5e9" onClick={() => setActiveTab('raised')} />
+        <StatCard label="My Raised" value={stats.myRaisedTickets} icon={Award} iconColor="#0ea5e9" onClick={() => setActiveTab('raised')} accent="#0ea5e9" />
       </div>
 
 
@@ -518,9 +539,14 @@ const EmployeeDashboard = ({ stats: initialStats, navigate, token, user, onNewTi
             <PriorityChart data={stats.byPriority} />
           </div>
 
-          {stats.byType?.length > 0 && (
-            <div className="glass-card">
-              <SectionTitle>My Workload by Type</SectionTitle>
+          <div className="glass-card">
+            <SectionTitle>My Workload by Type</SectionTitle>
+            {!(stats.byType?.length > 0) ? (
+              <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+                <ListTodo size={32} style={{ opacity: 0.2, margin: '0 auto 0.5rem' }} />
+                <p style={{ fontSize: '0.9rem', fontWeight: '500' }}>No workload data available</p>
+              </div>
+            ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                 {stats.byType.map(item => (
                   <div key={item._id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.65rem 0.9rem', background: 'var(--glass)', borderRadius: '8px', border: '1px solid var(--border)' }}>
@@ -529,8 +555,8 @@ const EmployeeDashboard = ({ stats: initialStats, navigate, token, user, onNewTi
                   </div>
                 ))}
               </div>
-            </div>
-          )}
+            )}
+          </div>
 
           {/* Quick tips */}
           <div className="glass-card" style={{ padding: '1.25rem', background: 'rgba(99,102,241,0.04)', border: '1px solid rgba(99,102,241,0.2)' }}>

@@ -10,7 +10,7 @@ const FAQ_DATA = [
     color: '#6366f1',
     roles: ['admin', 'team_leader', 'hr', 'employee', 'client'],
     items: [
-      { q: 'What is the Unified Helpdesk Portal?', a: 'This is a centralized ticketing and support system where you can raise, track, and resolve issues. Each user has a role-based view tailored to their responsibilities.' },
+      { q: 'What is the Helpdesk Portal?', a: 'This is a centralized ticketing and support system where you can raise, track, and resolve issues. Each user has a role-based view tailored to their responsibilities.' },
       { q: 'How do I log in?', a: 'Enter your registered email and password on the login page. If you don\'t have an account, click "Register" to create one. Contact your Admin if you need a specific role assigned.' },
       { q: 'How do I update my profile?', a: 'Click on your name/avatar in the sidebar footer, then go to "Profile". You can update your name, email, and password from there.' },
     ]
@@ -195,6 +195,7 @@ const FAQ_DATA = [
 const Help = () => {
   const { user } = useContext(AuthContext);
   const [expanded, setExpanded] = useState({});
+  const [activeCategory, setActiveCategory] = useState('all');
 
   const role = user?.role || 'client';
 
@@ -206,10 +207,9 @@ const Help = () => {
   // Filter by role
   const roleFiltered = FAQ_DATA.filter(cat => cat.roles.includes(role));
 
-  const filteredFAQ = roleFiltered.map(cat => ({
-    ...cat,
-    items: cat.items
-  })).filter(cat => cat.items.length > 0);
+  const filteredFAQ = roleFiltered.filter(cat => 
+    activeCategory === 'all' || cat.category === activeCategory
+  );
 
   const totalTopics = roleFiltered.reduce((sum, c) => sum + c.items.length, 0);
 
@@ -230,73 +230,146 @@ const Help = () => {
   }[role] || '#6366f1';
 
   return (
-    <div className="main-content animate-fade-in">
-      <header style={{ marginBottom: '2rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
-          <div>
-            <h1 style={{ fontSize: '2rem', fontWeight: '700', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <BookOpen color="var(--primary)" /> Help Center
-            </h1>
-            <p style={{ color: 'var(--text-muted)', marginTop: '0.25rem' }}>
-              Help guide tailored for your <span style={{ color: roleColor, fontWeight: '600' }}>{roleLabel}</span> role.
-            </p>
-          </div>
-          <div style={{
-            padding: '0.45rem 1rem', borderRadius: '999px',
-            background: `${roleColor}18`, border: `1px solid ${roleColor}40`,
-            fontSize: '0.78rem', fontWeight: '700', color: roleColor,
-            textTransform: 'uppercase', letterSpacing: '0.06em',
-            display: 'flex', alignItems: 'center', gap: '0.4rem'
-          }}>
-            <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: roleColor }} />
-            {roleLabel} Guide
-          </div>
-        </div>
-      </header>
-
-
-
-      {/* Quick Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '1rem', marginBottom: '2.5rem' }}>
-        {[
-          { label: 'Help Topics', value: totalTopics, color: roleColor },
-          { label: 'Categories', value: roleFiltered.length, color: '#10b981' },
-          { label: 'Your Role', value: roleLabel, color: roleColor },
-        ].map(stat => (
-          <div key={stat.label} className="glass-card" style={{ padding: '1rem', display: 'flex', alignItems: 'center', gap: '0.75rem', borderLeft: `3px solid ${stat.color}` }}>
-            <div>
-              <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: '600', textTransform: 'uppercase' }}>{stat.label}</p>
-              <h3 style={{ fontSize: '1.2rem', fontWeight: '700' }}>{stat.value}</h3>
+    <div className="main-content animate-fade-in" style={{ maxWidth: '1400px', margin: '0 auto' }}>
+      {/* Hero Header */}
+      <div style={{
+        background: `linear-gradient(135deg, ${roleColor}20, ${roleColor}05)`,
+        borderRadius: '24px',
+        padding: '3rem 2rem',
+        marginBottom: '2.5rem',
+        border: `1px solid ${roleColor}20`,
+        position: 'relative',
+        overflow: 'hidden'
+      }}>
+        <div style={{
+          position: 'absolute', top: '-10%', right: '-5%', width: '300px', height: '300px',
+          background: `radial-gradient(circle, ${roleColor}15 0%, transparent 70%)`,
+          filter: 'blur(40px)', pointerEvents: 'none'
+        }} />
+        
+        <div style={{ position: 'relative', zIndex: 1 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+            <div style={{
+              width: '48px', height: '48px', borderRadius: '14px',
+              background: roleColor, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              boxShadow: `0 8px 16px ${roleColor}40`
+            }}>
+              <BookOpen color="#fff" size={24} />
             </div>
+            <h1 style={{ fontSize: '2.5rem', fontWeight: '800', letterSpacing: '-0.03em', color: 'var(--text-main)' }}>
+              Help Center
+            </h1>
           </div>
-        ))}
+          <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem', maxWidth: '600px', lineHeight: '1.6' }}>
+            Welcome to your personalized knowledge hub. Find guides, FAQs, and tips specifically curated for your <span style={{ color: roleColor, fontWeight: '700' }}>{roleLabel}</span> role.
+          </p>
+        </div>
       </div>
 
-      {/* FAQ Sections */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '2.5rem' }}>
+      {/* Vertical Stats & Categories */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '3rem' }}>
+        <div className="glass-card" style={{ padding: '1rem 1.5rem', display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+          <div style={{ width: '42px', height: '42px', borderRadius: '12px', background: `${roleColor}15`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Star color={roleColor} size={20} />
+          </div>
+          <div>
+            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Tailored Guide</p>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: '700' }}>{roleLabel} View</h3>
+          </div>
+        </div>
+        
+        <div className="glass-card" style={{ padding: '1rem 1.5rem', display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+          <div style={{ width: '42px', height: '42px', borderRadius: '12px', background: '#10b98115', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <FolderOpen color="#10b981" size={20} />
+          </div>
+          <div>
+            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Categories</p>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: '700' }}>{roleFiltered.length} Sections</h3>
+          </div>
+        </div>
+
+        <div className="glass-card" style={{ padding: '1rem 1.5rem', display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+          <div style={{ width: '42px', height: '42px', borderRadius: '12px', background: '#6366f115', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Award color="#6366f1" size={20} />
+          </div>
+          <div>
+            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Help Topics</p>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: '700' }}>{totalTopics} Articles</h3>
+          </div>
+        </div>
+      </div>
+
+      {/* Category Navigation */}
+      <div style={{ marginBottom: '3rem' }}>
+        <h2 style={{ fontSize: '1.25rem', fontWeight: '800', marginBottom: '1.5rem', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+          <LayoutDashboard size={22} color="var(--primary)" /> Browse by Category
+        </h2>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+          <button 
+            onClick={() => setActiveCategory('all')}
+            style={{
+              padding: '0.85rem 1.5rem', borderRadius: '14px', fontSize: '0.95rem', fontWeight: '600',
+              cursor: 'pointer', transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+              background: activeCategory === 'all' ? 'var(--primary)' : 'var(--glass)',
+              color: activeCategory === 'all' ? '#fff' : 'var(--text-main)',
+              border: '1px solid var(--border)',
+              textAlign: 'left',
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+              boxShadow: activeCategory === 'all' ? '0 8px 20px rgba(99, 102, 241, 0.3)' : 'none'
+            }}
+          >
+            <span>All Topics</span>
+            <span style={{ fontSize: '0.8rem', opacity: 0.8, background: activeCategory === 'all' ? 'rgba(255,255,255,0.2)' : 'var(--border)', padding: '0.1rem 0.6rem', borderRadius: '20px' }}>{totalTopics}</span>
+          </button>
+          {roleFiltered.map(cat => (
+            <button 
+              key={cat.category}
+              onClick={() => setActiveCategory(cat.category)}
+              style={{
+                padding: '0.85rem 1.5rem', borderRadius: '14px', fontSize: '0.95rem', fontWeight: '600',
+                cursor: 'pointer', transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+                background: activeCategory === cat.category ? cat.color : 'var(--glass)',
+                color: activeCategory === cat.category ? '#fff' : 'var(--text-main)',
+                border: '1px solid var(--border)',
+                textAlign: 'left',
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                boxShadow: activeCategory === cat.category ? `0 8px 20px ${cat.color}40` : 'none'
+              }}
+            >
+              <span>{cat.category}</span>
+              <span style={{ fontSize: '0.8rem', opacity: 0.8, background: activeCategory === cat.category ? 'rgba(255,255,255,0.2)' : 'var(--border)', padding: '0.1rem 0.6rem', borderRadius: '20px' }}>{cat.items.length}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Content Section */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '3rem' }}>
         {filteredFAQ.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
-            <HelpCircle size={40} style={{ opacity: 0.2, marginBottom: '1rem' }} />
-            <p style={{ fontWeight: '500' }}>No help topics available for your role.</p>
+          <div className="glass-card" style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-muted)' }}>
+            <HelpCircle size={48} style={{ opacity: 0.15, marginBottom: '1rem' }} />
+            <p style={{ fontSize: '1.1rem', fontWeight: '500' }}>No articles found in this category.</p>
+            <button onClick={() => setActiveCategory('all')} style={{ marginTop: '1rem', color: 'var(--primary)', fontWeight: '600', background: 'none', border: 'none', cursor: 'pointer' }}>View all topics</button>
           </div>
         ) : (
           filteredFAQ.map((cat, cIdx) => {
             const Icon = cat.icon;
             return (
-              <div key={cIdx}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}>
+              <div key={cIdx} className="animate-fade-in">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
                   <div style={{
-                    width: '36px', height: '36px', borderRadius: '10px',
-                    background: `${cat.color}18`, display: 'flex', alignItems: 'center', justifyContent: 'center'
+                    width: '42px', height: '42px', borderRadius: '12px',
+                    background: `${cat.color}15`, display: 'flex', alignItems: 'center', justifyContent: 'center'
                   }}>
-                    <Icon size={18} color={cat.color} />
+                    <Icon size={20} color={cat.color} />
                   </div>
                   <div>
-                    <h2 style={{ fontSize: '1.1rem', fontWeight: '700', color: 'var(--text-main)' }}>{cat.category}</h2>
-                    <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{cat.items.length} topic{cat.items.length > 1 ? 's' : ''}</p>
+                    <h2 style={{ fontSize: '1.4rem', fontWeight: '800', color: 'var(--text-main)', letterSpacing: '-0.01em' }}>{cat.category}</h2>
+                    <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{cat.items.length} helpful articles</p>
                   </div>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '0.75rem' }}>
                   {cat.items.map((item, iIdx) => {
                     const key = `${cIdx}-${iIdx}`;
                     const isExp = expanded[key];
@@ -305,24 +378,55 @@ const Help = () => {
                         key={iIdx} 
                         className="glass-card" 
                         style={{ 
-                          padding: '1rem 1.5rem', cursor: 'pointer', transition: 'all 0.2s',
-                          borderLeft: isExp ? `3px solid ${cat.color}` : '3px solid transparent'
+                          padding: '0', cursor: 'pointer', transition: 'all 0.3s ease',
+                          border: isExp ? `1px solid ${cat.color}50` : '1px solid var(--border)',
+                          background: isExp ? `${cat.color}05` : 'var(--glass)',
+                          transform: isExp ? 'scale(1.01)' : 'scale(1)',
+                          zIndex: isExp ? 2 : 1,
+                          overflow: 'hidden'
                         }}
                         onClick={() => toggleExpand(cIdx, iIdx)}
                       >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <h3 style={{ fontSize: '0.95rem', fontWeight: '500', color: isExp ? cat.color : 'var(--text-main)' }}>{item.q}</h3>
-                          {isExp ? <ChevronUp size={18} color={cat.color} /> : <ChevronDown size={18} color="var(--text-muted)" />}
+                        <div style={{ 
+                          padding: '1.25rem 1.75rem', 
+                          display: 'flex', 
+                          justifyContent: 'space-between', 
+                          alignItems: 'center',
+                          background: isExp ? `${cat.color}10` : 'transparent'
+                        }}>
+                          <h3 style={{ 
+                            fontSize: '1rem', 
+                            fontWeight: isExp ? '700' : '500', 
+                            color: isExp ? cat.color : 'var(--text-main)',
+                            transition: 'color 0.2s'
+                          }}>{item.q}</h3>
+                          <div style={{
+                            width: '28px', height: '28px', borderRadius: '50%',
+                            background: isExp ? cat.color : 'var(--border)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            transition: 'all 0.3s'
+                          }}>
+                            {isExp ? <ChevronUp size={16} color="#fff" /> : <ChevronDown size={16} color="var(--text-muted)" />}
+                          </div>
                         </div>
-                        {isExp && (
+                        
+                        <div style={{ 
+                          maxHeight: isExp ? '1000px' : '0',
+                          opacity: isExp ? 1 : 0,
+                          transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                          overflow: 'hidden'
+                        }}>
                           <div style={{ 
-                            marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--border)', 
-                            color: 'var(--text-muted)', lineHeight: 1.8, fontSize: '0.9rem',
-                            whiteSpace: 'pre-line'
+                            padding: '1.5rem 1.75rem 2rem', 
+                            color: 'var(--text-muted)', 
+                            lineHeight: 1.8, 
+                            fontSize: '0.95rem',
+                            whiteSpace: 'pre-line',
+                            borderTop: `1px solid ${cat.color}20`
                           }}>
                             {item.a}
                           </div>
-                        )}
+                        </div>
                       </div>
                     );
                   })}
@@ -331,6 +435,26 @@ const Help = () => {
             );
           })
         )}
+      </div>
+      
+      {/* Footer Support Callout */}
+      <div style={{ 
+        marginTop: '5rem', 
+        padding: '3rem', 
+        borderRadius: '24px', 
+        background: 'var(--glass)', 
+        border: '1px solid var(--border)',
+        textAlign: 'center'
+      }}>
+        <h3 style={{ fontSize: '1.5rem', fontWeight: '800', marginBottom: '0.75rem' }}>Still need help?</h3>
+        <p style={{ color: 'var(--text-muted)', marginBottom: '2rem' }}>If you couldn't find the answer you were looking for, our support team is ready to assist you.</p>
+        <button 
+          onClick={() => window.location.href = 'mailto:support@helpdesk.com'}
+          className="btn btn-primary" 
+          style={{ padding: '0.75rem 2.5rem' }}
+        >
+          Contact Support
+        </button>
       </div>
     </div>
   );
