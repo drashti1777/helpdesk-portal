@@ -218,15 +218,18 @@ const Users = () => {
             style={{ paddingLeft: '2.4rem', marginBottom: 0, fontSize: '0.875rem' }}
           />
         </div>
-        <select
-          value={filterRole} onChange={e => setFilterRole(e.target.value)}
-          style={{ width: 'auto', minWidth: '160px', marginBottom: 0, fontSize: '0.875rem', cursor: 'pointer' }}
-        >
-          <option value="all">All Roles</option>
-          <option value="admin">Admin</option>
-          <option value="team_leader">Team Leader</option>
-          <option value="employee">Employee</option>
-        </select>
+        <div style={{ position: 'relative' }}>
+          <select
+            value={filterRole} onChange={e => setFilterRole(e.target.value)}
+            style={{ width: 'auto', minWidth: '160px', marginBottom: 0, fontSize: '0.875rem', cursor: 'pointer', appearance: 'none', paddingRight: '2.5rem' }}
+          >
+            <option value="all">All Roles</option>
+            <option value="admin">Admin</option>
+            <option value="team_leader">Team Leader</option>
+            <option value="employee">Employee</option>
+          </select>
+          <ChevronDown size={14} style={{ position: 'absolute', right: '0.9rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none', opacity: 0.6 }} />
+        </div>
       </div>
 
       {/* Table */}

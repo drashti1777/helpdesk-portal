@@ -3,7 +3,7 @@ import React, { useState, useContext } from 'react';
 import ReactDOM from 'react-dom';
 import { AuthContext } from '../../context/AuthContext';
 import {
-  X, UserPlus, Save, Sparkles, Mail, Phone, Lock, Shield
+  X, UserPlus, Save, Sparkles, Mail, Phone, Lock, Shield, ChevronDown
 } from 'lucide-react';
 
 const AddUserDrawer = ({ isOpen, onClose, onSuccess }) => {
@@ -64,7 +64,7 @@ const AddUserDrawer = ({ isOpen, onClose, onSuccess }) => {
     background: 'var(--bg-input)',
     border: '1px solid var(--border)',
     borderRadius: '12px', color: 'var(--text-main)',
-    fontSize: '0.9rem', outline: 'none',
+    fontSize: '0.9rem', outline: 'none', marginBottom: 0,
     transition: 'all 0.2s ease',
     boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.05)'
   };
@@ -201,13 +201,14 @@ const AddUserDrawer = ({ isOpen, onClose, onSuccess }) => {
                 <select
                   value={formData.role}
                   onChange={e => setFormData({ ...formData, role: e.target.value })}
-                  style={{ ...inputStyle, paddingLeft: '3rem', cursor: 'pointer' }}
+                  style={{ ...inputStyle, paddingLeft: '3rem', cursor: 'pointer', appearance: 'none' }}
                 >
                   <option value="employee">Employee</option>
                   <option value="hr">HR Role</option>
                   <option value="team_leader">Team Leader</option>
                   {isAdmin && <option value="admin">Admin</option>}
                 </select>
+                <ChevronDown size={16} style={{ position: 'absolute', right: '1.1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', opacity: 0.5, pointerEvents: 'none' }} />
               </div>
             </div>
 

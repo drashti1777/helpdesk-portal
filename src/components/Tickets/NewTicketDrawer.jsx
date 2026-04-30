@@ -5,7 +5,7 @@ import { AuthContext } from '../../context/AuthContext';
 import {
   Upload, X, FileText, AlertTriangle,
   Globe, User as UserIcon, ShieldCheck, Award,
-  Save, Sparkles
+  Save, Sparkles, ChevronDown
 } from 'lucide-react';
 
 const TICKET_TYPE_MAP = {
@@ -246,14 +246,17 @@ const NewTicketDrawer = ({ isOpen, onClose, onSuccess }) => {
             {(formData.type === 'bug' || formData.type === 'team_leader') && (
               <div>
                 <label style={labelStyle}>Select Project</label>
-                <select
-                  value={formData.project}
-                  onChange={e => setFormData({ ...formData, project: e.target.value })}
-                  style={inputStyle}
-                >
-                  <option value="">Internal / No Project</option>
-                  {projects.map(p => <option key={p._id} value={p.name}>{p.name} {p.teamName ? `(${p.teamName})` : ''}</option>)}
-                </select>
+                <div style={{ position: 'relative' }}>
+                  <select
+                    value={formData.project}
+                    onChange={e => setFormData({ ...formData, project: e.target.value })}
+                    style={{ ...inputStyle, cursor: 'pointer', appearance: 'none' }}
+                  >
+                    <option value="">Internal / No Project</option>
+                    {projects.map(p => <option key={p._id} value={p.name}>{p.name} {p.teamName ? `(${p.teamName})` : ''}</option>)}
+                  </select>
+                  <ChevronDown size={16} style={{ position: 'absolute', right: '1.1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', opacity: 0.5, pointerEvents: 'none' }} />
+                </div>
                 {formData.project && projects.find(p => p.name === formData.project) && (
                   <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
                     {projects.find(p => p.name === formData.project).teamName && (
@@ -271,14 +274,17 @@ const NewTicketDrawer = ({ isOpen, onClose, onSuccess }) => {
               {/* Category */}
               <div>
                 <label style={labelStyle}>Category</label>
-                <select
-                  value={formData.category}
-                  onChange={e => setFormData({ ...formData, category: e.target.value })}
-                  style={inputStyle}
-                >
-                  <option value="">Select Category</option>
-                  {(CATEGORIES_BY_TYPE[formData.type] || []).map(c => <option key={c} value={c}>{c}</option>)}
-                </select>
+                <div style={{ position: 'relative' }}>
+                  <select
+                    value={formData.category}
+                    onChange={e => setFormData({ ...formData, category: e.target.value })}
+                    style={{ ...inputStyle, cursor: 'pointer', appearance: 'none' }}
+                  >
+                    <option value="">Select Category</option>
+                    {(CATEGORIES_BY_TYPE[formData.type] || []).map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                  <ChevronDown size={16} style={{ position: 'absolute', right: '1.1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', opacity: 0.5, pointerEvents: 'none' }} />
+                </div>
               </div>
 
               {/* Priority */}
@@ -310,14 +316,17 @@ const NewTicketDrawer = ({ isOpen, onClose, onSuccess }) => {
             {isManagement && formData.type !== 'bug' && (
               <div>
                 <label style={labelStyle}>Assign Solver</label>
-                <select
-                  value={formData.assignedTo}
-                  onChange={e => setFormData({ ...formData, assignedTo: e.target.value })}
-                  style={inputStyle}
-                >
-                  <option value="">Keep Unassigned</option>
-                  {agents.map(a => <option key={a._id} value={a._id}>{a.name} ({a.role.replace('_', ' ')})</option>)}
-                </select>
+                <div style={{ position: 'relative' }}>
+                  <select
+                    value={formData.assignedTo}
+                    onChange={e => setFormData({ ...formData, assignedTo: e.target.value })}
+                    style={{ ...inputStyle, cursor: 'pointer', appearance: 'none' }}
+                  >
+                    <option value="">Keep Unassigned</option>
+                    {agents.map(a => <option key={a._id} value={a._id}>{a.name} ({a.role.replace('_', ' ')})</option>)}
+                  </select>
+                  <ChevronDown size={16} style={{ position: 'absolute', right: '1.1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', opacity: 0.5, pointerEvents: 'none' }} />
+                </div>
               </div>
             )}
 
