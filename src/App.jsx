@@ -50,12 +50,21 @@ const AppLayout = ({ children }) => {
     }
   }, [isLight]);
 
-  const toggleTheme = () => setIsLight(!isLight);
+  const toggleTheme = () => {
+    const next = !isLight;
+    setIsLight(next);
+    window.dispatchEvent(new CustomEvent('theme-changed', { detail: { isLight: next } }));
+  };
 
   React.useEffect(() => {
     const handleCountChange = (e) => setUnreadCount(e.detail.count);
+    const handleThemeChange = (e) => setIsLight(e.detail.isLight);
     window.addEventListener('unread-count-changed', handleCountChange);
-    return () => window.removeEventListener('unread-count-changed', handleCountChange);
+    window.addEventListener('theme-changed', handleThemeChange);
+    return () => {
+      window.removeEventListener('unread-count-changed', handleCountChange);
+      window.removeEventListener('theme-changed', handleThemeChange);
+    };
   }, []);
 
   return (

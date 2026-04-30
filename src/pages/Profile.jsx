@@ -41,14 +41,16 @@ const Profile = () => {
   const [isLight, setIsLight] = useState(() => localStorage.getItem('theme') === 'light');
 
   useEffect(() => {
-    if (isLight) {
-      document.body.classList.add('light-theme');
-      localStorage.setItem('theme', 'light');
-    } else {
-      document.body.classList.remove('light-theme');
-      localStorage.setItem('theme', 'dark');
-    }
-  }, [isLight]);
+    const handleGlobalTheme = (e) => setIsLight(e.detail.isLight);
+    window.addEventListener('theme-changed', handleGlobalTheme);
+    return () => window.removeEventListener('theme-changed', handleGlobalTheme);
+  }, []);
+
+  const toggleLocalTheme = () => {
+    const next = !isLight;
+    setIsLight(next);
+    window.dispatchEvent(new CustomEvent('theme-changed', { detail: { isLight: next } }));
+  };
 
   const showToast = (msg, type = 'success') => {
     setToast({ msg, type });
@@ -160,15 +162,18 @@ const Profile = () => {
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Theme Mode</span>
                 <button
-                  onClick={() => setIsLight(!isLight)}
+                  onClick={toggleLocalTheme}
                   style={{
                     background: 'var(--glass)', border: '1px solid var(--border)',
-                    padding: '0.4rem 0.8rem', borderRadius: '8px', cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-main)',
-                    fontSize: '0.8rem', fontWeight: '600'
+                    width: '40px', height: '40px', borderRadius: '12px',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    cursor: 'pointer', color: 'var(--text-main)', transition: 'all 0.2s'
                   }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--primary)'; e.currentTarget.style.background = 'rgba(99,102,241,0.1)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = 'var(--glass)'; }}
+                  title="Toggle Theme"
                 >
-                  {isLight ? <><Sun size={14} /> Light</> : <><Moon size={14} /> Dark</>}
+                  {isLight ? <Moon size={18} /> : <Sun size={18} />}
                 </button>
               </div>
             </div>
