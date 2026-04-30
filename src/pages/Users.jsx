@@ -464,7 +464,7 @@ const Users = () => {
                       )}
                     </div>
                   ) : (
-                    <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontStyle: 'italic' }}>Restricted</span>
+                    <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontStyle: 'italic' }}>Permission denied</span>
                   )}
                 </div>
               </div>

@@ -132,7 +132,7 @@ const AppLayout = ({ children }) => {
             textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.8rem',
             background: 'var(--glass)', flexShrink: 0
           }}>
-            &copy; {new Date().getFullYear()} Unified Helpdesk Portal. All rights reserved.
+            &copy; {new Date().getFullYear()} Helpdesk Portal. All rights reserved.
           </footer>
         </div>
       </div>
@@ -182,7 +182,7 @@ function App() {
     <BrowserRouter>
       <Routes>
         {/* Public */}
-        <Route path="/login" element={!user ? <Login /> : <Navigate to="/" replace />} />
+        <Route path="/login" element={!user ? <Login /> : <Navigate to="/projects" replace />} />
 
         {/* Dashboard — ALL roles including client */}
         <Route path="/" element={
@@ -248,9 +248,9 @@ function App() {
 
         {/* Projects */}
         <Route path="/projects" element={
-          <RoleRoute allowedRoles={['admin']}>
+          <PrivateRoute>
             <AppLayout><Projects /></AppLayout>
-          </RoleRoute>
+          </PrivateRoute>
         } />
 
 

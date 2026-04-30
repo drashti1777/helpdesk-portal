@@ -66,11 +66,9 @@ const Sidebar = () => {
     </NavLink>
 
     {/* Project */}
-    {role === 'admin' && (
-      <NavLink to="/projects" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-        <PlusCircle size={18} /> Project
-      </NavLink>
-    )}
+    <NavLink to="/projects" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+      <PlusCircle size={18} /> Project
+    </NavLink>
 
     {/* Users — admin, team_leader */}
     {(role === 'admin' || role === 'team_leader') && (

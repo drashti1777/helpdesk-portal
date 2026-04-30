@@ -182,7 +182,7 @@ const TicketDetail = () => {
     );
   }
 
-  const { ticket, comments } = data;
+  const { ticket, comments, projectInfo } = data;
   const statusCfg = STATUS_CONFIG[ticket.status] || STATUS_CONFIG.pending;
   const isOverdue = new Date(ticket.slaResolutionDue) < new Date() && ticket.status !== 'completed';
   const isOwner = ticket.createdBy?._id === user._id;
@@ -190,15 +190,17 @@ const TicketDetail = () => {
 
   const isAdmin = user.role === 'admin';
   const isTeamLeader = user.role === 'team_leader';
+  const isProjectTL = isTeamLeader && projectInfo?.teamLeader?._id === user._id;
 
   const canManage = isAdmin ||
+                   isProjectTL ||
                    (isHR && ticket.type === 'hr') ||
-                   (isEmployee && isAssignedToMe && !isOwner);
+                   (isAssignedToMe && !isOwner);
 
 
   const canDelete = isAdmin;
 
-  const canAssign = isAdmin || (isTeamLeader && ticket.type === 'hr');
+  const canAssign = isAdmin || isProjectTL;
 
   return (
     <div className="main-content animate-fade-in">
@@ -401,21 +403,11 @@ const TicketDetail = () => {
                 style={{ marginBottom: 0 }}
               >
                 <option value="">Unassigned</option>
-                {employees
-                  .filter(emp => {
-                    // Filter logic for Team Leaders
-                    if (user.role === 'team_leader') {
-                      if (ticket.type === 'hr') return emp.role === 'hr';
-                      if (ticket.type === 'employee') return emp.role === 'hr' || emp.role === 'admin';
-                    }
-                    // Filter logic for HR
-                    if (user.role === 'hr') {
-                      return emp.role === 'employee' || emp.role === 'hr';
-                    }
-                    // Admins can assign anyone to anything
-                    return true;
-                  })
-                  .map(emp => (
+                {isAdmin ? employees.map(emp => (
+                  <option key={emp._id} value={emp._id}>
+                    {emp.name} ({emp.role.replace('_', ' ')})
+                  </option>
+                )) : projectInfo?.teamMembers?.map(emp => (
                   <option key={emp._id} value={emp._id}>
                     {emp.name} ({emp.role.replace('_', ' ')})
                   </option>

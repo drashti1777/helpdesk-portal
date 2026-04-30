@@ -13,39 +13,67 @@ import { POINT_VALUES, ELIGIBLE_ROLES, TIER_RANK, computeTier } from './gamifica
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+const canAccessTicket = async (user, ticket) => {
+  if (!user || !ticket) return false;
+  const userId = user._id.toString();
+  const createdById = (ticket.createdBy?._id || ticket.createdBy)?.toString();
+  const assignedToId = (ticket.assignedTo?._id || ticket.assignedTo)?.toString();
+
+  if (user.role === 'admin') return true;
+  
+  if (user.role === 'team_leader') {
+    // TL sees their own, assigned, or anything in their projects
+    if (createdById === userId || assignedToId === userId) return true;
+    if (ticket.project) {
+      const proj = await Project.findOne({ name: ticket.project, teamLeader: user._id });
+      if (proj) return true;
+    }
+    return false;
+  }
+
+  if (user.role === 'employee') {
+    return createdById === userId || assignedToId === userId;
+  }
+
+  if (user.role === 'hr') {
+    return ticket.type === 'hr' || createdById === userId || assignedToId === userId;
+  }
+  
+  return false;
+};
+
 async function dispatchNotifications(ticket, message, initiatorId, initiatorRole) {
-  if (initiatorRole === 'employee') {
-    targetRoles = ['team_leader', 'admin'];
-  } else if (initiatorRole === 'team_leader') {
-    targetRoles = ['admin'];
-  } else if (initiatorRole === 'hr') {
-    targetRoles = ['admin'];
-  } else if (initiatorRole === 'admin') {
-    targetRoles = [];
+  const notificationDocs = [];
+  const involvedUserIds = new Set();
+  
+  // 1. Admins always get notified
+  const admins = await User.find({ role: 'admin', status: 1 }).select('_id');
+  admins.forEach(a => involvedUserIds.add(a._id.toString()));
+
+  // 2. Project Team Leader
+  if (ticket.project) {
+    const proj = await Project.findOne({ name: ticket.project }).select('teamLeader');
+    if (proj?.teamLeader) involvedUserIds.add(proj.teamLeader.toString());
   }
 
-  const usersToNotify = await User.find({ role: { $in: targetRoles }, status: 1 });
-  const notificationDocs = usersToNotify
-    .filter(u => u._id.toString() !== initiatorId.toString())
-    .map(u => ({
-      userId: u._id,
-      ticketId: ticket._id,
-      message
-    }));
-
+  // 3. Assignee
   const assignedToId = ticket.assignedTo?._id?.toString() || ticket.assignedTo?.toString();
-  if (assignedToId && assignedToId !== initiatorId.toString()) {
-    if (!notificationDocs.some(n => n.userId.toString() === assignedToId)) {
-      notificationDocs.push({ userId: assignedToId, ticketId: ticket._id, message });
-    }
-  }
+  if (assignedToId) involvedUserIds.add(assignedToId);
 
+  // 4. Creator
   const createdById = ticket.createdBy?._id?.toString() || ticket.createdBy?.toString();
-  if (createdById && createdById !== initiatorId.toString()) {
-    if (!notificationDocs.some(n => n.userId.toString() === createdById)) {
-      notificationDocs.push({ userId: createdById, ticketId: ticket._id, message });
+  if (createdById) involvedUserIds.add(createdById);
+
+  // Filter out the initiator and build docs
+  involvedUserIds.forEach(uid => {
+    if (uid !== initiatorId.toString()) {
+      notificationDocs.push({
+        userId: uid,
+        ticketId: ticket._id,
+        message
+      });
     }
-  }
+  });
 
   if (notificationDocs.length > 0) {
     await Notification.insertMany(notificationDocs);
@@ -158,31 +186,6 @@ const seedAdmin = async () => {
     console.log('✅ Admin credentials updated: admin@gmail.com / admin@123');
   }
 };
-
-const canAccessTicket = (user, ticket) => {
-  if (!user || !ticket) return false;
-  const userId = user._id.toString();
-  const createdById = (ticket.createdBy?._id || ticket.createdBy)?.toString();
-  const assignedToId = (ticket.assignedTo?._id || ticket.assignedTo)?.toString();
-
-  if (['admin', 'team_leader'].includes(user.role)) return true;
-  
-  if (user.role === 'employee') {
-    // Employees can access tickets they created or are assigned to
-    return createdById === userId || assignedToId === userId;
-  }
-
-  if (user.role === 'hr') {
-    // HR can access internal HR tickets, and anything they created/are assigned to.
-    return ticket.type === 'hr' || createdById === userId || assignedToId === userId;
-  }
-  
-  return false;
-};
-
-// ─────────────────────────────────────────────
-// AUTH ROUTES
-// ─────────────────────────────────────────────
 
 app.post('/api/auth/register', async (req, res) => {
   const { name, email, password, role } = req.body;
@@ -320,18 +323,14 @@ app.get('/api/tickets', protect, async (req, res) => {
       { assignedTo: req.user._id }
     ];
   } else if (req.user.role === 'team_leader') {
-
-  } else if (req.user.role === 'team_leader') {
-    // Team Leaders see everything except maybe some restricted internal notes if we had them.
-    // For now, same as Admin visibility but focused on oversight.
+    // Team Leaders see tickets in their projects OR where they are creator/assignee
+    const ledProjects = await Project.find({ teamLeader: req.user._id }).select('name');
+    const projectNames = ledProjects.map(p => p.name);
     query.$or = [
-      { type: 'hr' },     // TLs manage employee internal tickets
-      { type: 'bug' },    // TLs verify bug reports for points
-      { type: 'employee' },
+      { project: { $in: projectNames } },
       { createdBy: req.user._id },
       { assignedTo: req.user._id }
     ];
-
   } else if (req.user.role === 'admin') {
     query = {}; // Admin sees everything
 
@@ -365,13 +364,40 @@ app.post('/api/tickets', protect, upload.array('files'), async (req, res) => {
   const slaResolutionHours = slaResponseHours * 4;
   const slaResponseDue = new Date(now.getTime() + slaResponseHours * 60 * 60 * 1000);
   const slaResolutionDue = new Date(now.getTime() + slaResolutionHours * 60 * 60 * 1000);
+  ticketType = type || 'hr';
+  let finalAssignedTo = assignedTo;
+
+  // Auto-assignment logic
+  if (!finalAssignedTo) {
+    if (ticketType === 'bug') {
+      // Find project Team Leader
+      const proj = await Project.findOne({ name: project });
+      if (proj && proj.teamLeader) {
+        finalAssignedTo = proj.teamLeader;
+      } else {
+        // Fallback to first admin
+        const admin = await User.findOne({ role: 'admin', status: 1 });
+        if (admin) finalAssignedTo = admin._id;
+      }
+    } else if (ticketType === 'hr') {
+      // Find first available HR user
+      const hrUser = await User.findOne({ role: 'hr', status: 1 });
+      if (hrUser) {
+        finalAssignedTo = hrUser._id;
+      } else {
+        // Fallback to first admin
+        const admin = await User.findOne({ role: 'admin', status: 1 });
+        if (admin) finalAssignedTo = admin._id;
+      }
+    }
+  }
 
   const ticket = await Ticket.create({
     title, description, project, type: ticketType, priority: priority || config.settings?.defaultPriority || 'low',
     category: category || 'General',
     createdBy: req.user._id,
     targetClient: targetClient || null,
-    assignedTo: assignedTo || null,
+    assignedTo: finalAssignedTo || null,
     attachments, slaResponseDue, slaResolutionDue
   });
 
@@ -385,13 +411,95 @@ app.get('/api/tickets/:id', protect, async (req, res) => {
     .populate('createdBy', 'name email role')
     .populate('assignedTo', 'name email role');
   if (!ticket) return res.status(404).json({ message: 'Ticket not found' });
-  if (!canAccessTicket(req.user, ticket)) {
+  if (! (await canAccessTicket(req.user, ticket))) {
     return res.status(403).json({ message: 'Not authorized to view this ticket' });
   }
+
+  // Get project info if applicable
+  let projectInfo = null;
+  if (ticket.project) {
+    projectInfo = await Project.findOne({ name: ticket.project })
+      .populate('teamMembers', 'name email role mobile')
+      .populate('teamLeader', 'name email role mobile');
+  }
+
   const comments = await Comment.find({ ticketId: req.params.id })
     .populate('userId', 'name role')
     .sort({ createdAt: 1 });
-  res.json({ ticket, comments });
+  res.json({ ticket, comments, projectInfo });
+});
+
+// ─────────────────────────────────────────────
+// PROJECT ROUTES
+// ─────────────────────────────────────────────
+
+app.get('/api/projects', protect, async (req, res) => {
+  try {
+    let query = {};
+    if (req.user.role === 'team_leader') {
+      query = { teamLeader: req.user._id };
+    } else if (req.user.role === 'employee') {
+      query = { teamMembers: req.user._id };
+    }
+    const projects = await Project.find(query)
+      .populate('teamLeader', 'name email mobile')
+      .populate('teamMembers', 'name email role mobile')
+      .sort({ name: 1 });
+    res.json(projects);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+app.post('/api/projects', protect, authorize('admin'), upload.single('knowledgeBaseFile'), async (req, res) => {
+  try {
+    const { name, teamName, projectUrl, uatUrl, productionLink, teamLeader, teamMembers } = req.body;
+    const project = await Project.create({
+      name, teamName, projectUrl, uatUrl, productionLink,
+      teamLeader: teamLeader || null,
+      teamMembers: teamMembers ? JSON.parse(teamMembers) : [],
+      knowledgeBase: req.file ? `/uploads/${req.file.filename}` : null,
+      knowledgeBaseOriginalName: req.file ? req.file.originalname : null
+    });
+    res.status(201).json(project);
+  } catch (err) {
+    res.status(400).json({ message: err.message || 'Error creating project' });
+  }
+});
+
+app.put('/api/projects/:id', protect, authorize('admin'), upload.single('knowledgeBaseFile'), async (req, res) => {
+  try {
+    const { name, teamName, projectUrl, uatUrl, productionLink, teamLeader, teamMembers } = req.body;
+    const project = await Project.findById(req.params.id);
+    if (!project) return res.status(404).json({ message: 'Project not found' });
+
+    project.name = name;
+    project.teamName = teamName;
+    project.projectUrl = projectUrl;
+    project.uatUrl = uatUrl;
+    project.productionLink = productionLink;
+    project.teamLeader = teamLeader || null;
+    project.teamMembers = teamMembers ? JSON.parse(teamMembers) : [];
+    
+    if (req.file) {
+      project.knowledgeBase = `/uploads/${req.file.filename}`;
+      project.knowledgeBaseOriginalName = req.file.originalname;
+    }
+
+    await project.save();
+    res.json(project);
+  } catch (err) {
+    res.status(400).json({ message: err.message || 'Error updating project' });
+  }
+});
+
+app.delete('/api/projects/:id', protect, authorize('admin'), async (req, res) => {
+  try {
+    await Project.findByIdAndDelete(req.params.id);
+    res.json({ message: 'Project deleted' });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
 });
 
 app.put('/api/tickets/:id', protect, async (req, res) => {
@@ -562,78 +670,7 @@ app.post('/api/tickets/:id/comments', protect, async (req, res) => {
   res.status(201).json(populatedComment);
 });
 
-// ─────────────────────────────────────────────
-// PROJECT ROUTES
-// ─────────────────────────────────────────────
 
-app.get('/api/projects', protect, async (req, res) => {
-  const projects = await Project.find()
-    .populate('teamLeader', 'name email mobile')
-    .populate('teamMembers', 'name email role mobile')
-    .sort({ name: 1 });
-  res.json(projects);
-});
-
-app.post('/api/projects', protect, authorize('admin'), upload.single('knowledgeBaseFile'), async (req, res) => {
-  const { name, teamLeader, projectUrl, uatUrl, productionLink, teamName } = req.body;
-  const teamMembers = typeof req.body.teamMembers === 'string'
-    ? JSON.parse(req.body.teamMembers || '[]')
-    : (req.body.teamMembers || []);
-  if (!name) return res.status(400).json({ message: 'Project name is required' });
-  try {
-    const project = await Project.create({ 
-      name, 
-      knowledgeBase: req.file ? `/uploads/${req.file.filename}` : '',
-      knowledgeBaseOriginalName: req.file?.originalname || '',
-      teamLeader: teamLeader || null,
-      projectUrl,
-      uatUrl,
-      productionLink,
-      teamName,
-      teamMembers: teamMembers || []
-    });
-    res.status(201).json(project);
-  } catch (err) {
-    res.status(400).json({ message: 'Project already exists or invalid data' });
-  }
-});
-
-app.put('/api/projects/:id', protect, authorize('admin'), upload.single('knowledgeBaseFile'), async (req, res) => {
-  const { name, teamLeader, projectUrl, uatUrl, productionLink, teamName } = req.body;
-  const teamMembers = req.body.teamMembers !== undefined
-    ? (typeof req.body.teamMembers === 'string' ? JSON.parse(req.body.teamMembers || '[]') : req.body.teamMembers)
-    : undefined;
-  try {
-    const project = await Project.findById(req.params.id);
-    if (!project) return res.status(404).json({ message: 'Project not found' });
-
-    if (name) project.name = name;
-    if (teamLeader !== undefined) project.teamLeader = teamLeader || null;
-    if (projectUrl !== undefined) project.projectUrl = projectUrl;
-    if (uatUrl !== undefined) project.uatUrl = uatUrl;
-    if (productionLink !== undefined) project.productionLink = productionLink;
-    if (teamName !== undefined) project.teamName = teamName;
-    if (teamMembers !== undefined) project.teamMembers = teamMembers;
-    if (req.file) {
-      project.knowledgeBase = `/uploads/${req.file.filename}`;
-      project.knowledgeBaseOriginalName = req.file.originalname;
-    }
-
-    await project.save();
-
-    const populated = await Project.findById(project._id)
-      .populate('teamLeader', 'name email mobile')
-      .populate('teamMembers', 'name email role mobile');
-    res.json(populated);
-  } catch (err) {
-    res.status(400).json({ message: 'Update failed' });
-  }
-});
-
-app.delete('/api/projects/:id', protect, authorize('admin'), async (req, res) => {
-  await Project.findByIdAndDelete(req.params.id);
-  res.json({ message: 'Project deleted' });
-});
 
 // ─────────────────────────────────────────────
 // STATS ROUTES
@@ -870,7 +907,7 @@ app.get('/api/users/employees', protect, authorize('admin', 'team_leader'), asyn
 });
 
 // Assignable agents — ONLY employees/team_leaders
-app.get('/api/users/agents', protect, authorize('admin', 'super_admin', 'team_leader'), async (req, res) => {
+app.get('/api/users/agents', protect, authorize('admin', 'super_admin', 'team_leader', 'hr'), async (req, res) => {
   const query = { status: 1, role: { $in: ['employee', 'team_leader', 'hr', 'admin'] } };
   const agents = await User.find(query).select('name email role mobile');
   res.json(agents);

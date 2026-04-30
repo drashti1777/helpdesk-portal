@@ -63,6 +63,7 @@ const Projects = () => {
   };
 
   const fetchUsers = async () => {
+    if (user.role !== 'admin' && user.role !== 'team_leader') return;
     try {
       const res = await fetch(`${API_BASE_URL}/api/users/agents`, {
         headers: { 'Authorization': `Bearer ${user.token}` }
@@ -225,9 +226,11 @@ const Projects = () => {
             <h1 style={{ fontSize: '2rem', fontWeight: '700', letterSpacing: '-0.02em' }}>Project Management</h1>
             <p style={{ color: 'var(--text-muted)', marginTop: '0.25rem' }}>Full visibility and oversight of all registered projects.</p>
           </div>
-          <button onClick={() => { resetForm(); setShowModal(true); }} className="btn btn-primary">
-            <PlusCircle size={18} /> New Project
-          </button>
+          {user.role === 'admin' && (
+            <button onClick={() => { resetForm(); setShowModal(true); }} className="btn btn-primary">
+              <PlusCircle size={18} /> New Project
+            </button>
+          )}
         </header>
 
         <div style={{ marginBottom: '1.5rem' }}>
@@ -404,15 +407,16 @@ const Projects = () => {
                   })()}
                 </div>
 
-                {/* Actions */}
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
-                  <button onClick={() => handleEdit(project)} className="btn btn-outline" style={{ padding: '0.4rem', borderRadius: '8px' }}>
-                    <Edit2 size={16} />
-                  </button>
-                  <button onClick={() => handleDelete(project._id)} className="btn btn-outline" style={{ padding: '0.4rem', borderRadius: '8px', color: '#ef4444', borderColor: 'rgba(239,68,68,0.2)' }}>
-                    <Trash2 size={16} />
-                  </button>
-                </div>
+                {user.role === 'admin' && (
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
+                    <button onClick={() => handleEdit(project)} className="btn btn-outline" style={{ padding: '0.4rem', borderRadius: '8px' }}>
+                      <Edit2 size={16} />
+                    </button>
+                    <button onClick={() => handleDelete(project._id)} className="btn btn-outline" style={{ padding: '0.4rem', borderRadius: '8px', color: '#ef4444', borderColor: 'rgba(239,68,68,0.2)' }}>
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                )}
               </div>
             ))
           )}
@@ -468,7 +472,7 @@ const Projects = () => {
               <form onSubmit={handleSubmit} id="project-form" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>Project Name *</label>
-                  <input type="text" required value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder="e.g. Unified Ticketing Portal" />
+                  <input type="text" required value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder="e.g. HelpDesk Portal" />
                 </div>
 
                 <div>

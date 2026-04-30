@@ -39,9 +39,13 @@ const Login = () => {
       });
       const data = await res.json();
       if (res.ok) {
-        login(data);
-        navigate('/');
-
+        if (isRegister) {
+          setIsRegister(false);
+          setError('');
+        } else {
+          login(data);
+          navigate('/projects');
+        }
       } else {
         setError(data.message || 'Something went wrong');
       }
@@ -155,7 +159,7 @@ const Login = () => {
               </div>
               <div style={{ textAlign: 'left' }}>
                 <h1 style={{ fontSize: '2.8rem', fontWeight: '850', color: '#1e293b', lineHeight: 0.9, letterSpacing: '-0.02em' }}>
-                  Unified <br />
+                   <br />
                   <span style={{ color: '#4f46e5' }}>Helpdesk Portal</span>
                 </h1>
               </div>

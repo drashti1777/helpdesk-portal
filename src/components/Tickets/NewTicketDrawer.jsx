@@ -9,21 +9,19 @@ import {
 } from 'lucide-react';
 
 const TICKET_TYPE_MAP = {
-  employee: { value: 'employee', label: 'IT Support', icon: UserIcon, color: '#10b981' },
   hr: { value: 'hr', label: 'HR Request', icon: ShieldCheck, color: '#fb7185' },
   team_leader: { value: 'team_leader', label: 'Team Leader', icon: Award, color: '#c084fc' },
   bug: { value: 'bug', label: 'Bug Report', icon: AlertTriangle, color: '#ef4444' },
 };
 
 const CATEGORIES_BY_TYPE = {
-  employee: [
-    'Hardware Issue', 'Software Installation', 'Network / Wi-Fi',
-    'Password Reset', 'Email Config', 'System Slowdown', 'Printer Issue', 'Other'
-  ],
   hr: [
     'Leave Application', 'Payroll / Salary', 'Policy Query',
     'Recruitment / Hiring', 'Onboarding', 'Documents / Letters',
-    'Desk / Facility Issue', 'Employee Grievance', 'Other'
+    'Desk / Facility Issue', 'Employee Grievance',
+    'Hardware Issue', 'Software Installation', 'Network / Wi-Fi',
+    'Password Reset', 'Email Config', 'System Slowdown', 'Printer Issue',
+    'Other'
   ],
   team_leader: [
     'Team Coordination', 'Resource Request', 'Project Escalation',
@@ -40,7 +38,7 @@ const NewTicketDrawer = ({ isOpen, onClose, onSuccess }) => {
   const isTeamLeader = user?.role === 'team_leader';
   const isManagement = isAdmin || isTeamLeader;
 
-  const defaultType = TICKET_TYPE_MAP[user?.role]?.value || 'hr';
+  const defaultType = 'hr';
 
   const [formData, setFormData] = useState({
     title: '',
@@ -48,6 +46,7 @@ const NewTicketDrawer = ({ isOpen, onClose, onSuccess }) => {
     type: defaultType,
     priority: 'low',
     category: '',
+    otherCategory: '',
     project: '',
     assignedTo: '',
   });
@@ -86,7 +85,18 @@ const NewTicketDrawer = ({ isOpen, onClose, onSuccess }) => {
     e.preventDefault();
     setLoading(true);
     const data = new FormData();
-    Object.entries(formData).forEach(([k, v]) => { if (v) data.append(k, v); });
+    
+    // Process category if "Other"
+    const finalCategory = formData.category === 'Other' ? (formData.otherCategory || 'Other') : formData.category;
+    
+    Object.entries(formData).forEach(([k, v]) => { 
+      if (k === 'category') {
+        data.append(k, finalCategory);
+      } else if (k !== 'otherCategory' && v) {
+        data.append(k, v); 
+      }
+    });
+    
     files.forEach(f => data.append('files', f));
 
     try {
@@ -98,7 +108,7 @@ const NewTicketDrawer = ({ isOpen, onClose, onSuccess }) => {
       if (res.ok) {
         onSuccess?.();
         onClose();
-        setFormData({ title: '', description: '', type: defaultType, priority: 'low', category: '', project: '', assignedTo: '' });
+        setFormData({ title: '', description: '', type: defaultType, priority: 'low', category: '', otherCategory: '', project: '', assignedTo: '' });
         setFiles([]);
       }
     } catch (err) {
@@ -195,13 +205,11 @@ const NewTicketDrawer = ({ isOpen, onClose, onSuccess }) => {
               <label style={labelStyle}>Ticket Type</label>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                 {(isManagement ? [
-                  { value: 'employee', label: 'IT Support' },
                   { value: 'hr', label: 'HR Request' },
                   { value: 'team_leader', label: 'Team Leader' },
                   { value: 'bug', label: 'Bug Report' }
                 ] : [
                   { value: 'hr', label: 'HR Request' },
-                  { value: 'employee', label: 'IT Issue' },
                   { value: 'bug', label: 'Bug Report' }
                 ]).map(type => {
                   const cfg = TICKET_TYPE_MAP[type.value];
@@ -210,7 +218,7 @@ const NewTicketDrawer = ({ isOpen, onClose, onSuccess }) => {
                   return (
                     <button
                       key={type.value} type="button"
-                      onClick={() => setFormData({ ...formData, type: type.value, assignedTo: '', category: '' })}
+                      onClick={() => setFormData({ ...formData, type: type.value, assignedTo: '', category: '', otherCategory: '' })}
                       style={{
                         padding: '0.85rem 1rem', borderRadius: '12px', cursor: 'pointer',
                         display: 'flex', alignItems: 'center', gap: '0.75rem',
@@ -273,10 +281,23 @@ const NewTicketDrawer = ({ isOpen, onClose, onSuccess }) => {
               </div>
             </div>
 
+            {/* Other Category Description */}
+            {formData.category === 'Other' && (
+              <div className="animate-fade-in">
+                <label style={labelStyle}>Issue Description *</label>
+                <input
+                  type="text" placeholder="Please specify the issue..." required
+                  value={formData.otherCategory}
+                  onChange={e => setFormData({ ...formData, otherCategory: e.target.value })}
+                  style={inputStyle}
+                />
+              </div>
+            )}
+
             {/* Project */}
-            {isManagement && !['employee', 'hr'].includes(formData.type) && (
+            {(isManagement || formData.type === 'bug') && (
               <div>
-                <label style={labelStyle}>Linked Project</label>
+                <label style={labelStyle}>Select Project</label>
                 <select
                   value={formData.project}
                   onChange={e => setFormData({ ...formData, project: e.target.value })}
@@ -305,7 +326,7 @@ const NewTicketDrawer = ({ isOpen, onClose, onSuccess }) => {
             )}
 
             {/* Assignee / Target */}
-            {isManagement && formData.type === 'employee' && (
+            {isManagement && formData.type !== 'bug' && (
               <div>
                 <label style={labelStyle}>Assign Solver</label>
                 <select

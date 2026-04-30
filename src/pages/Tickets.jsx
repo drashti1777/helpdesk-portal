@@ -15,8 +15,9 @@ const STATUS_CONFIG = {
 };
 
 const TYPE_CONFIG = {
-  employee: { label: 'Employee', color: '#10b981' },
-  hr: { label: 'HR', color: '#6366f1' },
+  hr: { label: 'HR Request', color: '#fb7185' },
+  bug: { label: 'Bug Report', color: '#ef4444' },
+  team_leader: { label: 'Team Leader', color: '#c084fc' }
 };
 
 const StatusBadge = ({ status }) => {
@@ -74,15 +75,13 @@ const Tickets = () => {
   const [exporting, setExporting] = useState(false);
   const [showNewTicketDrawer, setShowNewTicketDrawer] = useState(false);
 
-  // Only show Team Leader column when admin is on the All Tickets Overview tab
-  const showTeamLeaderCol = user.role === 'admin' && activeTab === 'all_tickets';
+
 
   // Only show type filter next to search bar on All Tickets Overview tab
   const showTypeFilterInBar =
     ['admin', 'team_leader'].includes(user.role) && activeTab === 'all_tickets';
 
   const getGridTemplate = () => {
-    if (showTeamLeaderCol) return '70px 1fr 110px 130px 120px 100px 110px 110px';
     return '70px 1fr 110px 120px 100px 110px 110px';
   };
 
@@ -174,6 +173,7 @@ const Tickets = () => {
       else matchCategory = (t.createdBy?._id || t.createdBy) === user?._id;
     } else if (user.role === 'admin') {
       if (activeTab === 'hr_pool') matchCategory = t.type === 'hr';
+      else if (activeTab === 'team_leader_pool') matchCategory = t.createdBy?.role === 'team_leader';
       else if (activeTab === 'employee_pool') matchCategory = ['employee', 'bug'].includes(t.type);
       else if (activeTab === 'all_tickets') matchCategory = true;
       else matchCategory = (t.createdBy?._id || t.createdBy) === user?._id;
@@ -333,6 +333,7 @@ const Tickets = () => {
         <div style={{ display: 'flex', gap: '1.5rem', borderBottom: '1px solid var(--border)', marginBottom: '1.5rem', paddingBottom: '0.2rem' }}>
           <TabButton active={activeTab === 'all_tickets'} onClick={() => setActiveTab('all_tickets')} label="All Tickets Overview" />
           <TabButton active={activeTab === 'hr_pool'} onClick={() => setActiveTab('hr_pool')} label="HR Internal" />
+          <TabButton active={activeTab === 'team_leader_pool'} onClick={() => setActiveTab('team_leader_pool')} label="Team Leader" />
           <TabButton active={activeTab === 'employee_pool'} onClick={() => setActiveTab('employee_pool')} label="Employee Tickets" />
         </div>
       )}
@@ -413,7 +414,7 @@ const Tickets = () => {
           <span>ID</span>
           <span>Subject</span>
           <span>Type</span>
-          {showTeamLeaderCol && <span>Team Leader</span>}
+
           <span>Status</span>
           <span>Priority</span>
           <span>Date</span>
@@ -471,12 +472,7 @@ const Tickets = () => {
                 }}>
                   {typeCfg.label}
                 </span>
-                {/* ── Team Leader column: only in All Tickets Overview ── */}
-                {showTeamLeaderCol && (
-                  <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {ticket.teamLeader?.name || ticket.assignedTo?.name || <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>—</span>}
-                  </span>
-                )}
+
                 <StatusBadge status={ticket.status} />
                 <span className={`badge badge-${ticket.priority}`}>{ticket.priority}</span>
                 <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
