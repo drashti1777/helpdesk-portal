@@ -258,7 +258,7 @@ const Projects = () => {
         <div className="glass-card" style={{ padding: 0, overflow: 'hidden' }}>
           <div style={{
             display: 'grid',
-            gridTemplateColumns: '180px 220px 160px 1fr 130px 130px 90px',
+            gridTemplateColumns: '180px 210px 150px 1fr 120px 120px 120px 90px',
             padding: '0.75rem 1.5rem',
             background: 'rgba(255,255,255,0.03)',
             borderBottom: '1px solid var(--border)',
@@ -272,6 +272,7 @@ const Projects = () => {
             <span>Project Leader</span>
             <span>Access Links</span>
             <span>Description</span>
+            <span>KBase</span>
             <span>Team Info</span>
             <span>Bugs</span>
             <span style={{ textAlign: 'right' }}>Actions</span>
@@ -291,7 +292,7 @@ const Projects = () => {
             filteredProjects.map((project, idx) => (
               <div key={project._id} style={{
                 display: 'grid',
-                gridTemplateColumns: '180px 220px 160px 1fr 130px 130px 90px',
+                gridTemplateColumns: '180px 210px 150px 1fr 120px 120px 120px 90px',
                 alignItems: 'center',
                 padding: '1.25rem 1.5rem',
                 borderBottom: idx < filteredProjects.length - 1 ? '1px solid var(--border)' : 'none',
@@ -382,21 +383,30 @@ const Projects = () => {
                   )}
                 </div>
 
+                {/* 4. Description */}
                 <div>
                   <p style={{ 
                     fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: '1.4', 
                     display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden'
                   }}>
-                    {project.description || 'No description provided.'}
+                    {project.description || 'No description'}
                   </p>
-                  {project.knowledgeBase && (
+                </div>
+
+                {/* 5. Knowledge Base */}
+                <div>
+                  {project.knowledgeBase ? (
                     <button
                       type="button"
                       onClick={() => window.open(getKnowledgeBaseUrl(project), '_blank', 'noopener,noreferrer')}
-                      style={{ background: 'none', border: 'none', color: 'var(--primary)', fontSize: '0.7rem', fontWeight: '700', padding: 0, marginTop: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '2px' }}
+                      className="btn btn-outline"
+                      style={{ padding: '0.35rem 0.6rem', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
                     >
-                      <FileText size={10} /> View KB
+                      <FileText size={12} />
+                      <span>View</span>
                     </button>
+                  ) : (
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>No KB</span>
                   )}
                 </div>
 
@@ -663,7 +673,7 @@ const Projects = () => {
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>Knowledge Base</label>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>KBase</label>
                   <div
                     onClick={() => knowledgeBaseInputRef.current?.click()}
                     onDragEnter={e => {
@@ -711,7 +721,7 @@ const Projects = () => {
                       </div>
                       <div>
                         <p style={{ fontSize: '0.9rem', fontWeight: '700', color: 'var(--text-main)' }}>Drag and drop document here</p>
-                        <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>or click to browse a knowledge base file</p>
+                        <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>or click to browse a kbase file</p>
                       </div>
                     </div>
                   </div>
@@ -720,7 +730,7 @@ const Projects = () => {
                     <div style={{ marginTop: '0.9rem', display: 'flex', flexWrap: 'wrap', gap: '0.75rem', alignItems: 'center' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 0.75rem', borderRadius: '10px', background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.2)', color: 'var(--primary)', fontSize: '0.8rem', fontWeight: '600' }}>
                         <FileText size={14} />
-                        <span>{knowledgeBaseFile?.name || editingProject?.knowledgeBaseOriginalName || 'Knowledge base document'}</span>
+                        <span>{knowledgeBaseFile?.name || editingProject?.knowledgeBaseOriginalName || 'kbase document'}</span>
                         {knowledgeBaseFile && (
                           <X size={14} style={{ cursor: 'pointer', opacity: 0.7 }} onClick={(event) => { event.stopPropagation(); setKnowledgeBaseFile(null); }} />
                         )}

@@ -242,6 +242,34 @@ const NewTicketDrawer = ({ isOpen, onClose, onSuccess }) => {
               </div>
             </div>
 
+            {/* Project */}
+            {(formData.type === 'bug' || formData.type === 'team_leader') && (
+              <div>
+                <label style={labelStyle}>Select Project</label>
+                <select
+                  value={formData.project}
+                  onChange={e => setFormData({ ...formData, project: e.target.value })}
+                  style={inputStyle}
+                >
+                  <option value="">Internal / No Project</option>
+                  {projects.map(p => <option key={p._id} value={p.name}>{p.name} {p.teamName ? `(${p.teamName})` : ''}</option>)}
+                </select>
+                {formData.project && projects.find(p => p.name === formData.project) && (
+                  <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                    {projects.find(p => p.name === formData.project).teamName && (
+                      <span style={{ fontSize: '0.7rem', color: '#c084fc', fontWeight: '700', marginRight: '0.5rem' }}>👥 {projects.find(p => p.name === formData.project).teamName}</span>
+                    )}
+                    {projects.find(p => p.name === formData.project).projectUrl && (
+                      <a href={projects.find(p => p.name === formData.project).projectUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.7rem', color: 'var(--primary)', textDecoration: 'none' }}>🌐 Project</a>
+                    )}
+                    {projects.find(p => p.name === formData.project).productionLink && (
+                      <a href={projects.find(p => p.name === formData.project).productionLink} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.7rem', color: '#10b981', textDecoration: 'none' }}>🚀 Prod</a>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
               {/* Category */}
               <div>
@@ -280,50 +308,6 @@ const NewTicketDrawer = ({ isOpen, onClose, onSuccess }) => {
                 </div>
               </div>
             </div>
-
-            {/* Other Category Description */}
-            {formData.category === 'Other' && (
-              <div className="animate-fade-in">
-                <label style={labelStyle}>Issue Description *</label>
-                <input
-                  type="text" placeholder="Please specify the issue..." required
-                  value={formData.otherCategory}
-                  onChange={e => setFormData({ ...formData, otherCategory: e.target.value })}
-                  style={inputStyle}
-                />
-              </div>
-            )}
-
-            {/* Project */}
-            {(isManagement || formData.type === 'bug') && (
-              <div>
-                <label style={labelStyle}>Select Project</label>
-                <select
-                  value={formData.project}
-                  onChange={e => setFormData({ ...formData, project: e.target.value })}
-                  style={inputStyle}
-                >
-                  <option value="">Internal / No Project</option>
-                  {projects.map(p => <option key={p._id} value={p.name}>{p.name} {p.teamName ? `(${p.teamName})` : ''}</option>)}
-                </select>
-                {formData.project && projects.find(p => p.name === formData.project) && (
-                  <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
-                    {projects.find(p => p.name === formData.project).teamName && (
-                      <span style={{ fontSize: '0.7rem', color: '#c084fc', fontWeight: '700', marginRight: '0.5rem' }}>👥 {projects.find(p => p.name === formData.project).teamName}</span>
-                    )}
-                    {projects.find(p => p.name === formData.project).projectUrl && (
-                      <a href={projects.find(p => p.name === formData.project).projectUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.7rem', color: 'var(--primary)', textDecoration: 'none' }}>🌐 Project</a>
-                    )}
-                    {projects.find(p => p.name === formData.project).uatUrl && (
-                      <a href={projects.find(p => p.name === formData.project).uatUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.7rem', color: 'var(--warning)', textDecoration: 'none' }}>🧪 UAT</a>
-                    )}
-                    {projects.find(p => p.name === formData.project).productionLink && (
-                      <a href={projects.find(p => p.name === formData.project).productionLink} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.7rem', color: '#10b981', textDecoration: 'none' }}>🚀 Prod</a>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
 
             {/* Assignee / Target */}
             {isManagement && formData.type !== 'bug' && (
