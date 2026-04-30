@@ -192,6 +192,7 @@ const Profile = () => {
                     value={formData.firstName}
                     onChange={e => setFormData({...formData, firstName: e.target.value})}
                     required
+                    autoComplete="off"
                     style={{ width: '100%', padding: '0.85rem 1rem 0.85rem 2.85rem', background: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: '12px', color: 'var(--text-main)', outline: 'none' }}
                   />
                 </div>
@@ -206,6 +207,7 @@ const Profile = () => {
                     value={formData.lastName}
                     onChange={e => setFormData({...formData, lastName: e.target.value})}
                     required
+                    autoComplete="off"
                     style={{ width: '100%', padding: '0.85rem 1rem 0.85rem 2.85rem', background: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: '12px', color: 'var(--text-main)', outline: 'none' }}
                   />
                 </div>
@@ -221,6 +223,7 @@ const Profile = () => {
                     type="text"
                     value={formData.mobile}
                     onChange={e => setFormData({...formData, mobile: e.target.value})}
+                    autoComplete="off"
                     style={{ width: '100%', padding: '0.85rem 1rem 0.85rem 2.85rem', background: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: '12px', color: 'var(--text-main)', outline: 'none' }}
                   />
                 </div>
@@ -235,6 +238,7 @@ const Profile = () => {
                     value={formData.email}
                     onChange={e => setFormData({...formData, email: e.target.value})}
                     required
+                    autoComplete="off"
                     style={{ width: '100%', padding: '0.85rem 1rem 0.85rem 2.85rem', background: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: '12px', color: 'var(--text-main)', outline: 'none' }}
                   />
                 </div>
@@ -258,6 +262,7 @@ const Profile = () => {
                       placeholder="New Password"
                       value={formData.password}
                       onChange={e => setFormData({...formData, password: e.target.value})}
+                      autoComplete="new-password"
                       style={{ width: '100%', padding: '0.85rem 3rem 0.85rem 1.1rem', background: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: '12px', color: 'var(--text-main)', outline: 'none' }}
                     />
                     <button
@@ -277,6 +282,7 @@ const Profile = () => {
                       placeholder="Confirm Password"
                       value={formData.confirmPassword}
                       onChange={e => setFormData({...formData, confirmPassword: e.target.value})}
+                      autoComplete="new-password"
                       style={{ width: '100%', padding: '0.85rem 3rem 0.85rem 1.1rem', background: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: '12px', color: 'var(--text-main)', outline: 'none' }}
                     />
                     <button
