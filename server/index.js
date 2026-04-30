@@ -42,7 +42,7 @@ const canAccessTicket = async (user, ticket) => {
   return false;
 };
 
-async function dispatchNotifications(ticket, message, initiatorId, initiatorRole) {
+async function dispatchNotifications(ticket, message, initiatorId, initiatorRole, projectName = '', activityDetails = '') {
   const notificationDocs = [];
   const involvedUserIds = new Set();
   
@@ -51,8 +51,9 @@ async function dispatchNotifications(ticket, message, initiatorId, initiatorRole
   admins.forEach(a => involvedUserIds.add(a._id.toString()));
 
   // 2. Project Team Leader
-  if (ticket.project) {
-    const proj = await Project.findOne({ name: ticket.project }).select('teamLeader');
+  const finalProjectName = projectName || ticket.project || '';
+  if (finalProjectName) {
+    const proj = await Project.findOne({ name: finalProjectName }).select('teamLeader');
     if (proj?.teamLeader) involvedUserIds.add(proj.teamLeader.toString());
   }
 
@@ -70,6 +71,8 @@ async function dispatchNotifications(ticket, message, initiatorId, initiatorRole
       notificationDocs.push({
         userId: uid,
         ticketId: ticket._id,
+        projectName: finalProjectName,
+        activityDetails: activityDetails || message,
         message
       });
     }
@@ -314,7 +317,7 @@ app.post('/api/auth/seed-super-admin', async (req, res) => {
 // ─────────────────────────────────────────────
 
 app.get('/api/tickets', protect, async (req, res) => {
-  let query = {};
+  let query = { activeStatus: 1 };
 
   if (req.user.role === 'employee') {
     // Employees see tickets they raised or are assigned to
@@ -332,7 +335,7 @@ app.get('/api/tickets', protect, async (req, res) => {
       { assignedTo: req.user._id }
     ];
   } else if (req.user.role === 'admin') {
-    query = {}; // Admin sees everything
+    query = { activeStatus: 1 }; // Admin sees all active tickets
 
   } else if (req.user.role === 'hr') {
     // HR sees tickets assigned to them and tickets they created
@@ -353,7 +356,10 @@ app.get('/api/tickets', protect, async (req, res) => {
 app.post('/api/tickets', protect, upload.array('files'), async (req, res) => {
   const { title, description, project, type, priority, category, targetClient, assignedTo } = req.body;
   console.log('🎫 Creating ticket:', { title, type, targetClient, assignedTo, createdBy: req.user._id, role: req.user.role });
-  const attachments = req.files ? req.files.map(f => ({ filename: f.filename, path: f.path })) : [];
+  const attachments = req.files ? req.files.map(f => ({ 
+    filename: f.originalname, 
+    path: `/uploads/${f.filename}` 
+  })) : [];
   const config = await getSystemConfig();
 
   let ticketType = type || 'employee';
@@ -401,7 +407,9 @@ app.post('/api/tickets', protect, upload.array('files'), async (req, res) => {
     attachments, slaResponseDue, slaResolutionDue
   });
 
-  await dispatchNotifications(ticket, `New ticket raised: ${title}`, req.user._id, req.user.role);
+  const populatedTicket = await Ticket.findById(ticket._id).populate('assignedTo', 'name');
+  const assigneeName = populatedTicket.assignedTo?.name || 'Unassigned';
+  await dispatchNotifications(ticket, `New ${ticketType.toUpperCase()} raised: ${title} (Proj: ${ticket.project})`, req.user._id, req.user.role, ticket.project, `Title: ${title} | Proj: ${ticket.project} | Assigned to: ${assigneeName} | Category: ${ticket.category} | Priority: ${ticket.priority}`);
 
   res.status(201).json(ticket);
 });
@@ -410,7 +418,7 @@ app.get('/api/tickets/:id', protect, async (req, res) => {
   const ticket = await Ticket.findById(req.params.id)
     .populate('createdBy', 'name email role')
     .populate('assignedTo', 'name email role');
-  if (!ticket) return res.status(404).json({ message: 'Ticket not found' });
+  if (!ticket || ticket.activeStatus === 0) return res.status(404).json({ message: 'Ticket not found or deleted' });
   if (! (await canAccessTicket(req.user, ticket))) {
     return res.status(403).json({ message: 'Not authorized to view this ticket' });
   }
@@ -435,7 +443,7 @@ app.get('/api/tickets/:id', protect, async (req, res) => {
 
 app.get('/api/projects', protect, async (req, res) => {
   try {
-    let query = {};
+    let query = { status: 1 };
     if (req.user.role === 'team_leader') {
       query = { teamLeader: req.user._id };
     } else if (req.user.role === 'employee') {
@@ -453,10 +461,11 @@ app.get('/api/projects', protect, async (req, res) => {
 
 app.post('/api/projects', protect, authorize('admin'), upload.single('knowledgeBaseFile'), async (req, res) => {
   try {
-    const { name, teamName, projectUrl, uatUrl, productionLink, teamLeader, teamMembers } = req.body;
+    const { name, teamName, productionUrl, uatUrl, productionLink, teamLeader, teamMembers, status: projectStatus } = req.body;
     const project = await Project.create({
-      name, teamName, projectUrl, uatUrl, productionLink,
+      name, teamName, productionUrl, uatUrl, productionLink,
       teamLeader: teamLeader || null,
+      status: projectStatus !== undefined ? Number(projectStatus) : 1,
       teamMembers: teamMembers ? JSON.parse(teamMembers) : [],
       knowledgeBase: req.file ? `/uploads/${req.file.filename}` : null,
       knowledgeBaseOriginalName: req.file ? req.file.originalname : null
@@ -467,18 +476,24 @@ app.post('/api/projects', protect, authorize('admin'), upload.single('knowledgeB
   }
 });
 
-app.put('/api/projects/:id', protect, authorize('admin'), upload.single('knowledgeBaseFile'), async (req, res) => {
+app.put('/api/projects/:id', protect, authorize('admin', 'team_leader'), upload.single('knowledgeBaseFile'), async (req, res) => {
   try {
-    const { name, teamName, projectUrl, uatUrl, productionLink, teamLeader, teamMembers } = req.body;
+    const { name, teamName, productionUrl, uatUrl, productionLink, teamLeader, teamMembers, status: projectStatus } = req.body;
     const project = await Project.findById(req.params.id);
     if (!project) return res.status(404).json({ message: 'Project not found' });
 
+    // Team leaders can only edit their own projects
+    if (req.user.role === 'team_leader' && (project.teamLeader?.toString() !== req.user._id.toString())) {
+      return res.status(403).json({ message: 'Team Leaders can only edit projects they are assigned to lead.' });
+    }
+
     project.name = name;
     project.teamName = teamName;
-    project.projectUrl = projectUrl;
+    project.productionUrl = productionUrl;
     project.uatUrl = uatUrl;
     project.productionLink = productionLink;
     project.teamLeader = teamLeader || null;
+    if (projectStatus !== undefined) project.status = Number(projectStatus);
     project.teamMembers = teamMembers ? JSON.parse(teamMembers) : [];
     
     if (req.file) {
@@ -495,8 +510,8 @@ app.put('/api/projects/:id', protect, authorize('admin'), upload.single('knowled
 
 app.delete('/api/projects/:id', protect, authorize('admin'), async (req, res) => {
   try {
-    await Project.findByIdAndDelete(req.params.id);
-    res.json({ message: 'Project deleted' });
+    await Project.findByIdAndUpdate(req.params.id, { status: 0 });
+    res.json({ message: 'Project marked as inactive' });
   } catch (err) {
     res.status(500).json({ message: 'Server error' });
   }
@@ -517,14 +532,26 @@ app.put('/api/tickets/:id', protect, async (req, res) => {
   const canWorkTicket = isAdminLevel || isEmployee || hrCanManageThisTicket;
 
   if (status) {
-    if (isAdminLevel || isEmployee) {
-    if (req.user.role === 'admin' && ticket.type === 'hr') {
+    if (isAdminLevel || isEmployee || hrCanManageThisTicket) {
+      if (req.user.role === 'admin' && ticket.type === 'hr') {
         return res.status(403).json({ message: 'Admins cannot manage HR tickets directly if they are sensitive.' });
       }
-      // Bug tickets can only be marked completed by admin/team_leader to prevent point self-award.
-      if (ticket.type === 'bug' && status === 'completed' && !isAdminLevel) {
-        return res.status(403).json({ message: 'Only admins or team leaders can verify bug reports as completed.' });
+
+      // Logic for 'resolved' (Employee finishing work)
+      if (status === 'resolved' && !isAssigned && !isAdminLevel) {
+        return res.status(403).json({ message: 'Only the assigned member can mark a ticket as resolved.' });
       }
+
+      // Logic for 'completed' (Verification)
+      if (status === 'completed' && !isAdminLevel) {
+        return res.status(403).json({ message: 'Only admins or team leaders can verify and complete tickets.' });
+      }
+
+      // Logic for 'in_progress' (Reopening from resolved)
+      if (status === 'in_progress' && ticket.status === 'resolved' && !isAdminLevel) {
+        return res.status(403).json({ message: 'Only admins or team leaders can reopen resolved tickets.' });
+      }
+
       ticket.status = status;
     } else {
       return res.status(403).json({ message: 'You are not authorized to update this ticket status' });
@@ -571,7 +598,9 @@ app.put('/api/tickets/:id', protect, async (req, res) => {
   }
 
   // Role-based notification for ticket update
-  await dispatchNotifications(ticket, `Ticket updated: ${ticket.title}`, req.user._id, req.user.role);
+  const populatedTicketForUpdate = await Ticket.findById(ticket._id).populate('assignedTo', 'name');
+  const assigneeNameUpdate = populatedTicketForUpdate.assignedTo?.name || 'Unassigned';
+  await dispatchNotifications(ticket, `Ticket updated: ${ticket.title} (Proj: ${ticket.project})`, req.user._id, req.user.role, ticket.project, `Title: ${ticket.title} | Proj: ${ticket.project} | Assigned to: ${assigneeNameUpdate} | Status: ${ticket.status} | Priority: ${ticket.priority}`);
 
   // Return populated ticket so frontend state remains consistent
   const updatedTicket = await Ticket.findById(ticket._id)
@@ -590,9 +619,9 @@ app.delete('/api/tickets/:id', protect, authorize('admin', 'team_leader'), async
     return res.status(403).json({ message: 'Team Leaders cannot delete HR tickets.' });
   }
 
-  await Ticket.findByIdAndDelete(req.params.id);
-  await Comment.deleteMany({ ticketId: req.params.id });
-  res.json({ message: 'Ticket deleted' });
+  ticket.activeStatus = 0;
+  await ticket.save();
+  res.json({ message: 'Ticket marked as inactive' });
 });
 
 // Notifications

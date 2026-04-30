@@ -32,7 +32,8 @@ const ticketSchema = new mongoose.Schema({
   project: { type: String },
   type: { type: String, enum: ['hr', 'employee', 'bug', 'team_leader'], required: true },
   priority: { type: String, enum: ['low', 'medium', 'high'], default: 'low' },
-  status: { type: String, enum: ['pending', 'in_progress', 'on_hold', 'completed'], default: 'pending' },
+  status: { type: String, enum: ['pending', 'in_progress', 'on_hold', 'resolved', 'completed'], default: 'pending' },
+  activeStatus: { type: Number, enum: [0, 1], default: 1 }, // 0: Deleted/Inactive, 1: Active
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   targetClient: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   assignedTo: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
@@ -65,6 +66,8 @@ const notificationSchema = new mongoose.Schema({
   message: { type: String, required: true },
   isRead: { type: Boolean, default: false },
   ticketId: { type: mongoose.Schema.Types.ObjectId, ref: 'Ticket' },
+  projectName: { type: String },
+  activityDetails: { type: String },
   createdAt: { type: Date, default: Date.now }
 });
 
@@ -90,12 +93,13 @@ const projectSchema = new mongoose.Schema({
   description: { type: String },
   knowledgeBase: { type: String },
   knowledgeBaseOriginalName: { type: String },
-  projectUrl: { type: String },
+  productionUrl: { type: String },
   uatUrl: { type: String },
   productionLink: { type: String },
   teamName: { type: String },
   teamMembers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   teamLeader: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  status: { type: Number, enum: [0, 1], default: 1 }, // 0: Inactive/Deleted, 1: Active
   createdAt: { type: Date, default: Date.now }
 });
 

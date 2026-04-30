@@ -325,9 +325,15 @@ const Users = () => {
                     </span>
                   )}
                   {emp.createdAt && (
-                    <p style={{ fontSize: '0.73rem', color: 'var(--text-muted)', marginTop: '1px' }}>
-                      Joined {new Date(emp.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}
-                    </p>
+                    <div style={{ fontSize: '0.73rem', color: 'var(--text-muted)', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                      <span style={{ fontWeight: '600', color: 'rgba(255,255,255,0.4)' }}>Joined:</span>
+                      <span>
+                        {(() => {
+                          const p = formatDateTimeParts(emp.createdAt);
+                          return p ? `${p.datePart} ${p.timePart}` : new Date(emp.createdAt).toLocaleDateString();
+                        })()}
+                      </span>
+                    </div>
                   )}
                 </div>
 

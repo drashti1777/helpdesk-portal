@@ -5,7 +5,7 @@ import API_BASE_URL from '../config';
 import { AuthContext } from '../context/AuthContext';
 import {
   ArrowLeft, Send, Paperclip, Clock, User as UserIcon,
-  CheckCircle, RefreshCcw, AlertTriangle, Shield, Trash2, UserCheck, Star
+  CheckCircle, RefreshCcw, AlertTriangle, Shield, Trash2, UserCheck, Star, FileText, Bug, ShieldCheck
 } from 'lucide-react';
 import ConfirmModal from '../components/Layout/ConfirmModal';
 
@@ -13,7 +13,8 @@ const STATUS_CONFIG = {
   pending:     { color: '#ef4444', bg: 'rgba(239,68,68,0.1)',    label: 'Pending'     },
   in_progress: { color: '#6366f1', bg: 'rgba(99,102,241,0.12)', label: 'In Progress' },
   on_hold:     { color: '#f59e0b', bg: 'rgba(245,158,11,0.1)',  label: 'On Hold'     },
-  completed:   { color: '#10b981', bg: 'rgba(16,185,129,0.1)',  label: 'Completed'   },
+  resolved:    { color: '#10b981', bg: 'rgba(16,185,129,0.1)',  label: 'Resolved'    },
+  completed:   { color: '#059669', bg: 'rgba(5,150,105,0.15)',  label: 'Verified'    },
 };
 
 const ROLE_COLORS = {
@@ -210,28 +211,52 @@ const TicketDetail = () => {
           <ArrowLeft size={16} /> Back
         </button>
         <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
-          {canManage && ticket.status !== 'completed' && (
+          {/* Status Actions */}
+          {ticket.status !== 'completed' && (
             <>
-              {ticket.status === 'pending' && (
+              {(isAdmin || isProjectTL || isAssignedToMe) && ticket.status === 'pending' && (
                 <button onClick={() => updateTicket({ status: 'in_progress' })} className="btn btn-outline" style={{ fontSize: '0.85rem' }}>
-                  Start Working
+                  <RefreshCcw size={16} /> Start Working
                 </button>
               )}
-              {ticket.status !== 'on_hold' && (
+              
+              {(isAdmin || isProjectTL || isAssignedToMe) && (ticket.status === 'in_progress' || ticket.status === 'on_hold') && (
+                <button onClick={() => updateTicket({ status: 'resolved' })} className="btn btn-primary" style={{ background: '#10b981', fontSize: '0.85rem' }}>
+                  <CheckCircle size={16} /> Mark as Resolved
+                </button>
+              )}
+
+              {/* Verification Actions (Admin/TL Only) */}
+              {ticket.status === 'resolved' && (isAdmin || isProjectTL) && (
+                <>
+                  <button onClick={() => updateTicket({ status: 'completed' })} className="btn btn-primary" style={{ background: '#059669', fontSize: '0.85rem' }}>
+                    <ShieldCheck size={16} /> Verify & Complete
+                  </button>
+                  <button onClick={() => updateTicket({ status: 'in_progress' })} className="btn btn-outline" style={{ color: '#ef4444', borderColor: 'rgba(239,68,68,0.3)', fontSize: '0.85rem' }}>
+                    <RefreshCcw size={16} /> Reject & Reopen
+                  </button>
+                </>
+              )}
+
+              {(isAdmin || isProjectTL || isAssignedToMe) && ticket.status === 'in_progress' && (
                 <button onClick={() => updateTicket({ status: 'on_hold' })} className="btn btn-outline" style={{ fontSize: '0.85rem' }}>
-                  Hold
+                  <Clock size={16} /> Hold
                 </button>
               )}
-              <button onClick={() => updateTicket({ status: 'completed' })} className="btn btn-primary" style={{ background: 'var(--success)', fontSize: '0.85rem' }}>
-                <CheckCircle size={16} /> Resolve
-              </button>
             </>
           )}
-          {ticket.status === 'completed' && canManage && (
-            <button onClick={() => updateTicket({ status: 'in_progress' })} className="btn btn-outline" style={{ fontSize: '0.85rem' }}>
-              <RefreshCcw size={16} /> Reopen
+
+          {/* Admin/TL specialized actions */}
+          {(isAdmin || isProjectTL) && ticket.type !== 'bug' && ticket.status !== 'completed' && (
+            <button 
+              onClick={() => updateTicket({ type: 'bug' })} 
+              className="btn btn-outline" 
+              style={{ color: '#fbbf24', borderColor: 'rgba(251,191,36,0.3)', fontSize: '0.85rem' }}
+            >
+              <Bug size={16} /> Approve as Bug
             </button>
           )}
+
           {canDelete && (
             <button onClick={() => setShowDeleteConfirm(true)} className="btn btn-outline" style={{ color: '#fca5a5', borderColor: 'rgba(239,68,68,0.3)', fontSize: '0.85rem' }}>
               <Trash2 size={16} /> Delete
@@ -290,15 +315,44 @@ const TicketDetail = () => {
                 <h4 style={{ marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem' }}>
                   <Paperclip size={16} /> Attachments ({ticket.attachments.length})
                 </h4>
-                <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-                  {ticket.attachments.map((file, i) => (
-                    <a
-                      key={i} href={`${API_BASE_URL}/${file.path}`} target="_blank" rel="noreferrer"
-                      className="btn btn-outline" style={{ fontSize: '0.8rem', padding: '0.4rem 0.9rem' }}
-                    >
-                      {file.filename}
-                    </a>
-                  ))}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '1rem' }}>
+                  {ticket.attachments.map((file, i) => {
+                    const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(file.filename);
+                    const fileUrl = `${API_BASE_URL}${file.path}`;
+                    
+                    return (
+                      <div key={i} className="glass-card" style={{ padding: '0.75rem', position: 'relative', overflow: 'hidden' }}>
+                        {isImage ? (
+                          <div style={{ height: '100px', borderRadius: '8px', overflow: 'hidden', marginBottom: '0.75rem', background: 'rgba(0,0,0,0.2)' }}>
+                            <img 
+                              src={fileUrl} 
+                              alt={file.filename} 
+                              style={{ width: '100%', height: '100%', objectFit: 'cover', cursor: 'pointer' }}
+                              onClick={() => window.open(fileUrl, '_blank')}
+                            />
+                          </div>
+                        ) : (
+                          <div style={{ height: '100px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.05)', marginBottom: '0.75rem' }}>
+                            <FileText size={32} color="var(--text-muted)" />
+                          </div>
+                        )}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                          <p style={{ fontSize: '0.75rem', fontWeight: '600', color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {file.filename}
+                          </p>
+                          <a 
+                            href={fileUrl} 
+                            target="_blank" 
+                            rel="noreferrer" 
+                            className="btn btn-outline" 
+                            style={{ fontSize: '0.7rem', padding: '0.3rem', width: '100%', textAlign: 'center', justifyContent: 'center' }}
+                          >
+                            View / Download
+                          </a>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}

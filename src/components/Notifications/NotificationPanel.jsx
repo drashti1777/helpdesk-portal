@@ -2,7 +2,7 @@ import API_BASE_URL from '../../config';
 import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
-import { Bell, X, Check, Clock, Info, Trash2 } from 'lucide-react';
+import { Bell, X, Check, Clock, Info, Trash2, Globe } from 'lucide-react';
 import ConfirmModal from '../Layout/ConfirmModal';
 
 const NotificationPanel = () => {
@@ -235,6 +235,16 @@ const NotificationPanel = () => {
                     <p style={{ fontSize: '0.85rem', fontWeight: n.isRead ? '400' : '600', color: 'var(--text-main)', marginBottom: '0.25rem', lineHeight: 1.4 }}>
                       {n.message}
                     </p>
+                    {n.projectName && (
+                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', padding: '0.15rem 0.45rem', borderRadius: '4px', background: 'rgba(99,102,241,0.1)', color: 'var(--primary)', fontSize: '0.65rem', fontWeight: '700', marginBottom: '0.4rem', textTransform: 'uppercase' }}>
+                        <Globe size={10} /> {n.projectName}
+                      </div>
+                    )}
+                    {n.activityDetails && n.activityDetails !== n.message && (
+                      <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.4rem', fontStyle: 'italic' }}>
+                        {n.activityDetails}
+                      </p>
+                    )}
                     <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
                       {new Date(n.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })} {new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </p>

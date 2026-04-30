@@ -11,7 +11,8 @@ const STATUS_CONFIG = {
   pending: { color: '#ef4444', bg: 'rgba(239,68,68,0.1)', label: 'Pending' },
   in_progress: { color: '#6366f1', bg: 'rgba(99,102,241,0.12)', label: 'In Progress' },
   on_hold: { color: '#f59e0b', bg: 'rgba(245,158,11,0.1)', label: 'On Hold' },
-  completed: { color: '#10b981', bg: 'rgba(16,185,129,0.1)', label: 'Completed' },
+  resolved: { color: '#10b981', bg: 'rgba(16,185,129,0.1)', label: 'Resolved' },
+  completed: { color: '#059669', bg: 'rgba(5,150,105,0.15)', label: 'Verified' },
 };
 
 const TYPE_CONFIG = {
@@ -190,7 +191,7 @@ const Tickets = () => {
   // Role-aware header
   const pageTitle = {
     admin: 'All Tickets',
-    team_leader: 'Team Management',
+    team_leader: 'Tickets Management',
     employee: 'Tickets',
   }[user.role] || 'Tickets';
 
@@ -475,8 +476,9 @@ const Tickets = () => {
 
                 <StatusBadge status={ticket.status} />
                 <span className={`badge badge-${ticket.priority}`}>{ticket.priority}</span>
-                <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
-                  {new Date(ticket.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', whiteSpace: 'nowrap', display: 'flex', flexDirection: 'column' }}>
+                  <span>{new Date(ticket.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}</span>
+                  <span style={{ fontSize: '0.7rem', opacity: 0.8 }}>{new Date(ticket.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                 </span>
                 <div style={{ textAlign: 'right' }}>
                   <button className="btn btn-outline" style={{ padding: '0.3rem 0.75rem', fontSize: '0.72rem' }}>View</button>

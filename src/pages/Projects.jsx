@@ -21,13 +21,16 @@ const Projects = () => {
   const [toast, setToast] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
+    description: '',
     teamName: '',
-    projectUrl: '',
+    productionUrl: '',
     uatUrl: '',
     productionLink: '',
     teamLeader: '',
-    teamMembers: []
+    teamMembers: [],
+    status: 1
   });
+  const [infoProject, setInfoProject] = useState(null);
   const [saving, setSaving] = useState(false);
   const [availableUsers, setAvailableUsers] = useState([]);
   const [memberSearch, setMemberSearch] = useState('');
@@ -116,12 +119,14 @@ const Projects = () => {
     try {
       const payload = new FormData();
       payload.append('name', formData.name);
+      payload.append('description', formData.description);
       payload.append('teamName', formData.teamName);
-      payload.append('projectUrl', formData.projectUrl);
+      payload.append('productionUrl', formData.productionUrl);
       payload.append('uatUrl', formData.uatUrl);
       payload.append('productionLink', formData.productionLink);
       payload.append('teamLeader', formData.teamLeader);
       payload.append('teamMembers', JSON.stringify(formData.teamMembers));
+      payload.append('status', formData.status);
       if (knowledgeBaseFile) {
         payload.append('knowledgeBaseFile', knowledgeBaseFile);
       }
@@ -152,12 +157,14 @@ const Projects = () => {
   const resetForm = () => {
     setFormData({
       name: '',
+      description: '',
       teamName: '',
-      projectUrl: '',
+      productionUrl: '',
       uatUrl: '',
       productionLink: '',
       teamLeader: '',
-      teamMembers: []
+      teamMembers: [],
+      status: 1
     });
     setKnowledgeBaseFile(null);
     setShowMemberDropdown(false);
@@ -169,12 +176,14 @@ const Projects = () => {
     setEditingProject(project);
     setFormData({
       name: project.name || '',
+      description: project.description || '',
       teamName: project.teamName || '',
-      projectUrl: project.projectUrl || '',
+      productionUrl: project.productionUrl || '',
       uatUrl: project.uatUrl || '',
       productionLink: project.productionLink || '',
       teamLeader: project.teamLeader?._id || project.teamLeader || '',
-      teamMembers: (project.teamMembers || []).map(m => m._id || m)
+      teamMembers: (project.teamMembers || []).map(m => m._id || m),
+      status: project.status ?? 1
     });
     setKnowledgeBaseFile(null);
     setShowModal(true);
@@ -259,11 +268,11 @@ const Projects = () => {
             textTransform: 'uppercase',
             letterSpacing: '0.07em'
           }}>
-            <span>Project & Team</span>
+            <span>Project & Status</span>
             <span>Project Leader</span>
             <span>Access Links</span>
-            <span>Knowledge Base</span>
-            <span>Info</span>
+            <span>Description</span>
+            <span>Team Info</span>
             <span>Bugs</span>
             <span style={{ textAlign: 'right' }}>Actions</span>
           </div>
@@ -291,11 +300,37 @@ const Projects = () => {
                 {/* 1. Project & Team Name */}
                 <div>
                   <h3 style={{ fontWeight: '700', fontSize: '1rem', color: 'var(--text-main)' }}>{project.name}</h3>
-                  {project.teamName && (
-                    <p style={{ fontSize: '0.75rem', color: 'var(--primary)', fontWeight: '600', marginTop: '2px' }}>
-                      Team: {project.teamName}
-                    </p>
-                  )}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '4px' }}>
+                    <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                      <span style={{ 
+                        fontSize: '0.65rem', padding: '0.15rem 0.5rem', borderRadius: '4px',
+                        background: project.status === 1 ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)',
+                        color: project.status === 1 ? '#22c55e' : '#ef4444',
+                        fontWeight: '700', border: `1px solid ${project.status === 1 ? 'rgba(34,197,94,0.2)' : 'rgba(239,68,68,0.2)'}`,
+                        cursor: (user.role === 'admin' || (user.role === 'team_leader' && (project.teamLeader?._id || project.teamLeader) === user._id)) ? 'pointer' : 'default'
+                      }}
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        if (user.role !== 'admin' && (user.role !== 'team_leader' || (project.teamLeader?._id || project.teamLeader) !== user._id)) return;
+                        const newStatus = project.status === 1 ? 0 : 1;
+                        const res = await fetch(`${API_BASE_URL}/api/projects/${project._id}`, {
+                          method: 'PUT',
+                          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${user.token}` },
+                          body: JSON.stringify({ ...project, status: newStatus, teamLeader: project.teamLeader?._id || project.teamLeader })
+                        });
+                        if (res.ok) fetchProjects();
+                      }}
+                      title="Click to toggle status"
+                      >
+                        {project.status === 1 ? 'ACTIVE' : 'INACTIVE'}
+                      </span>
+                    </div>
+                    {project.teamName && (
+                      <span style={{ fontSize: '0.75rem', color: 'var(--primary)', fontWeight: '600' }}>
+                        {project.teamName}
+                      </span>
+                    )}
+                  </div>
                   <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '4px', fontStyle: 'italic' }}>
                      #{project._id.slice(-6).toUpperCase()}
                   </p>
@@ -327,53 +362,54 @@ const Projects = () => {
 
                 {/* 3. Access Links */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                  {project.projectUrl && (
-                    <a href={project.projectUrl} target="_blank" rel="noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.75rem', color: '#6366f1', textDecoration: 'none', fontWeight: '600' }}>
-                      <Globe size={13} /> Project
+                  {project.productionUrl && (
+                    <a href={project.productionUrl} target="_blank" rel="noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.75rem', color: '#6366f1', textDecoration: 'none', fontWeight: '600' }}>
+                      <Globe size={13} /> Production
                     </a>
                   )}
                   {project.uatUrl && (
                     <a href={project.uatUrl} target="_blank" rel="noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.75rem', color: '#f59e0b', textDecoration: 'none', fontWeight: '600' }}>
-                      <Shield size={13} /> UAT
+                      <Shield size={13} /> UAT Link
                     </a>
                   )}
                   {project.productionLink && (
                     <a href={project.productionLink} target="_blank" rel="noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.75rem', color: '#10b981', textDecoration: 'none', fontWeight: '600' }}>
-                      <Layout size={13} /> Live
+                      <Layout size={13} /> Dashboard
                     </a>
                   )}
-                  {!project.projectUrl && !project.uatUrl && !project.productionLink && (
+                  {!project.productionUrl && !project.uatUrl && !project.productionLink && (
                     <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>—</span>
                   )}
                 </div>
 
-                {/* 4. Knowledge Base */}
                 <div>
-                  {project.knowledgeBase ? (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
-                      <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: '1.4' }}>
-                        {project.knowledgeBaseOriginalName || 'Knowledge base document uploaded'}
-                      </p>
-                      <button
-                        type="button"
-                        onClick={() => window.open(getKnowledgeBaseUrl(project), '_blank', 'noopener,noreferrer')}
-                        className="btn btn-outline"
-                        style={{ alignSelf: 'flex-start', padding: '0.45rem 0.75rem', fontSize: '0.75rem' }}
-                      >
-                        <ExternalLink size={14} /> View
-                      </button>
-                    </div>
-                  ) : (
-                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontStyle: 'italic', opacity: 0.5 }}>—</span>
+                  <p style={{ 
+                    fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: '1.4', 
+                    display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden'
+                  }}>
+                    {project.description || 'No description provided.'}
+                  </p>
+                  {project.knowledgeBase && (
+                    <button
+                      type="button"
+                      onClick={() => window.open(getKnowledgeBaseUrl(project), '_blank', 'noopener,noreferrer')}
+                      style={{ background: 'none', border: 'none', color: 'var(--primary)', fontSize: '0.7rem', fontWeight: '700', padding: 0, marginTop: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '2px' }}
+                    >
+                      <FileText size={10} /> View KB
+                    </button>
                   )}
                 </div>
 
                 {/* 5. Info */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                    <Users size={12} color="var(--text-muted)" />
-                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{project.teamMembers?.length || 0} members</span>
-                  </div>
+                <div>
+                  <button 
+                    onClick={() => setInfoProject(project)}
+                    className="btn btn-outline" 
+                    style={{ padding: '0.35rem 0.6rem', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+                  >
+                    <Users size={12} />
+                    <span>{project.teamMembers?.length || 0} Members</span>
+                  </button>
                 </div>
 
                 {/* 6. Bug Stats */}
@@ -407,14 +443,16 @@ const Projects = () => {
                   })()}
                 </div>
 
-                {user.role === 'admin' && (
+                {(user.role === 'admin' || (user.role === 'team_leader' && (project.teamLeader?._id || project.teamLeader) === user._id)) && (
                   <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
                     <button onClick={() => handleEdit(project)} className="btn btn-outline" style={{ padding: '0.4rem', borderRadius: '8px' }}>
                       <Edit2 size={16} />
                     </button>
-                    <button onClick={() => handleDelete(project._id)} className="btn btn-outline" style={{ padding: '0.4rem', borderRadius: '8px', color: '#ef4444', borderColor: 'rgba(239,68,68,0.2)' }}>
-                      <Trash2 size={16} />
-                    </button>
+                    {user.role === 'admin' && (
+                      <button onClick={() => handleDelete(project._id)} className="btn btn-outline" style={{ padding: '0.4rem', borderRadius: '8px', color: '#ef4444', borderColor: 'rgba(239,68,68,0.2)' }}>
+                        <Trash2 size={16} />
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
@@ -480,14 +518,38 @@ const Projects = () => {
                   <input type="text" value={formData.teamName} onChange={e => setFormData({ ...formData, teamName: e.target.value })} placeholder="e.g. Alpha Developers" />
                 </div>
 
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>Description / Credentials</label>
+                  <textarea 
+                    value={formData.description} 
+                    onChange={e => setFormData({ ...formData, description: e.target.value })} 
+                    placeholder="Enter project details, credentials, or brief description..."
+                    style={{ minHeight: '100px', resize: 'vertical' }}
+                  />
+                </div>
+
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>Project URL</label>
-                    <input type="url" value={formData.projectUrl} onChange={e => setFormData({ ...formData, projectUrl: e.target.value })} placeholder="https://..." />
+                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>Production URL</label>
+                    <input type="url" value={formData.productionUrl} onChange={e => setFormData({ ...formData, productionUrl: e.target.value })} placeholder="https://..." />
                   </div>
                   <div>
                     <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>UAT URL</label>
                     <input type="url" value={formData.uatUrl} onChange={e => setFormData({ ...formData, uatUrl: e.target.value })} placeholder="https://..." />
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>Dashboard Link</label>
+                    <input type="url" value={formData.productionLink} onChange={e => setFormData({ ...formData, productionLink: e.target.value })} placeholder="https://..." />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>Project Status</label>
+                    <select value={formData.status} onChange={e => setFormData({ ...formData, status: Number(e.target.value) })}>
+                      <option value={1}>Active</option>
+                      <option value={0}>Inactive</option>
+                    </select>
                   </div>
                 </div>
 
@@ -691,10 +753,82 @@ const Projects = () => {
         document.body
       )}
 
+      {/* Team Member Info Modal */}
+      {infoProject && ReactDOM.createPortal(
+        <div style={{
+          position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
+          background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100000,
+          padding: '1.5rem'
+        }} onClick={() => setInfoProject(null)}>
+          <div 
+            onClick={e => e.stopPropagation()}
+            style={{ 
+              background: 'var(--bg-card)', border: '1px solid var(--border)', 
+              width: '100%', maxWidth: '500px', borderRadius: '20px', overflow: 'hidden',
+              boxShadow: '0 25px 60px rgba(0,0,0,0.5)', animation: 'modalSlideUp 0.3s ease'
+            }}
+          >
+            <div style={{ padding: '1.5rem', background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <h3 style={{ fontSize: '1.2rem', fontWeight: '800', color: 'var(--text-main)' }}>{infoProject.name} Team</h3>
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Project Members & Assignments</p>
+              </div>
+              <button onClick={() => setInfoProject(null)} style={{ background: 'rgba(255,255,255,0.05)', border: 'none', color: 'var(--text-muted)', padding: '0.5rem', borderRadius: '10px', cursor: 'pointer' }}>
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div style={{ padding: '1.5rem', maxHeight: '60vh', overflowY: 'auto' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {/* Leader First */}
+                {infoProject.teamLeader && (
+                  <div style={{ padding: '1rem', background: 'rgba(99,102,241,0.05)', border: '1px solid rgba(99,102,241,0.15)', borderRadius: '14px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                      <span style={{ fontSize: '0.65rem', fontWeight: '800', color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Project Leader</span>
+                      <Shield size={14} color="var(--primary)" />
+                    </div>
+                    <p style={{ fontWeight: '700', color: 'var(--text-main)' }}>{infoProject.teamLeader.name}</p>
+                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{infoProject.teamLeader.email}</p>
+                  </div>
+                )}
+
+                {/* Team Members */}
+                <div style={{ marginTop: '0.5rem' }}>
+                  <span style={{ fontSize: '0.65rem', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '0.75rem' }}>Team Members ({infoProject.teamMembers?.length || 0})</span>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    {infoProject.teamMembers?.map(m => (
+                      <div key={m._id} style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.5rem', borderRadius: '10px' }}>
+                        <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: '700' }}>
+                          {m.name.charAt(0)}
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <p style={{ fontSize: '0.85rem', fontWeight: '700', color: 'var(--text-main)' }}>{m.name}</p>
+                          <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{m.role} · {m.email}</p>
+                        </div>
+                      </div>
+                    ))}
+                    {!infoProject.teamMembers?.length && (
+                      <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.8rem', fontStyle: 'italic', padding: '1rem' }}>No team members assigned.</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div style={{ padding: '1.25rem 1.5rem', background: 'rgba(0,0,0,0.1)', borderTop: '1px solid var(--border)', textAlign: 'right' }}>
+              <button onClick={() => setInfoProject(null)} className="btn btn-primary" style={{ minWidth: '120px' }}>Close</button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
       <style>{`
         @keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
         .animate-spin { animation: spin 1s linear infinite; }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes modalSlideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
       `}</style>
       <ConfirmModal
         isOpen={deleteConfirm.isOpen}
