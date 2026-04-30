@@ -166,29 +166,7 @@ const getSystemConfig = async () => {
   return config;
 };
 
-const seedAdmin = async () => {
-  const adminEmail = 'admin@gmail.com';
-  const adminExists = await User.findOne({ email: adminEmail });
-  
-  if (!adminExists) {
-    const hashedPassword = await bcrypt.hash('admin@123', 10);
-    await User.create({
-      name: 'System Admin',
-      email: adminEmail,
-      password: hashedPassword,
-      role: 'admin',
-      status: 1
-    });
-    console.log('✅ Default Admin created: admin@gmail.com / admin@123');
-  } else {
-    // If user exists but maybe password was different, we can force reset it for the user if they are stuck
-    const hashedPassword = await bcrypt.hash('admin@123', 10);
-    adminExists.password = hashedPassword;
-    adminExists.role = 'admin'; // ensure they are admin
-    await adminExists.save();
-    console.log('✅ Admin credentials updated: admin@gmail.com / admin@123');
-  }
-};
+
 
 app.post('/api/auth/register', async (req, res) => {
   const { name, email, password, role } = req.body;
@@ -1304,7 +1282,7 @@ app.get('/api/reports/summary', protect, authorize('admin'), async (req, res) =>
 // ─────────────────────────────────────────────
 const PORT = process.env.PORT || 5000;
 connectDB().then(async () => {
-  await seedAdmin();
+
   
   // Static files for production
   const distPath = path.join(__dirname, '../dist');

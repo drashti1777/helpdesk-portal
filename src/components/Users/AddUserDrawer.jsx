@@ -135,6 +135,7 @@ const AddUserDrawer = ({ isOpen, onClose, onSuccess }) => {
                   value={formData.name}
                   onChange={e => setFormData({ ...formData, name: e.target.value })}
                   style={inputStyle}
+                  autoComplete="off"
                   onFocus={e => { e.target.style.borderColor = 'var(--primary)'; e.target.style.boxShadow = '0 0 0 4px rgba(99,102,241,0.1)'; }}
                   onBlur={e => { e.target.style.borderColor = 'var(--border)'; e.target.style.boxShadow = 'none'; }}
                 />
@@ -151,6 +152,7 @@ const AddUserDrawer = ({ isOpen, onClose, onSuccess }) => {
                   value={formData.email}
                   onChange={e => setFormData({ ...formData, email: e.target.value })}
                   style={{ ...inputStyle, paddingLeft: '3rem' }}
+                  autoComplete="off"
                   onFocus={e => { e.target.style.borderColor = 'var(--primary)'; e.target.style.boxShadow = '0 0 0 4px rgba(99,102,241,0.1)'; }}
                   onBlur={e => { e.target.style.borderColor = 'var(--border)'; e.target.style.boxShadow = 'none'; }}
                 />
@@ -167,6 +169,7 @@ const AddUserDrawer = ({ isOpen, onClose, onSuccess }) => {
                   value={formData.mobile}
                   onChange={e => setFormData({ ...formData, mobile: e.target.value })}
                   style={{ ...inputStyle, paddingLeft: '3rem' }}
+                  autoComplete="off"
                   onFocus={e => { e.target.style.borderColor = 'var(--primary)'; e.target.style.boxShadow = '0 0 0 4px rgba(99,102,241,0.1)'; }}
                   onBlur={e => { e.target.style.borderColor = 'var(--border)'; e.target.style.boxShadow = 'none'; }}
                 />
@@ -183,6 +186,7 @@ const AddUserDrawer = ({ isOpen, onClose, onSuccess }) => {
                   value={formData.password}
                   onChange={e => setFormData({ ...formData, password: e.target.value })}
                   style={{ ...inputStyle, paddingLeft: '3rem' }}
+                  autoComplete="new-password"
                   onFocus={e => { e.target.style.borderColor = 'var(--primary)'; e.target.style.boxShadow = '0 0 0 4px rgba(99,102,241,0.1)'; }}
                   onBlur={e => { e.target.style.borderColor = 'var(--border)'; e.target.style.boxShadow = 'none'; }}
                 />
