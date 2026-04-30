@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import ConfirmModal from '../components/Layout/ConfirmModal';
 import Badge from '../components/Badge';
+import AddUserDrawer from '../components/Users/AddUserDrawer';
 
 const ROLE_META = {
   admin: { label: 'Admin', color: '#a5b4fc', bg: 'rgba(99,102,241,0.15)', border: 'rgba(99,102,241,0.3)', icon: Shield },
@@ -41,10 +42,8 @@ const Users = () => {
   const [filterRole, setFilterRole] = useState('all');
   const [actionMenu, setActionMenu] = useState(null);
 
-  // Add User Modal State
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [addForm, setAddForm] = useState({ name: '', email: '', mobile: '', password: '', role: 'employee' });
-  const [addLoading, setAddLoading] = useState(false);
+  // Add User Drawer State
+  const [showAddDrawer, setShowAddDrawer] = useState(false);
 
   // Delete Confirmation State
   const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, emp: null });
@@ -113,33 +112,9 @@ const Users = () => {
     } catch { showToast('Server error', 'error'); }
   };
 
-  const handleAddUser = async (e) => {
-    e.preventDefault();
-    setAddLoading(true);
-    const payload = {
-      ...addForm,
-      email: addForm.email.trim()
-    };
-    try {
-      const res = await fetch(`${API_BASE_URL}/api/users`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${user.token}` },
-        body: JSON.stringify(payload)
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setUsers(prev => [data, ...prev]);
-        setShowAddModal(false);
-        setAddForm({ name: '', email: '', mobile: '', password: '', role: 'employee' });
-        showToast(`${data.name} added successfully as ${data.role}`);
-      } else {
-        showToast(data.message || 'Failed to add user', 'error');
-      }
-    } catch {
-      showToast('Server error while adding user', 'error');
-    } finally {
-      setAddLoading(false);
-    }
+  const onUserAdded = (newUser) => {
+    setUsers(prev => [newUser, ...prev]);
+    showToast(`${newUser.name} added successfully as ${newUser.role}`);
   };
 
   const filtered = users.filter(u => {
@@ -200,7 +175,7 @@ const Users = () => {
           <button className="btn btn-outline" onClick={fetchUsers} style={{ fontSize: '0.875rem' }}>
             <RefreshCw size={14} /> Refresh
           </button>
-          <button className="btn btn-primary" onClick={() => setShowAddModal(true)} style={{ fontSize: '0.875rem' }}>
+          <button className="btn btn-primary" onClick={() => setShowAddDrawer(true)} style={{ fontSize: '0.875rem' }}>
             <PlusCircle size={15} /> Add User
           </button>
         </div>
@@ -323,17 +298,6 @@ const Users = () => {
                     <span style={{ marginLeft: '0.5rem', fontSize: '0.67rem', fontWeight: '700', background: 'rgba(99,102,241,0.15)', color: '#a5b4fc', padding: '0.1rem 0.45rem', borderRadius: '999px' }}>
                       You
                     </span>
-                  )}
-                  {emp.createdAt && (
-                    <div style={{ fontSize: '0.73rem', color: 'var(--text-muted)', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                      <span style={{ fontWeight: '600', color: 'rgba(255,255,255,0.4)' }}>Joined:</span>
-                      <span>
-                        {(() => {
-                          const p = formatDateTimeParts(emp.createdAt);
-                          return p ? `${p.datePart} ${p.timePart}` : new Date(emp.createdAt).toLocaleDateString();
-                        })()}
-                      </span>
-                    </div>
                   )}
                 </div>
 
@@ -486,102 +450,11 @@ const Users = () => {
       )}
 
       {/* Add User Drawer */}
-      <div style={{
-        position: 'fixed', top: 0, right: 0, width: '100%', height: '100%',
-        background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)',
-        display: 'flex', justifyContent: 'flex-end', zIndex: 9999,
-        opacity: showAddModal ? 1 : 0, pointerEvents: showAddModal ? 'all' : 'none',
-        transition: 'opacity 0.3s ease'
-      }} onClick={() => setShowAddModal(false)}>
-        <div
-          onClick={e => e.stopPropagation()}
-          style={{
-            background: 'var(--bg-dark)', borderLeft: '1px solid var(--border)',
-            width: '100%', maxWidth: '450px', height: '100%',
-            boxShadow: '-10px 0 50px rgba(0,0,0,0.5)', position: 'relative',
-            display: 'flex', flexDirection: 'column',
-            transform: showAddModal ? 'translateX(0)' : 'translateX(100%)',
-            transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
-          }}
-        >
-          {/* Drawer Header */}
-          <div style={{ padding: '1.5rem 2rem', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <h2 style={{ fontSize: '1.5rem', fontWeight: '800', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <PlusCircle size={24} color="var(--primary)" /> Add New User
-              </h2>
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Register a new member to the platform.</p>
-            </div>
-            <button
-              onClick={() => setShowAddModal(false)}
-              style={{ background: 'var(--glass)', border: '1px solid var(--border)', color: 'var(--text-muted)', cursor: 'pointer', padding: '0.5rem', borderRadius: '10px' }}
-            >
-              <X size={20} />
-            </button>
-          </div>
-
-          {/* Drawer Body */}
-          <div style={{ flex: 1, overflowY: 'auto', padding: '2rem' }}>
-            <form onSubmit={handleAddUser} id="add-user-form" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>Full Name</label>
-                <input
-                  type="text" required
-                  value={addForm.name} onChange={e => setAddForm({ ...addForm, name: e.target.value })}
-                  placeholder="e.g. John Doe"
-                />
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>Email Address</label>
-                <input
-                  type="email" required
-                  value={addForm.email} onChange={e => setAddForm({ ...addForm, email: e.target.value })}
-                  placeholder="john@example.com"
-                />
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>Mobile Number</label>
-                <input
-                  type="tel"
-                  value={addForm.mobile} onChange={e => setAddForm({ ...addForm, mobile: e.target.value })}
-                  placeholder="+1 234 567 890"
-                />
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>Temporary Password</label>
-                <input
-                  type="password" required minLength={6}
-                  value={addForm.password} onChange={e => setAddForm({ ...addForm, password: e.target.value })}
-                  placeholder="••••••••"
-                />
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>System Role</label>
-                <select
-                  value={addForm.role} onChange={e => setAddForm({ ...addForm, role: e.target.value })}
-                  style={{ cursor: 'pointer' }}
-                >
-                  <option value="employee">Employee</option>
-                  <option value="employee">Employee</option>
-                  <option value="hr">HR Role</option>
-                  <option value="team_leader">Team Leader</option>
-                  {isAdmin && (
-                    <option value="admin">Admin</option>
-                  )}
-                </select>
-              </div>
-            </form>
-          </div>
-
-          {/* Drawer Footer */}
-          <div style={{ padding: '1.5rem 2rem', borderTop: '1px solid var(--border)', display: 'flex', gap: '1rem', background: 'rgba(0,0,0,0.1)' }}>
-            <button type="button" onClick={() => setShowAddModal(false)} className="btn btn-outline" style={{ flex: 1 }}>Cancel</button>
-            <button type="submit" form="add-user-form" disabled={addLoading} className="btn btn-primary" style={{ flex: 2 }}>
-              {addLoading ? 'Creating...' : 'Create User'}
-            </button>
-          </div>
-        </div>
-      </div>
+      <AddUserDrawer 
+        isOpen={showAddDrawer} 
+        onClose={() => setShowAddDrawer(false)} 
+        onSuccess={onUserAdded} 
+      />
 
       <ConfirmModal
         isOpen={deleteConfirm.isOpen}

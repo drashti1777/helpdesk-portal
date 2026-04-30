@@ -123,7 +123,6 @@ const Projects = () => {
       payload.append('teamName', formData.teamName);
       payload.append('productionUrl', formData.productionUrl);
       payload.append('uatUrl', formData.uatUrl);
-      payload.append('productionLink', formData.productionLink);
       payload.append('teamLeader', formData.teamLeader);
       payload.append('teamMembers', JSON.stringify(formData.teamMembers));
       payload.append('status', formData.status);
@@ -161,7 +160,6 @@ const Projects = () => {
       teamName: '',
       productionUrl: '',
       uatUrl: '',
-      productionLink: '',
       teamLeader: '',
       teamMembers: [],
       status: 1
@@ -180,7 +178,6 @@ const Projects = () => {
       teamName: project.teamName || '',
       productionUrl: project.productionUrl || '',
       uatUrl: project.uatUrl || '',
-      productionLink: project.productionLink || '',
       teamLeader: project.teamLeader?._id || project.teamLeader || '',
       teamMembers: (project.teamMembers || []).map(m => m._id || m),
       status: project.status ?? 1
@@ -373,12 +370,7 @@ const Projects = () => {
                       <Shield size={13} /> UAT Link
                     </a>
                   )}
-                  {project.productionLink && (
-                    <a href={project.productionLink} target="_blank" rel="noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.75rem', color: '#10b981', textDecoration: 'none', fontWeight: '600' }}>
-                      <Layout size={13} /> Dashboard
-                    </a>
-                  )}
-                  {!project.productionUrl && !project.uatUrl && !project.productionLink && (
+                  {!project.productionUrl && !project.uatUrl && (
                     <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>—</span>
                   )}
                 </div>
@@ -507,7 +499,7 @@ const Projects = () => {
             <div style={{ padding: '1.5rem 2rem', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-card)' }}>
               <div>
                 <h2 style={{ fontSize: '1.5rem', fontWeight: '800', letterSpacing: '-0.02em', color: 'var(--text-main)' }}>
-                  {editingProject ? 'Update Project' : 'Register Project'}
+                  {editingProject ? 'Update Project' : 'Create Project'}
                 </h2>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Configure project details and team assignments.</p>
               </div>
@@ -549,11 +541,7 @@ const Projects = () => {
                   </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>Dashboard Link</label>
-                    <input type="url" value={formData.productionLink} onChange={e => setFormData({ ...formData, productionLink: e.target.value })} placeholder="https://..." />
-                  </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1rem' }}>
                   <div>
                     <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>Project Status</label>
                     <select value={formData.status} onChange={e => setFormData({ ...formData, status: Number(e.target.value) })}>
@@ -755,7 +743,7 @@ const Projects = () => {
             <div style={{ padding: '1.5rem 2rem', borderTop: '1px solid var(--border)', display: 'flex', gap: '1rem', background: 'var(--bg-card)' }}>
               <button type="button" onClick={() => setShowModal(false)} className="btn btn-outline" style={{ flex: 1 }}>Cancel</button>
               <button type="submit" form="project-form" disabled={saving} className="btn btn-primary" style={{ flex: 2 }}>
-                {saving ? 'Processing...' : editingProject ? 'Update Details' : 'Register Project'}
+                {saving ? 'Processing...' : editingProject ? 'Update Details' : 'Create Project'}
               </button>
             </div>
           </div>

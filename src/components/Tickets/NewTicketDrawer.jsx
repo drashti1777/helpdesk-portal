@@ -262,9 +262,6 @@ const NewTicketDrawer = ({ isOpen, onClose, onSuccess }) => {
                     {projects.find(p => p.name === formData.project).projectUrl && (
                       <a href={projects.find(p => p.name === formData.project).projectUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.7rem', color: 'var(--primary)', textDecoration: 'none' }}>🌐 Project</a>
                     )}
-                    {projects.find(p => p.name === formData.project).productionLink && (
-                      <a href={projects.find(p => p.name === formData.project).productionLink} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.7rem', color: '#10b981', textDecoration: 'none' }}>🚀 Prod</a>
-                    )}
                   </div>
                 )}
               </div>

@@ -54,10 +54,6 @@ const Sidebar = () => {
       {/* Nav */ }
   <nav style={{ flex: 1 }}>
 
-    {/* Dashboard — all roles */}
-    <NavLink to="/" end className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-      <LayoutDashboard size={18} /> Dashboard
-    </NavLink>
 
     {/* Tickets — everyone */}
     <NavLink to="/tickets" end className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>

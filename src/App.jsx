@@ -185,13 +185,7 @@ function App() {
         <Route path="/login" element={!user ? <Login /> : <Navigate to="/projects" replace />} />
 
         {/* Dashboard — ALL roles including client */}
-        <Route path="/" element={
-          <PrivateRoute>
-            <AppLayout>
-              <Dashboard />
-            </AppLayout>
-          </PrivateRoute>
-        } />
+        <Route path="/" element={<Navigate to="/projects" replace />} />
 
         {/* Tickets — everyone */}
         <Route path="/profile" element={
@@ -256,7 +250,7 @@ function App() {
 
 
         {/* Fallback */}
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<Navigate to="/projects" replace />} />
       </Routes>
     </BrowserRouter>
   );
