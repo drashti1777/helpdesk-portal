@@ -285,7 +285,7 @@ const Projects = () => {
             display: 'grid',
             gridTemplateColumns: 'minmax(180px, 240px) minmax(210px, 260px) minmax(170px, 220px) minmax(150px, 200px) minmax(220px, 1fr) minmax(120px, 140px) minmax(120px, 140px) minmax(120px, 140px) 90px',
             padding: '0.75rem 1.5rem',
-            background: 'rgba(255,255,255,0.03)',
+            background: 'var(--bg-muted)',
             borderBottom: '1px solid var(--border)',
             fontSize: '0.7rem',
             fontWeight: '700',
@@ -323,7 +323,7 @@ const Projects = () => {
                 padding: '1.25rem 1.5rem',
                 borderBottom: idx < filteredProjects.length - 1 ? '1px solid var(--border)' : 'none',
                 transition: 'background 0.2s ease'
-              }} onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.02)'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+              }} onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-muted)'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
                 {/* 1. Project & Team Name */}
                 <div style={gridCell}>
                   <h3 style={{ fontWeight: '700', fontSize: '1rem', color: 'var(--text-main)' }}>{project.name}</h3>
@@ -720,7 +720,7 @@ const Projects = () => {
                         maxHeight: '300px', overflow: 'hidden', display: 'flex', flexDirection: 'column',
                         boxShadow: '0 20px 50px rgba(0,0,0,0.6)', animation: 'fadeIn 0.2s ease'
                       }}>
-                        <div style={{ padding: '0.75rem', borderBottom: '1px solid var(--border)', background: 'rgba(255,255,255,0.02)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <div style={{ padding: '0.75rem', borderBottom: '1px solid var(--border)', background: 'var(--bg-muted)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                           <div style={{ position: 'relative', flex: 1 }}>
                             <Search size={14} style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
                             <input 
@@ -739,7 +739,7 @@ const Projects = () => {
 
                         <div style={{ overflowY: 'auto', flex: 1 }}>
                           {availableUsers.filter(u => u.name.toLowerCase().includes(memberSearch.toLowerCase()) || u.email.toLowerCase().includes(memberSearch.toLowerCase())).map(u => (
-                            <div key={u._id} onClick={() => { handleMemberToggle(u._id); }} style={{ padding: '0.75rem 1rem', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: formData.teamMembers.includes(u._id) ? 'rgba(99,102,241,0.08)' : 'transparent', borderBottom: '1px solid rgba(255,255,255,0.02)' }} onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'} onMouseLeave={e => e.currentTarget.style.background = formData.teamMembers.includes(u._id) ? 'rgba(99,102,241,0.08)' : 'transparent'}>
+                            <div key={u._id} onClick={() => { handleMemberToggle(u._id); }} style={{ padding: '0.75rem 1rem', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: formData.teamMembers.includes(u._id) ? 'rgba(99,102,241,0.08)' : 'transparent', borderBottom: '1px solid var(--bg-muted)' }} onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-muted)'} onMouseLeave={e => e.currentTarget.style.background = formData.teamMembers.includes(u._id) ? 'rgba(99,102,241,0.08)' : 'transparent'}>
                               <div>
                                 <p style={{ fontSize: '0.85rem', fontWeight: '700', color: formData.teamMembers.includes(u._id) ? 'var(--primary)' : 'var(--text-main)' }}>{u.name}</p>
                                 <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{u.role} · {u.email}</p>
@@ -780,7 +780,7 @@ const Projects = () => {
                     }}
                     style={{
                       border: `1px dashed ${isDraggingKnowledgeBase ? 'rgba(99,102,241,0.7)' : 'var(--border)'}`,
-                      background: isDraggingKnowledgeBase ? 'rgba(99,102,241,0.08)' : 'rgba(255,255,255,0.02)',
+                      background: isDraggingKnowledgeBase ? 'rgba(99,102,241,0.08)' : 'var(--bg-muted)',
                       borderRadius: '14px',
                       padding: '1.25rem',
                       cursor: 'pointer',
@@ -860,12 +860,12 @@ const Projects = () => {
               boxShadow: '0 25px 60px rgba(0,0,0,0.5)', animation: 'modalSlideUp 0.3s ease'
             }}
           >
-            <div style={{ padding: '1.5rem', background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ padding: '1.5rem', background: 'var(--bg-muted)', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
                 <h3 style={{ fontSize: '1.2rem', fontWeight: '800', color: 'var(--text-main)' }}>{infoProject.name} Team</h3>
                 <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Project Members & Assignments</p>
               </div>
-              <button onClick={() => setInfoProject(null)} style={{ background: 'rgba(255,255,255,0.05)', border: 'none', color: 'var(--text-muted)', padding: '0.5rem', borderRadius: '10px', cursor: 'pointer' }}>
+              <button onClick={() => setInfoProject(null)} style={{ background: 'var(--bg-muted)', border: 'none', color: 'var(--text-muted)', padding: '0.5rem', borderRadius: '10px', cursor: 'pointer' }}>
                 <X size={20} />
               </button>
             </div>
@@ -890,7 +890,7 @@ const Projects = () => {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                     {infoProject.teamMembers?.map(m => (
                       <div key={m._id} style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.5rem', borderRadius: '10px' }}>
-                        <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: '700' }}>
+                        <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'var(--bg-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: '700' }}>
                           {m.name.charAt(0)}
                         </div>
                         <div style={{ flex: 1 }}>

@@ -154,7 +154,7 @@ const AdminControl = () => {
   }
 
   const Toggle = ({ checked, onChange, label, desc }) => (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid var(--border)', marginBottom: '0.75rem' }}>
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: 'var(--bg-muted)', borderRadius: '12px', border: '1px solid var(--border)', marginBottom: '0.75rem' }}>
       <div style={{ flex: 1 }}>
         <p style={{ fontWeight: '600', fontSize: '0.9rem', marginBottom: '0.1rem' }}>{label}</p>
         <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{desc}</p>
@@ -163,7 +163,7 @@ const AdminControl = () => {
         onClick={() => onChange(!checked)}
         style={{
           width: '44px', height: '24px', borderRadius: '12px',
-          background: checked ? 'var(--primary)' : 'rgba(255,255,255,0.1)',
+          background: checked ? 'var(--primary)' : 'var(--border-strong)',
           position: 'relative', cursor: 'pointer', transition: 'all 0.3s ease',
           boxShadow: checked ? '0 0 10px rgba(99,102,241,0.3)' : 'none'
         }}
@@ -205,7 +205,7 @@ const AdminControl = () => {
         </div>
 
         {/* Tab Navigation */}
-        <div style={{ display: 'flex', gap: '0.5rem', marginTop: '2rem', background: 'rgba(255,255,255,0.03)', padding: '0.4rem', borderRadius: '14px', border: '1px solid var(--border)', width: 'fit-content' }}>
+        <div style={{ display: 'flex', gap: '0.5rem', marginTop: '2rem', background: 'var(--bg-muted)', padding: '0.4rem', borderRadius: '14px', border: '1px solid var(--border)', width: 'fit-content' }}>
           {[
             { id: 'general', icon: Settings, label: 'General' },
             { id: 'sla', icon: Clock, label: 'SLA & Priority' },
@@ -259,7 +259,7 @@ const AdminControl = () => {
                 checked={config.settings.maintenanceMode}
                 onChange={(v) => setConfig(p => ({...p, settings: {...p.settings, maintenanceMode: v}}))}
               />
-              <div style={{ padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid var(--border)' }}>
+              <div style={{ padding: '1rem', background: 'var(--bg-muted)', borderRadius: '12px', border: '1px solid var(--border)' }}>
                 <p style={{ fontWeight: '600', fontSize: '0.9rem', marginBottom: '0.5rem' }}>Default Priority</p>
                 <select
                   value={config.settings.defaultPriority || 'low'}
@@ -322,7 +322,7 @@ const AdminControl = () => {
               ))}
             </div>
             
-            <div style={{ marginTop: '2.5rem', display: 'flex', gap: '1rem', padding: '1.25rem', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid var(--border)' }}>
+            <div style={{ marginTop: '2.5rem', display: 'flex', gap: '1rem', padding: '1.25rem', background: 'var(--bg-muted)', borderRadius: '12px', border: '1px solid var(--border)' }}>
               <AlertTriangle size={20} color="var(--text-muted)" />
               <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: '1.5' }}>
                 Modifying SLA times will affect existing tickets. Notifications will be triggered for tickets that exceed these new thresholds.
@@ -344,7 +344,7 @@ const AdminControl = () => {
                 .filter(([role]) => !['super_admin', 'admin', 'client'].includes(role))
                 .map(([role, permissions]) => (
                 <div key={role} style={{ 
-                  padding: '1.25rem', borderRadius: '16px', background: 'rgba(255,255,255,0.02)', 
+                  padding: '1.25rem', borderRadius: '16px', background: 'var(--bg-muted)', 
                   border: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: '1.5rem' 
                 }}>
                   <div style={{ width: '120px' }}>
@@ -410,7 +410,7 @@ const AdminControl = () => {
                     <div key={key} style={{
                       padding: '1rem 1.25rem',
                       borderRadius: '14px',
-                      background: 'rgba(255,255,255,0.02)',
+                      background: 'var(--bg-muted)',
                       border: '1px solid var(--border)',
                       display: 'grid',
                       gridTemplateColumns: '1fr 130px 100px 1fr 130px',
@@ -475,7 +475,7 @@ const AdminControl = () => {
         .loader {
           width: 24px;
           height: 24px;
-          border: 3px solid rgba(255,255,255,0.1);
+          border: 3px solid var(--border-strong);
           border-top-color: var(--primary);
           border-radius: 50%;
           animation: spin 0.8s linear infinite;

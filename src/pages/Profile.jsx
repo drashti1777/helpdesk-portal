@@ -346,7 +346,7 @@ const AchievementsCard = ({ data }) => {
             <span>Next: {next.label}</span>
             <span>{points} / {next.threshold}</span>
           </div>
-          <div style={{ height: '8px', background: 'rgba(255,255,255,0.05)', borderRadius: '999px', overflow: 'hidden' }}>
+          <div style={{ height: '8px', background: 'var(--bg-muted)', borderRadius: '999px', overflow: 'hidden' }}>
             <div style={{
               width: `${Math.round(progress * 100)}%`,
               height: '100%',

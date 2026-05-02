@@ -1,5 +1,5 @@
-import React, { useState, useContext } from 'react';
-import { BookOpen, ChevronDown, ChevronUp, Shield, Users, Ticket, Bell, LayoutDashboard, ShieldCheck, UserCheck, Globe, Award, HelpCircle, Star, FolderOpen, Settings } from 'lucide-react';
+import React, { useState, useContext, useMemo } from 'react';
+import { BookOpen, ChevronDown, ChevronUp, Users, Ticket, Bell, LayoutDashboard, Award, HelpCircle, Search, Sparkles, MessageCircle, Mail, ArrowRight, Settings } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 
 // Each FAQ item has a 'roles' array — only shown to those roles
@@ -196,6 +196,7 @@ const Help = () => {
   const { user } = useContext(AuthContext);
   const [expanded, setExpanded] = useState({});
   const [activeCategory, setActiveCategory] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
 
   const role = user?.role || 'client';
 
@@ -204,260 +205,337 @@ const Help = () => {
     setExpanded(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
-  // Filter by role
   const roleFiltered = FAQ_DATA.filter(cat => cat.roles.includes(role));
 
-  const filteredFAQ = roleFiltered.filter(cat => 
-    activeCategory === 'all' || cat.category === activeCategory
-  );
+  const searchedFAQ = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    const base = roleFiltered.filter(cat => activeCategory === 'all' || cat.category === activeCategory);
+    if (!q) return base;
+    return base
+      .map(cat => ({
+        ...cat,
+        items: cat.items.filter(it =>
+          it.q.toLowerCase().includes(q) || it.a.toLowerCase().includes(q)
+        ),
+      }))
+      .filter(cat => cat.items.length > 0);
+  }, [roleFiltered, activeCategory, searchQuery]);
 
   const totalTopics = roleFiltered.reduce((sum, c) => sum + c.items.length, 0);
 
   const roleLabel = {
-    admin: 'Admin',
-    team_leader: 'Team Leader',
-    hr: 'HR',
-    employee: 'Employee',
-    client: 'Client'
+    admin: 'Admin', team_leader: 'Team Leader', hr: 'HR',
+    employee: 'Employee', client: 'Client',
   }[role] || role;
 
-  const roleColor = {
-    admin: '#a5b4fc',
-    team_leader: '#c084fc',
-    hr: '#fb7185',
-    employee: '#6ee7b7',
-    client: '#94a3b8'
-  }[role] || '#6366f1';
-
   return (
-    <div className="main-content animate-fade-in" style={{ maxWidth: '1400px', margin: '0 auto' }}>
-      {/* Hero Header */}
-      <div style={{
-        background: `linear-gradient(135deg, ${roleColor}20, ${roleColor}05)`,
-        borderRadius: '24px',
-        padding: '3rem 2rem',
-        marginBottom: '2.5rem',
-        border: `1px solid ${roleColor}20`,
-        position: 'relative',
-        overflow: 'hidden'
-      }}>
-        <div style={{
-          position: 'absolute', top: '-10%', right: '-5%', width: '300px', height: '300px',
-          background: `radial-gradient(circle, ${roleColor}15 0%, transparent 70%)`,
-          filter: 'blur(40px)', pointerEvents: 'none'
-        }} />
-        
-        <div style={{ position: 'relative', zIndex: 1 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
-            <div style={{
-              width: '48px', height: '48px', borderRadius: '14px',
-              background: roleColor, display: 'flex', alignItems: 'center', justifyContent: 'center',
-              boxShadow: `0 8px 16px ${roleColor}40`
-            }}>
-              <BookOpen color="#fff" size={24} />
-            </div>
-            <h1 style={{ fontSize: '2.5rem', fontWeight: '800', letterSpacing: '-0.03em', color: 'var(--text-main)' }}>
-              Help Center
-            </h1>
-          </div>
-          <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem', maxWidth: '600px', lineHeight: '1.6' }}>
-            Welcome to your personalized knowledge hub. Find guides, FAQs, and tips specifically curated for your <span style={{ color: roleColor, fontWeight: '700' }}>{roleLabel}</span> role.
+    <div className="main-content animate-fade-in">
+      {/* Page header */}
+      <div style={{ marginBottom: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+        <div>
+          <h1 style={{ fontSize: '1.65rem', fontWeight: 800, color: 'var(--text-heading)', letterSpacing: '-0.01em' }}>
+            Knowledge Base
+          </h1>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', marginTop: 4 }}>
+            Guides and answers tailored for your <strong style={{ color: 'var(--primary)' }}>{roleLabel}</strong> role.
           </p>
         </div>
       </div>
 
-      {/* Vertical Stats & Categories */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '3rem' }}>
-        <div className="glass-card" style={{ padding: '1rem 1.5rem', display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-          <div style={{ width: '42px', height: '42px', borderRadius: '12px', background: `${roleColor}15`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Star color={roleColor} size={20} />
+      {/* Hero search card */}
+      <div className="surface-card" style={{
+        padding: '2rem 2.25rem',
+        background: 'linear-gradient(135deg, var(--primary-soft) 0%, #f8fbff 100%)',
+        border: '1px solid var(--border)',
+        marginBottom: '1.5rem',
+        position: 'relative', overflow: 'hidden',
+      }}>
+        <div style={{
+          position: 'absolute', top: -50, right: -30, width: 220, height: 220,
+          background: 'radial-gradient(circle, rgba(73,190,255,0.18) 0%, transparent 70%)',
+          borderRadius: '50%', pointerEvents: 'none',
+        }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', flexWrap: 'wrap', position: 'relative' }}>
+          <div style={{
+            width: 56, height: 56, borderRadius: 14,
+            background: 'linear-gradient(135deg, var(--primary), var(--secondary))',
+            color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: '0 10px 24px rgba(93,135,255,0.3)',
+            flexShrink: 0,
+          }}>
+            <BookOpen size={26} strokeWidth={2.4} />
           </div>
-          <div>
-            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Tailored Guide</p>
-            <h3 style={{ fontSize: '1.1rem', fontWeight: '700' }}>{roleLabel} View</h3>
-          </div>
-        </div>
-        
-        <div className="glass-card" style={{ padding: '1rem 1.5rem', display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-          <div style={{ width: '42px', height: '42px', borderRadius: '12px', background: '#10b98115', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <FolderOpen color="#10b981" size={20} />
-          </div>
-          <div>
-            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Categories</p>
-            <h3 style={{ fontSize: '1.1rem', fontWeight: '700' }}>{roleFiltered.length} Sections</h3>
+          <div style={{ flex: '1 1 280px' }}>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-heading)' }}>
+              How can we help you today?
+            </h2>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', marginTop: 4 }}>
+              Search through {totalTopics} articles, or pick a category below.
+            </p>
           </div>
         </div>
 
-        <div className="glass-card" style={{ padding: '1rem 1.5rem', display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-          <div style={{ width: '42px', height: '42px', borderRadius: '12px', background: '#6366f115', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Award color="#6366f1" size={20} />
-          </div>
-          <div>
-            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Help Topics</p>
-            <h3 style={{ fontSize: '1.1rem', fontWeight: '700' }}>{totalTopics} Articles</h3>
-          </div>
-        </div>
-      </div>
-
-      {/* Category Navigation */}
-      <div style={{ marginBottom: '3rem' }}>
-        <h2 style={{ fontSize: '1.25rem', fontWeight: '800', marginBottom: '1.5rem', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-          <LayoutDashboard size={22} color="var(--primary)" /> Browse by Category
-        </h2>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-          <button 
-            onClick={() => setActiveCategory('all')}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 10,
+          background: '#fff', borderRadius: 'var(--radius)',
+          padding: '0.7rem 1rem', marginTop: '1.25rem',
+          border: '1px solid var(--border)',
+          boxShadow: 'var(--shadow-xs)',
+          maxWidth: 640, position: 'relative',
+        }}>
+          <Search size={18} color="var(--text-subtle)" />
+          <input
+            type="text" value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            placeholder="Search articles, e.g. ‘assign a ticket’"
             style={{
-              padding: '0.85rem 1.5rem', borderRadius: '14px', fontSize: '0.95rem', fontWeight: '600',
-              cursor: 'pointer', transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
-              background: activeCategory === 'all' ? 'var(--primary)' : 'var(--glass)',
-              color: activeCategory === 'all' ? '#fff' : 'var(--text-main)',
-              border: '1px solid var(--border)',
-              textAlign: 'left',
-              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-              boxShadow: activeCategory === 'all' ? '0 8px 20px rgba(99, 102, 241, 0.3)' : 'none'
+              flex: 1, border: 'none', background: 'transparent', outline: 'none',
+              color: 'var(--text-main)', fontSize: '0.9rem', padding: 0, margin: 0,
+              boxShadow: 'none',
             }}
-          >
-            <span>All Topics</span>
-            <span style={{ fontSize: '0.8rem', opacity: 0.8, background: activeCategory === 'all' ? 'rgba(255,255,255,0.2)' : 'var(--border)', padding: '0.1rem 0.6rem', borderRadius: '20px' }}>{totalTopics}</span>
-          </button>
-          {roleFiltered.map(cat => (
-            <button 
-              key={cat.category}
-              onClick={() => setActiveCategory(cat.category)}
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
               style={{
-                padding: '0.85rem 1.5rem', borderRadius: '14px', fontSize: '0.95rem', fontWeight: '600',
-                cursor: 'pointer', transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
-                background: activeCategory === cat.category ? cat.color : 'var(--glass)',
-                color: activeCategory === cat.category ? '#fff' : 'var(--text-main)',
-                border: '1px solid var(--border)',
-                textAlign: 'left',
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                boxShadow: activeCategory === cat.category ? `0 8px 20px ${cat.color}40` : 'none'
+                background: 'none', border: 'none', cursor: 'pointer',
+                color: 'var(--text-subtle)', fontSize: 18, padding: 0,
               }}
-            >
-              <span>{cat.category}</span>
-              <span style={{ fontSize: '0.8rem', opacity: 0.8, background: activeCategory === cat.category ? 'rgba(255,255,255,0.2)' : 'var(--border)', padding: '0.1rem 0.6rem', borderRadius: '20px' }}>{cat.items.length}</span>
-            </button>
-          ))}
+            >×</button>
+          )}
         </div>
       </div>
 
-      {/* Content Section */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '3rem' }}>
-        {filteredFAQ.length === 0 ? (
-          <div className="glass-card" style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-muted)' }}>
-            <HelpCircle size={48} style={{ opacity: 0.15, marginBottom: '1rem' }} />
-            <p style={{ fontSize: '1.1rem', fontWeight: '500' }}>No articles found in this category.</p>
-            <button onClick={() => setActiveCategory('all')} style={{ marginTop: '1rem', color: 'var(--primary)', fontWeight: '600', background: 'none', border: 'none', cursor: 'pointer' }}>View all topics</button>
+      {/* Stats strip */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+        gap: '1rem', marginBottom: '1.75rem',
+      }}>
+        {[
+          { label: 'Categories', value: `${roleFiltered.length}`, icon: LayoutDashboard, color: 'var(--primary)', bg: 'var(--primary-soft)' },
+          { label: 'Articles', value: `${totalTopics}`, icon: BookOpen, color: 'var(--success)', bg: 'var(--success-soft)' },
+          { label: 'Your role', value: roleLabel, icon: Award, color: 'var(--warning)', bg: 'var(--warning-soft)' },
+          { label: 'Need more?', value: 'Contact us', icon: MessageCircle, color: 'var(--info)', bg: 'var(--info-soft)' },
+        ].map((s, i) => (
+          <div key={i} className="surface-card" style={{ padding: '1rem 1.25rem', display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+            <div style={{
+              width: 40, height: 40, borderRadius: 10,
+              background: s.bg, color: s.color,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+            }}>
+              <s.icon size={18} />
+            </div>
+            <div>
+              <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{s.label}</div>
+              <div style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-heading)', marginTop: 2 }}>{s.value}</div>
+            </div>
           </div>
-        ) : (
-          filteredFAQ.map((cat, cIdx) => {
+        ))}
+      </div>
+
+      {/* Category chips + content */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'minmax(0, 240px) minmax(0, 1fr)',
+        gap: '1.5rem',
+      }} className="kb-grid">
+        {/* Sidebar of categories */}
+        <aside className="surface-card" style={{ padding: '0.75rem', alignSelf: 'flex-start', position: 'sticky', top: 88 }}>
+          <div className="nav-section-label" style={{ padding: '0.5rem 0.75rem 0.4rem' }}>Categories</div>
+          <button
+            onClick={() => setActiveCategory('all')}
+            style={catChipStyle(activeCategory === 'all', 'var(--primary)')}
+          >
+            <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <Sparkles size={15} /> All Topics
+            </span>
+            <span style={countPillStyle(activeCategory === 'all')}>{totalTopics}</span>
+          </button>
+          {roleFiltered.map(cat => {
+            const active = activeCategory === cat.category;
             const Icon = cat.icon;
             return (
-              <div key={cIdx} className="animate-fade-in">
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
-                  <div style={{
-                    width: '42px', height: '42px', borderRadius: '12px',
-                    background: `${cat.color}15`, display: 'flex', alignItems: 'center', justifyContent: 'center'
-                  }}>
-                    <Icon size={20} color={cat.color} />
-                  </div>
-                  <div>
-                    <h2 style={{ fontSize: '1.4rem', fontWeight: '800', color: 'var(--text-main)', letterSpacing: '-0.01em' }}>{cat.category}</h2>
-                    <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{cat.items.length} helpful articles</p>
-                  </div>
-                </div>
-                
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '0.75rem' }}>
-                  {cat.items.map((item, iIdx) => {
-                    const key = `${cIdx}-${iIdx}`;
-                    const isExp = expanded[key];
-                    return (
-                      <div 
-                        key={iIdx} 
-                        className="glass-card" 
-                        style={{ 
-                          padding: '0', cursor: 'pointer', transition: 'all 0.3s ease',
-                          border: isExp ? `1px solid ${cat.color}50` : '1px solid var(--border)',
-                          background: isExp ? `${cat.color}05` : 'var(--glass)',
-                          transform: isExp ? 'scale(1.01)' : 'scale(1)',
-                          zIndex: isExp ? 2 : 1,
-                          overflow: 'hidden'
-                        }}
-                        onClick={() => toggleExpand(cIdx, iIdx)}
-                      >
-                        <div style={{ 
-                          padding: '1.25rem 1.75rem', 
-                          display: 'flex', 
-                          justifyContent: 'space-between', 
-                          alignItems: 'center',
-                          background: isExp ? `${cat.color}10` : 'transparent'
-                        }}>
-                          <h3 style={{ 
-                            fontSize: '1rem', 
-                            fontWeight: isExp ? '700' : '500', 
-                            color: isExp ? cat.color : 'var(--text-main)',
-                            transition: 'color 0.2s'
-                          }}>{item.q}</h3>
-                          <div style={{
-                            width: '28px', height: '28px', borderRadius: '50%',
-                            background: isExp ? cat.color : 'var(--border)',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            transition: 'all 0.3s'
-                          }}>
-                            {isExp ? <ChevronUp size={16} color="#fff" /> : <ChevronDown size={16} color="var(--text-muted)" />}
-                          </div>
-                        </div>
-                        
-                        <div style={{ 
-                          maxHeight: isExp ? '1000px' : '0',
-                          opacity: isExp ? 1 : 0,
-                          transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-                          overflow: 'hidden'
-                        }}>
-                          <div style={{ 
-                            padding: '1.5rem 1.75rem 2rem', 
-                            color: 'var(--text-muted)', 
-                            lineHeight: 1.8, 
-                            fontSize: '0.95rem',
-                            whiteSpace: 'pre-line',
-                            borderTop: `1px solid ${cat.color}20`
-                          }}>
-                            {item.a}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
+              <button
+                key={cat.category}
+                onClick={() => setActiveCategory(cat.category)}
+                style={catChipStyle(active, cat.color)}
+              >
+                <span style={{ display: 'flex', alignItems: 'center', gap: 10, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  <Icon size={15} /> <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{cat.category}</span>
+                </span>
+                <span style={countPillStyle(active)}>{cat.items.length}</span>
+              </button>
             );
-          })
-        )}
+          })}
+        </aside>
+
+        {/* Articles */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          {searchedFAQ.length === 0 ? (
+            <div className="surface-card" style={{ textAlign: 'center', padding: '3rem 2rem', color: 'var(--text-muted)' }}>
+              <HelpCircle size={42} style={{ opacity: 0.25, marginBottom: '0.85rem' }} />
+              <p style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-heading)' }}>No articles match your search.</p>
+              <p style={{ fontSize: '0.88rem', marginTop: 4 }}>Try a different keyword or browse all topics.</p>
+              <button
+                onClick={() => { setActiveCategory('all'); setSearchQuery(''); }}
+                className="btn btn-secondary"
+                style={{ marginTop: '1.25rem' }}
+              >
+                Reset filters
+              </button>
+            </div>
+          ) : (
+            searchedFAQ.map((cat, cIdx) => {
+              const Icon = cat.icon;
+              return (
+                <div key={cat.category} className="surface-card animate-fade-in" style={{ padding: 0, overflow: 'hidden' }}>
+                  <div style={{
+                    display: 'flex', alignItems: 'center', gap: '0.85rem',
+                    padding: '1.1rem 1.5rem',
+                    background: `linear-gradient(90deg, ${cat.color}10, transparent)`,
+                    borderBottom: '1px solid var(--border)',
+                  }}>
+                    <div style={{
+                      width: 36, height: 36, borderRadius: 10,
+                      background: cat.color, color: '#fff',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      boxShadow: `0 6px 14px ${cat.color}40`,
+                    }}>
+                      <Icon size={18} />
+                    </div>
+                    <div>
+                      <h3 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-heading)' }}>{cat.category}</h3>
+                      <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 1 }}>{cat.items.length} article{cat.items.length === 1 ? '' : 's'}</p>
+                    </div>
+                  </div>
+
+                  <div>
+                    {cat.items.map((item, iIdx) => {
+                      const key = `${cIdx}-${iIdx}`;
+                      const isExp = expanded[key];
+                      return (
+                        <div
+                          key={iIdx}
+                          onClick={() => toggleExpand(cIdx, iIdx)}
+                          style={{
+                            cursor: 'pointer',
+                            borderBottom: iIdx < cat.items.length - 1 ? '1px solid var(--border)' : 'none',
+                            transition: 'background 0.2s ease',
+                            background: isExp ? 'var(--bg-muted)' : 'transparent',
+                          }}
+                          onMouseEnter={e => { if (!isExp) e.currentTarget.style.background = 'var(--bg-muted)'; }}
+                          onMouseLeave={e => { if (!isExp) e.currentTarget.style.background = 'transparent'; }}
+                        >
+                          <div style={{
+                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                            padding: '1rem 1.5rem', gap: '1rem',
+                          }}>
+                            <h4 style={{
+                              fontSize: '0.92rem',
+                              fontWeight: isExp ? 700 : 600,
+                              color: isExp ? cat.color : 'var(--text-heading)',
+                              transition: 'color 0.2s', flex: 1,
+                            }}>{item.q}</h4>
+                            <div style={{
+                              width: 28, height: 28, borderRadius: '50%',
+                              background: isExp ? cat.color : 'var(--bg-card)',
+                              border: `1px solid ${isExp ? cat.color : 'var(--border)'}`,
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              transition: 'all 0.2s', flexShrink: 0,
+                            }}>
+                              {isExp
+                                ? <ChevronUp size={15} color="#fff" />
+                                : <ChevronDown size={15} color="var(--text-muted)" />}
+                            </div>
+                          </div>
+                          <div style={{
+                            maxHeight: isExp ? '600px' : '0',
+                            opacity: isExp ? 1 : 0,
+                            transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                            overflow: 'hidden',
+                          }}>
+                            <div style={{
+                              padding: '0 1.5rem 1.25rem',
+                              color: 'var(--text-muted)',
+                              lineHeight: 1.7,
+                              fontSize: '0.88rem',
+                              whiteSpace: 'pre-line',
+                            }}>
+                              {item.a}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })
+          )}
+
+          {/* Contact callout */}
+          <div className="surface-card" style={{
+            padding: '1.75rem',
+            background: 'linear-gradient(135deg, #2a3547 0%, #1c2434 100%)',
+            color: '#fff', border: 'none',
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem',
+            flexWrap: 'wrap',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <div style={{
+                width: 48, height: 48, borderRadius: 12,
+                background: 'rgba(255,255,255,0.12)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <Mail size={22} />
+              </div>
+              <div>
+                <h4 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#fff' }}>Still need help?</h4>
+                <p style={{ fontSize: '0.85rem', opacity: 0.8, marginTop: 2 }}>Drop us a line — our support team responds quickly.</p>
+              </div>
+            </div>
+            <button
+              onClick={() => window.location.href = 'mailto:support@helpdesk.com'}
+              className="btn"
+              style={{
+                background: '#fff', color: 'var(--text-heading)',
+                padding: '0.7rem 1.4rem', borderRadius: '999px', fontWeight: 700,
+              }}
+            >
+              Contact Support <ArrowRight size={15} />
+            </button>
+          </div>
+        </div>
       </div>
-      
-      {/* Footer Support Callout */}
-      <div style={{ 
-        marginTop: '5rem', 
-        padding: '3rem', 
-        borderRadius: '24px', 
-        background: 'var(--glass)', 
-        border: '1px solid var(--border)',
-        textAlign: 'center'
-      }}>
-        <h3 style={{ fontSize: '1.5rem', fontWeight: '800', marginBottom: '0.75rem' }}>Still need help?</h3>
-        <p style={{ color: 'var(--text-muted)', marginBottom: '2rem' }}>If you couldn't find the answer you were looking for, our support team is ready to assist you.</p>
-        <button 
-          onClick={() => window.location.href = 'mailto:support@helpdesk.com'}
-          className="btn btn-primary" 
-          style={{ padding: '0.75rem 2.5rem' }}
-        >
-          Contact Support
-        </button>
-      </div>
+
+      <style>{`
+        @media (max-width: 900px) {
+          .kb-grid { grid-template-columns: 1fr !important; }
+        }
+      `}</style>
     </div>
   );
 };
+
+const catChipStyle = (active, color) => ({
+  width: '100%',
+  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+  gap: 10, padding: '0.6rem 0.8rem',
+  borderRadius: 'var(--radius)',
+  border: 'none', cursor: 'pointer',
+  background: active ? color : 'transparent',
+  color: active ? '#fff' : 'var(--text-main)',
+  fontSize: '0.83rem', fontWeight: 600, textAlign: 'left',
+  marginBottom: 4, transition: 'all 0.18s ease',
+  boxShadow: active ? `0 4px 12px ${color}40` : 'none',
+});
+
+const countPillStyle = (active) => ({
+  fontSize: '0.7rem', fontWeight: 700,
+  background: active ? 'rgba(255,255,255,0.22)' : 'var(--bg-muted)',
+  color: active ? '#fff' : 'var(--text-muted)',
+  padding: '2px 8px', borderRadius: 999,
+});
 
 export default Help;

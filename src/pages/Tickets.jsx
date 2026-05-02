@@ -363,7 +363,7 @@ const Tickets = () => {
             >
               {cfg.label}
               <span style={{
-                background: statusFilter === key ? cfg.color : 'rgba(255,255,255,0.1)',
+                background: statusFilter === key ? cfg.color : 'var(--border-strong)',
                 color: statusFilter === key ? '#000' : 'var(--text-muted)',
                 padding: '0 0.4rem', borderRadius: '999px', fontSize: '0.7rem', fontWeight: '700'
               }}>{count}</span>
@@ -414,7 +414,7 @@ const Tickets = () => {
           borderBottom: '1px solid var(--border)',
           color: 'var(--text-muted)', fontSize: '0.72rem', fontWeight: '600',
           textTransform: 'uppercase', letterSpacing: '0.07em',
-          background: 'rgba(255,255,255,0.02)'
+          background: 'var(--bg-muted)'
         }}>
           <span>ID</span>
           <span>Subject</span>
@@ -453,7 +453,7 @@ const Tickets = () => {
                   cursor: 'pointer', transition: 'background 0.15s ease',
                   animation: `fadeIn 0.3s ease ${idx * 0.03}s both`
                 }}
-                onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}
+                onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-muted)'}
                 onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
               >
                 <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontFamily: 'monospace', fontWeight: '600' }}>

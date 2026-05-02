@@ -4,15 +4,24 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Helpdesk-portal</title>
+    <meta name="theme-color" content="#5d87ff" />
+    <meta name="description" content="Helpdesk Portal — A premium support platform by themidnight." />
+    <title>Helpdesk Portal • themidnight</title>
     <script>
       (function() {
-        const savedTheme = localStorage.getItem('theme');
-        if (savedTheme === 'light') {
-          document.body.classList.add('light-theme');
-        }
+        try {
+          var saved = localStorage.getItem('theme');
+          if (saved === 'dark') document.documentElement.classList.add('preload-dark');
+          document.addEventListener('DOMContentLoaded', function() {
+            if (saved === 'dark') document.body.classList.add('dark-theme');
+            else document.body.classList.add('light-theme');
+          });
+        } catch (e) {}
       })();
     </script>
+    <style>
+      html.preload-dark, html.preload-dark body { background: #0d1118 !important; }
+    </style>
   </head>
   <body>
     <div id="root"></div>

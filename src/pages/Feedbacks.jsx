@@ -91,7 +91,7 @@ const Feedbacks = () => {
       {/* Filter Bar */}
       <div style={{ 
         marginBottom: '2rem', display: 'flex', gap: '0.75rem', padding: '0.5rem', 
-        background: 'rgba(255,255,255,0.03)', borderRadius: '14px', border: '1px solid var(--border)', width: 'fit-content'
+        background: 'var(--bg-muted)', borderRadius: '14px', border: '1px solid var(--border)', width: 'fit-content'
       }}>
         {[
           { id: 'all', label: 'All Reviews' },
@@ -139,7 +139,7 @@ const Feedbacks = () => {
                   {[1, 2, 3, 4, 5].map(star => (
                     <Star 
                       key={star} size={18} 
-                      color={star <= t.rating ? '#f59e0b' : 'rgba(255,255,255,0.1)'} 
+                      color={star <= t.rating ? '#f59e0b' : 'var(--border-strong)'} 
                       fill={star <= t.rating ? '#f59e0b' : 'none'} 
                     />
                   ))}
@@ -154,14 +154,14 @@ const Feedbacks = () => {
               <div style={{ flex: 1 }}>
                 <p style={{ 
                   fontSize: '1rem', color: 'var(--text-main)', fontStyle: 'italic', lineHeight: '1.6',
-                  background: 'rgba(255,255,255,0.03)', padding: '1rem', borderRadius: '12px', border: '1px solid var(--border)'
+                  background: 'var(--bg-muted)', padding: '1rem', borderRadius: '12px', border: '1px solid var(--border)'
                 }}>
                   "{t.feedback || 'The client left no written feedback.'}"
                 </p>
               </div>
 
               {/* Meta Info: Client + Employee */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', padding: '0.75rem 1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '12px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', padding: '0.75rem 1rem', background: 'var(--bg-muted)', borderRadius: '12px' }}>
                 <div>
                   <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: '700', marginBottom: '0.2rem' }}>Client</p>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
@@ -203,7 +203,7 @@ const Feedbacks = () => {
         .loader {
           width: 40px;
           height: 40px;
-          border: 4px solid rgba(255,255,255,0.1);
+          border: 4px solid var(--border-strong);
           border-top-color: var(--primary);
           border-radius: 50%;
           animation: spin 0.8s linear infinite;

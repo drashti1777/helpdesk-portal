@@ -242,7 +242,7 @@ const Users = () => {
           borderBottom: '1px solid var(--border)',
           color: 'var(--text-muted)', fontSize: '0.72rem', fontWeight: '600',
           textTransform: 'uppercase', letterSpacing: '0.07em',
-          background: 'rgba(255,255,255,0.02)'
+          background: 'var(--bg-muted)'
         }}>
           <span></span>
           <span>Member</span>
@@ -281,7 +281,7 @@ const Users = () => {
                   position: 'relative',
                   zIndex: actionMenu === emp._id ? 10 : 1
                 }}
-                onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.025)'}
+                onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-muted)'}
                 onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
               >
                 {/* Avatar */}

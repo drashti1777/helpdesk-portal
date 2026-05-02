@@ -120,7 +120,7 @@ const Leaderboard = ({ embedded = false }) => {
             <div style={{
               display: 'grid', gridTemplateColumns: '60px 1fr 130px 130px 100px 110px',
               padding: '0.75rem 1.5rem',
-              background: 'rgba(255,255,255,0.03)',
+              background: 'var(--bg-muted)',
               borderBottom: '1px solid var(--border)',
               fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)',
               textTransform: 'uppercase', letterSpacing: '0.07em'

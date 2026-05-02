@@ -70,7 +70,7 @@ const CommentBubble = ({ comment, currentUserId }) => {
 };
 
 const InfoRow = ({ label, value, valueStyle }) => (
-  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.6rem 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.6rem 0', borderBottom: '1px solid var(--border)' }}>
     <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>{label}</span>
     <span style={{ fontWeight: '600', fontSize: '0.875rem', ...valueStyle }}>{value}</span>
   </div>
@@ -280,7 +280,7 @@ const TicketDetail = () => {
                   }}>{statusCfg.label}</span>
                   <span style={{
                     padding: '0.25rem 0.7rem', borderRadius: '999px', fontSize: '0.72rem', fontWeight: '700',
-                    background: 'rgba(255,255,255,0.05)', color: 'var(--text-muted)', border: '1px solid var(--border)',
+                    background: 'var(--bg-muted)', color: 'var(--text-muted)', border: '1px solid var(--border)',
                     textTransform: 'uppercase', letterSpacing: '0.05em'
                   }}>{ticket.type}</span>
                   {isOverdue && (
@@ -332,7 +332,7 @@ const TicketDetail = () => {
                             />
                           </div>
                         ) : (
-                          <div style={{ height: '100px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.05)', marginBottom: '0.75rem' }}>
+                          <div style={{ height: '100px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-muted)', marginBottom: '0.75rem' }}>
                             <FileText size={32} color="var(--text-muted)" />
                           </div>
                         )}
