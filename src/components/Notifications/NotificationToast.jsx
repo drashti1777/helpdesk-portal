@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   CheckCircle2, AlertCircle, Info, TriangleAlert, 
-  Trash2, X, RefreshCw, Eye, ExternalLink, ArrowRight
+  Trash2, X, RefreshCw, Eye, ExternalLink, ArrowRight, Globe
 } from 'lucide-react';
 
 const CONFIGS = {
@@ -53,15 +53,21 @@ const NotificationToast = () => {
   useEffect(() => {
     const handleShow = (e) => {
       const data = e.detail.notification || e.detail;
-      const { type = 'info', message, title } = data;
-      const id = Date.now();
+      // Handle backend notification structure (message, activityDetails) 
+      // vs frontend event structure (title, message)
+      const type = data.type || 'info';
       const config = CONFIGS[type] || CONFIGS.info;
 
+      const titleText = data.title || (data.activityDetails ? data.message : config.title);
+      const messageText = data.activityDetails || data.message || config.msg;
+
+      const id = Date.now();
       const newToast = {
         id,
         type,
-        title: title || config.title,
-        message: message || config.msg,
+        title: titleText,
+        message: messageText,
+        projectName: data.projectName,
         config,
         removing: false
       };
@@ -103,6 +109,23 @@ const NotificationToast = () => {
               </div>
               <div className="notif-text">
                 <div className="notif-title">{t.title}</div>
+                {t.projectName && (
+                  <div style={{ 
+                    display: 'inline-flex', 
+                    alignItems: 'center', 
+                    gap: '4px', 
+                    padding: '2px 8px', 
+                    borderRadius: '4px', 
+                    background: `${t.config.color}15`, 
+                    color: t.config.color, 
+                    fontSize: '10px', 
+                    fontWeight: '800', 
+                    textTransform: 'uppercase',
+                    marginBottom: '4px'
+                  }}>
+                    <Globe size={10} /> {t.projectName}
+                  </div>
+                )}
                 <div className="notif-msg">{t.message}</div>
                 <div className="notif-actions">
                   {t.config.actions.map((act, i) => (

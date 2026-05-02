@@ -65,7 +65,8 @@ const NewTicketDrawer = ({ isOpen, onClose, onSuccess }) => {
       .then(data => setProjects(Array.isArray(data) ? data : []));
 
     if (isManagement) {
-      fetch(`${API_BASE_URL}/api/users/agents`, { headers: { 'Authorization': `Bearer ${user.token}` } })
+      const endpoint = user.role === 'team_leader' ? '/api/users/employees' : '/api/users/agents';
+      fetch(`${API_BASE_URL}${endpoint}`, { headers: { 'Authorization': `Bearer ${user.token}` } })
         .then(res => res.json())
         .then(data => setAgents(Array.isArray(data) ? data : []));
     }

@@ -47,8 +47,9 @@ const NewTicket = () => {
       .then(res => res.json())
       .then(data => setProjects(Array.isArray(data) ? data : []));
 
-    if (user.role === 'admin' || user.role === 'team_leader') {
-      fetch(`${API_BASE_URL}/api/users/agents`, { headers: { 'Authorization': `Bearer ${user.token}` } })
+    if (isManagement) {
+      const endpoint = user.role === 'team_leader' ? '/api/users/employees' : '/api/users/agents';
+      fetch(`${API_BASE_URL}${endpoint}`, { headers: { 'Authorization': `Bearer ${user.token}` } })
         .then(res => res.json())
         .then(data => setAgents(Array.isArray(data) ? data : []));
     }
