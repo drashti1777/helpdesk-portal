@@ -79,6 +79,21 @@ const NewTicket = () => {
 
   const removeFile = (name) => setFiles(prev => prev.filter(f => f.name !== name));
 
+  const handlePaste = (e) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.indexOf('image') !== -1) {
+        const file = items[i].getAsFile();
+        if (file) {
+          const newFile = new File([file], `pasted-image-${Date.now()}.png`, { type: file.type });
+          handleFileChange([newFile]);
+        }
+      }
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -153,11 +168,14 @@ const NewTicket = () => {
 
             {formData.category === 'Other' && (
               <>
-                <label style={labelStyle}>Specify Category *</label>
-                <input
-                  type="text" placeholder="Enter custom category" required
+                <label style={labelStyle}>Issue Details / Custom Category *</label>
+                <textarea
+                  rows="3"
+                  placeholder="Describe your custom issue or specify category details..." 
+                  required
                   value={formData.otherCategory || ''}
                   onChange={e => setFormData({ ...formData, otherCategory: e.target.value })}
+                  style={{ resize: 'vertical' }}
                 />
               </>
             )}
@@ -182,13 +200,13 @@ const NewTicket = () => {
             )}
 
 
-            <label style={labelStyle}>Description *</label>
+            <label style={labelStyle}>Description</label>
             <textarea
               rows="6"
               placeholder={`Describe the issue in detail.\n\n• What happened?\n• When did it start?\n• Steps to reproduce (if applicable)`}
-              required
               value={formData.description}
               onChange={e => setFormData({ ...formData, description: e.target.value })}
+              onPaste={handlePaste}
               style={{ resize: 'vertical' }}
             />
           </div>
@@ -237,28 +255,58 @@ const NewTicket = () => {
                 )}
               </div>
             )}
-
             <h3 style={{ fontWeight: '600', marginBottom: '1.25rem', fontSize: '0.95rem', color: 'var(--text-main)' }}>Attachments</h3>
-            <div
-              onDragOver={e => { e.preventDefault(); setDragOver(true); }}
-              onDragLeave={() => setDragOver(false)}
-              onDrop={e => { e.preventDefault(); setDragOver(false); handleFileChange(e.dataTransfer.files); }}
-              style={{
-                border: `2px dashed ${dragOver ? 'var(--primary)' : 'var(--border)'}`,
-                borderRadius: '10px', padding: '2rem', textAlign: 'center',
-                background: dragOver ? 'rgba(99,102,241,0.05)' : 'var(--glass)',
-                position: 'relative', transition: 'all 0.2s ease'
-              }}
-            >
-              <Upload size={28} style={{ color: 'var(--text-muted)', marginBottom: '0.75rem' }} />
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>
-                Drag & drop files here, or <span style={{ color: 'var(--primary)', cursor: 'pointer', fontWeight: '600' }}>browse</span>
-              </p>
-              <input
-                type="file" multiple
-                style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }}
-                onChange={e => handleFileChange(e.target.files)}
-              />
+            
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '1rem' }}>
+              {/* Drop Zone */}
+              <div
+                onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+                onDragLeave={() => setDragOver(false)}
+                onDrop={e => { e.preventDefault(); setDragOver(false); handleFileChange(e.dataTransfer.files); }}
+                onPaste={handlePaste}
+                style={{
+                  border: `2px dashed ${dragOver ? 'var(--primary)' : 'var(--border)'}`,
+                  borderRadius: '12px', padding: '1.5rem', textAlign: 'center',
+                  background: dragOver ? 'rgba(99,102,241,0.05)' : 'var(--glass)',
+                  cursor: 'pointer', transition: 'all 0.2s ease',
+                  position: 'relative'
+                }}
+                onClick={() => document.getElementById('file-upload').click()}
+              >
+                <Upload size={24} color="var(--text-muted)" style={{ marginBottom: '0.5rem' }} />
+                <p style={{ fontSize: '0.8rem', fontWeight: '600', color: 'var(--text-main)' }}>Click or Drag Files</p>
+                <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Support for JPG, PNG, PDF</p>
+                <input
+                  id="file-upload" type="file" multiple hidden
+                  onChange={e => handleFileChange(e.target.files)}
+                />
+              </div>
+
+              {/* Paste Zone */}
+              <div
+                onPaste={handlePaste}
+                tabIndex="0"
+                style={{
+                  border: '2px dashed var(--border)',
+                  borderRadius: '12px', padding: '1.5rem', textAlign: 'center',
+                  background: 'var(--glass)',
+                  cursor: 'pointer', transition: 'all 0.2s ease',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                  outline: 'none'
+                }}
+                onFocus={e => e.currentTarget.style.borderColor = 'var(--primary)'}
+                onBlur={e => e.currentTarget.style.borderColor = 'var(--border)'}
+              >
+                <div style={{ 
+                  width: '32px', height: '32px', borderRadius: '50%', 
+                  background: 'rgba(99,102,241,0.1)', display: 'flex', 
+                  alignItems: 'center', justifyContent: 'center', marginBottom: '0.5rem' 
+                }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
+                </div>
+                <p style={{ fontSize: '0.8rem', fontWeight: '600', color: 'var(--text-main)' }}>Paste Screenshot</p>
+                <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Ctrl + V to attach</p>
+              </div>
             </div>
 
             {files.length > 0 && (

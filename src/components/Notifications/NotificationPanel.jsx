@@ -36,7 +36,7 @@ const NotificationPanel = () => {
         }
         const data = await res.json();
         const currentNotifications = Array.isArray(data) ? data : [];
-        
+
         if (!isInitial) {
           setNotifications(prev => {
             const newUnread = currentNotifications.filter(n => !n.isRead && !prev.find(existing => existing._id === n._id));
@@ -135,11 +135,11 @@ const NotificationPanel = () => {
   return (
     <>
       {/* Backdrop */}
-      <div 
+      <div
         onClick={() => setIsOpen(false)}
         style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.4)', zIndex: 1000, backdropFilter: 'blur(2px)' }}
       />
-      
+
       {/* Panel */}
       <div style={{
         position: 'fixed', top: 0, right: 0, width: '420px', height: '100%',
@@ -165,39 +165,39 @@ const NotificationPanel = () => {
             </div>
           </div>
           <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-            <button 
-              onClick={() => notifications.length > 0 && markAllRead()} 
-              className="btn btn-outline" 
+            <button
+              onClick={() => notifications.length > 0 && markAllRead()}
+              className="btn btn-outline"
               disabled={notifications.length === 0}
-              style={{ 
-                padding: '0.35rem 0.6rem', 
-                fontSize: '0.7rem', 
-                display: 'flex', 
-                alignItems: 'center', 
-                gap: '0.3rem', 
+              style={{
+                padding: '0.35rem 0.6rem',
+                fontSize: '0.7rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.3rem',
                 color: notifications.length > 0 ? 'var(--text-main)' : 'var(--text-muted)',
                 opacity: notifications.length === 0 ? 0.6 : 1,
                 cursor: notifications.length === 0 ? 'not-allowed' : 'pointer'
-              }} 
+              }}
               title="Mark all as read"
             >
               <Check size={13} /> Read All
             </button>
-            <button 
-              onClick={() => notifications.length > 0 && setShowClearConfirm(true)} 
-              className="btn btn-outline" 
+            <button
+              onClick={() => notifications.length > 0 && setShowClearConfirm(true)}
+              className="btn btn-outline"
               disabled={notifications.length === 0}
-              style={{ 
-                padding: '0.35rem 0.6rem', 
-                fontSize: '0.7rem', 
-                color: notifications.length > 0 ? '#fca5a5' : 'var(--text-muted)', 
-                borderColor: 'rgba(239,68,68,0.3)', 
-                display: 'flex', 
-                alignItems: 'center', 
-                gap: '0.3rem', 
-                opacity: notifications.length === 0 ? 0.6 : 1, 
+              style={{
+                padding: '0.35rem 0.6rem',
+                fontSize: '0.7rem',
+                color: notifications.length > 0 ? '#fca5a5' : 'var(--text-muted)',
+                borderColor: 'rgba(239,68,68,0.3)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.3rem',
+                opacity: notifications.length === 0 ? 0.6 : 1,
                 cursor: notifications.length === 0 ? 'not-allowed' : 'pointer'
-              }} 
+              }}
               title="Clear all"
             >
               <Trash2 size={13} /> Clear All
@@ -223,7 +223,7 @@ const NotificationPanel = () => {
             </div>
           ) : (
             notifications.map((n, idx) => (
-              <div 
+              <div
                 key={n._id}
                 style={{
                   padding: '0.85rem 1rem', borderRadius: '12px',
@@ -238,9 +238,9 @@ const NotificationPanel = () => {
                 {!n.isRead && (
                   <div style={{ position: 'absolute', top: '12px', left: '12px', width: '7px', height: '7px', borderRadius: '50%', background: 'var(--primary)', boxShadow: '0 0 6px rgba(99,102,241,0.4)' }} />
                 )}
-                
+
                 <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
-                  <div 
+                  <div
                     style={{ flexShrink: 0, marginTop: '2px', marginLeft: !n.isRead ? '0.75rem' : '0', cursor: 'pointer' }}
                     onClick={() => handleNotificationClick(n)}
                   >
@@ -254,7 +254,7 @@ const NotificationPanel = () => {
                   </div>
                   <div style={{ flex: 1, cursor: 'pointer', minWidth: 0 }} onClick={() => handleNotificationClick(n)}>
                     <p style={{ fontSize: '0.85rem', fontWeight: n.isRead ? '400' : '600', color: 'var(--text-main)', marginBottom: '0.25rem', lineHeight: 1.4 }}>
-                      {n.message}
+                      {n.message || 'System Notification'}
                     </p>
                     {n.projectName && (
                       <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', padding: '0.15rem 0.45rem', borderRadius: '4px', background: 'rgba(99,102,241,0.1)', color: 'var(--primary)', fontSize: '0.65rem', fontWeight: '700', marginBottom: '0.4rem', textTransform: 'uppercase' }}>

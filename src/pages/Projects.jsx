@@ -281,9 +281,9 @@ const Projects = () => {
 
         <div className="glass-card" style={{ padding: 0, overflowX: 'auto', overflowY: 'hidden' }}>
           <div style={{
-            minWidth: '1000px',
+            minWidth: '1100px',
             display: 'grid',
-            gridTemplateColumns: 'minmax(180px, 240px) minmax(210px, 260px) minmax(170px, 220px) minmax(150px, 200px) minmax(220px, 1fr) minmax(120px, 140px) minmax(120px, 140px) minmax(120px, 140px) 90px',
+            gridTemplateColumns: 'minmax(140px, 180px) minmax(160px, 200px) minmax(140px, 180px) minmax(120px, 150px) minmax(180px, 1fr) minmax(80px, 100px) minmax(90px, 110px) minmax(90px, 110px) 110px',
             padding: '0.75rem 1.5rem',
             background: 'var(--bg-muted)',
             borderBottom: '1px solid var(--border)',
@@ -318,7 +318,7 @@ const Projects = () => {
             filteredProjects.map((project, idx) => (
               <div key={project._id} style={{
                 display: 'grid',
-                gridTemplateColumns: 'minmax(180px, 240px) minmax(210px, 260px) minmax(170px, 220px) minmax(150px, 200px) minmax(220px, 1fr) minmax(120px, 140px) minmax(120px, 140px) minmax(120px, 140px) 90px',
+                gridTemplateColumns: 'minmax(140px, 180px) minmax(160px, 200px) minmax(140px, 180px) minmax(120px, 150px) minmax(180px, 1fr) minmax(80px, 100px) minmax(90px, 110px) minmax(90px, 110px) 110px',
                 alignItems: 'center',
                 padding: '1.25rem 1.5rem',
                 borderBottom: idx < filteredProjects.length - 1 ? '1px solid var(--border)' : 'none',
@@ -507,7 +507,7 @@ const Projects = () => {
                   })()}
                 </div>
 
-                {(user.role === 'admin' || (user.role === 'team_leader' && (project.teamLeader?._id || project.teamLeader) === user._id)) && (
+                {(user.role === 'admin' || (user.role === 'team_leader' && (project.teamLeader?._id || project.teamLeader) === user._id)) ? (
                   <div style={{ ...gridCell, display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
                     <button onClick={() => handleEdit(project)} className="btn btn-outline" style={{ padding: '0.4rem', borderRadius: '8px' }}>
                       <Edit2 size={16} />
@@ -517,6 +517,28 @@ const Projects = () => {
                         <Trash2 size={16} />
                       </button>
                     )}
+                  </div>
+                ) : (
+                  <div style={{ ...gridCell, textAlign: 'right' }}>
+                    <span style={{ 
+                      fontSize: '0.65rem', 
+                      fontWeight: '800', 
+                      color: 'var(--text-muted)', 
+                      opacity: 0.5,
+                      background: 'var(--bg-muted)',
+                      padding: '0.4rem 0.75rem',
+                      borderRadius: '8px',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05em',
+                      border: '1px solid var(--border)',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.4rem',
+                      whiteSpace: 'nowrap'
+                    }}>
+                      <Shield size={12} style={{ opacity: 0.6 }} />
+                      Permission Denied
+                    </span>
                   </div>
                 )}
               </div>
@@ -920,6 +942,13 @@ const Projects = () => {
         .animate-spin { animation: spin 1s linear infinite; }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         @keyframes modalSlideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        
+        @media (max-width: 1366px) {
+          .glass-card h3 { font-size: 0.9rem !important; }
+          .glass-card span, .glass-card a { font-size: 0.72rem !important; }
+          .glass-card p { font-size: 0.75rem !important; }
+          .glass-card .btn { padding: 0.3rem 0.5rem !important; font-size: 0.65rem !important; }
+        }
       `}</style>
       <ConfirmModal
         isOpen={deleteConfirm.isOpen}

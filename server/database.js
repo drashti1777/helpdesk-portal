@@ -28,7 +28,7 @@ userSchema.index({ points: -1 });
 
 const ticketSchema = new mongoose.Schema({
   title: { type: String, required: true },
-  description: { type: String, required: true },
+  description: { type: String },
   project: { type: String },
   type: { type: String, enum: ['hr', 'employee', 'bug', 'team_leader'], required: true },
   priority: { type: String, enum: ['low', 'medium', 'high'], default: 'low' },

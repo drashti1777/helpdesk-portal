@@ -52,7 +52,8 @@ const NotificationToast = () => {
 
   useEffect(() => {
     const handleShow = (e) => {
-      const { type = 'info', message, title } = e.detail;
+      const data = e.detail.notification || e.detail;
+      const { type = 'info', message, title } = data;
       const id = Date.now();
       const config = CONFIGS[type] || CONFIGS.info;
 
