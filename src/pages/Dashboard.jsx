@@ -10,9 +10,10 @@ import {
   Ticket as TicketIcon, AlertCircle, CheckCircle2, Clock,
   Users, TrendingUp, ArrowUpRight, ArrowDownRight, MoreHorizontal,
   PlusCircle, Inbox, Briefcase, Award, Activity, Target, ChevronRight,
-  Sun,
+  Sun, Trophy, Bug, Sparkles,
 } from 'lucide-react';
 import Loader from '../components/Branding/Loader';
+import Badge from '../components/Badge';
 
 const PRIORITY_COLORS = { low: '#13deb9', medium: '#ffae1f', high: '#fa896b' };
 const TYPE_COLORS = ['#5d87ff', '#49beff', '#13deb9', '#ffae1f', '#fa896b', '#8e63ce'];
@@ -418,12 +419,98 @@ const GoalsCard = ({ stats }) => {
   );
 };
 
+// ─── Leaderboard Section ──────────────────────────────────────────────────
+const LeaderboardSection = ({ data, navigate }) => {
+  const top3 = data.slice(0, 3);
+  const rest = data.slice(3, 5);
+
+  return (
+    <SectionCard
+      title="Bug Bounty Leaderboard"
+      padding="1.5rem"
+      action={
+        <button
+          onClick={() => navigate('/leaderboard')}
+          className="btn btn-ghost"
+          style={{ padding: '0.4rem 0.7rem', fontSize: '0.8rem' }}
+        >
+          View Full <ChevronRight size={14} />
+        </button>
+      }
+    >
+      {data.length === 0 ? (
+        <EmptyChart label="No rankings yet" />
+      ) : (
+        <>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem', marginBottom: '1.25rem' }}>
+            {top3.map((p, i) => {
+              const colors = i === 0 ? ['#fbbf24', 'rgba(251,191,36,0.1)'] : i === 1 ? ['#94a3b8', 'rgba(148,163,184,0.1)'] : ['#cd7f32', 'rgba(205,127,50,0.1)'];
+              return (
+                <div key={p._id} style={{
+                  textAlign: 'center', padding: '1rem 0.5rem', borderRadius: '16px',
+                  background: colors[1], border: `1px solid ${colors[0]}33`,
+                  position: 'relative', transition: 'transform 0.2s',
+                }} onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-3px)'} onMouseLeave={e => e.currentTarget.style.transform = ''}>
+                  <div style={{
+                    position: 'absolute', top: -10, left: '50%', transform: 'translateX(-50%)',
+                    background: colors[0], color: '#fff', fontSize: '0.6rem', fontWeight: 900,
+                    padding: '2px 8px', borderRadius: '99px', boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+                    zIndex: 2, whiteSpace: 'nowrap'
+                  }}>
+                    {i === 0 ? '🏆 1ST' : i === 1 ? '🥈 2ND' : '🥉 3RD'}
+                  </div>
+                  <div style={{
+                    width: 44, height: 44, borderRadius: '50%',
+                    background: 'linear-gradient(135deg,#6366f1,#8b5cf6)',
+                    margin: '0.5rem auto 0.75rem', display: 'flex', alignItems: 'center',
+                    justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: '0.9rem',
+                    boxShadow: i === 0 ? `0 8px 16px ${colors[1]}` : 'none'
+                  }}>
+                    {getInitials(p.name)}
+                  </div>
+                  <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-heading)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name.split(' ')[0]}</div>
+                  <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--primary)', marginTop: 4 }}>{p.points}</div>
+                  <div style={{ fontSize: '0.6rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Points</div>
+                </div>
+              );
+            })}
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+            {rest.map((p, i) => (
+              <div key={p._id} style={{
+                display: 'flex', alignItems: 'center', gap: '0.75rem',
+                padding: '0.65rem 0.85rem', background: 'var(--bg-muted)',
+                borderRadius: '10px', border: '1px solid var(--border)'
+              }}>
+                <div style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-muted)', width: 20 }}>#{i + 4}</div>
+                <div style={{
+                  width: 28, height: 28, borderRadius: '50%',
+                  background: 'var(--border)', color: 'var(--text-muted)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '0.65rem', fontWeight: 700
+                }}>{getInitials(p.name)}</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-heading)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--primary)' }}>{p.points}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </SectionCard>
+  );
+};
+
 // ─── Main Dashboard Component ──────────────────────────────────────────────
 const Dashboard = () => {
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
   const [stats, setStats] = useState(null);
   const [projects, setProjects] = useState([]);
+  const [leaderboard, setLeaderboard] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -432,15 +519,18 @@ const Dashboard = () => {
       try {
         const isElevated = ['admin', 'team_leader'].includes(user.role);
         const statsUrl = isElevated ? '/api/stats/admin' : '/api/stats/employee';
-        const [statsRes, projRes] = await Promise.all([
+        const [statsRes, projRes, lbRes] = await Promise.all([
           fetch(`${API_BASE_URL}${statsUrl}`, { headers: { Authorization: `Bearer ${user.token}` } }),
           fetch(`${API_BASE_URL}/api/projects`, { headers: { Authorization: `Bearer ${user.token}` } }),
+          fetch(`${API_BASE_URL}/api/leaderboard?limit=5`, { headers: { Authorization: `Bearer ${user.token}` } }),
         ]);
         const statsData = await statsRes.json();
         const projData = await projRes.json();
+        const lbData = await lbRes.json();
         if (!isMounted) return;
         setStats(statsData);
         setProjects(Array.isArray(projData) ? projData : []);
+        setLeaderboard(Array.isArray(lbData) ? lbData : []);
       } catch (err) {
         console.error('Dashboard fetch failed:', err);
       } finally {
@@ -640,6 +730,11 @@ const Dashboard = () => {
             ))}
           </div>
         </SectionCard>
+      </div>
+
+      {/* Leaderboard Section */}
+      <div style={{ marginBottom: '1.25rem' }}>
+        <LeaderboardSection data={leaderboard} navigate={navigate} />
       </div>
 
       {/* Bottom row: recent tickets + top assignees */}

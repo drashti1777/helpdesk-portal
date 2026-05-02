@@ -89,11 +89,6 @@ const TopBar = ({ unreadCount, isDark, onToggleTheme }) => {
             boxShadow: 'none',
           }}
         />
-        <kbd style={{
-          fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-subtle)',
-          background: 'var(--bg-card)', padding: '2px 6px', borderRadius: 4,
-          border: '1px solid var(--border)',
-        }}>⌘K</kbd>
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>

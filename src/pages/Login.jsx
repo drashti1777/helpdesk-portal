@@ -278,6 +278,7 @@ const Login = () => {
                     <option value="employee">Employee — Internal IT Requests</option>
                     <option value="team_leader">Team Leader — Management</option>
                     <option value="hr">HR — Personnel Management</option>
+                    <option value="client">Client — External Support View</option>
                     <option value="admin">Admin — System Administration</option>
                   </select>
                 </div>
