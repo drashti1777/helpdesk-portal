@@ -58,7 +58,7 @@ const NotificationPanel = () => {
     fetchAndToast(true);
     const interval = setInterval(() => fetchAndToast(false), 30000);
     return () => clearInterval(interval);
-  }, [user?.token]);
+  }, [user?.token, logout, navigate]);
 
   const markAsRead = async (id) => {
     try {
@@ -166,17 +166,38 @@ const NotificationPanel = () => {
           </div>
           <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
             <button 
-              onClick={markAllRead} 
+              onClick={() => notifications.length > 0 && markAllRead()} 
               className="btn btn-outline" 
-              style={{ padding: '0.35rem 0.6rem', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }} 
+              disabled={notifications.length === 0}
+              style={{ 
+                padding: '0.35rem 0.6rem', 
+                fontSize: '0.7rem', 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '0.3rem', 
+                color: notifications.length > 0 ? 'var(--text-main)' : 'var(--text-muted)',
+                opacity: notifications.length === 0 ? 0.6 : 1,
+                cursor: notifications.length === 0 ? 'not-allowed' : 'pointer'
+              }} 
               title="Mark all as read"
             >
               <Check size={13} /> Read All
             </button>
             <button 
-              onClick={() => setShowClearConfirm(true)} 
+              onClick={() => notifications.length > 0 && setShowClearConfirm(true)} 
               className="btn btn-outline" 
-              style={{ padding: '0.35rem 0.6rem', fontSize: '0.7rem', color: '#fca5a5', borderColor: 'rgba(239,68,68,0.3)', display: 'flex', alignItems: 'center', gap: '0.3rem' }} 
+              disabled={notifications.length === 0}
+              style={{ 
+                padding: '0.35rem 0.6rem', 
+                fontSize: '0.7rem', 
+                color: notifications.length > 0 ? '#fca5a5' : 'var(--text-muted)', 
+                borderColor: 'rgba(239,68,68,0.3)', 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '0.3rem', 
+                opacity: notifications.length === 0 ? 0.6 : 1, 
+                cursor: notifications.length === 0 ? 'not-allowed' : 'pointer'
+              }} 
               title="Clear all"
             >
               <Trash2 size={13} /> Clear All

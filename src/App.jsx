@@ -68,9 +68,9 @@ const AppLayout = ({ children }) => {
   }, []);
 
   return (
-    <div style={{ display: 'flex', height: '100vh', background: 'var(--bg-dark)', overflow: 'hidden' }}>
+    <div style={{ display: 'flex', height: '100vh', background: 'var(--bg-dark)', overflowX: 'auto', overflowY: 'hidden' }}>
       <Sidebar />
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
         {/* Top Header Bar */}
         <header style={{
           height: '64px', minHeight: '64px', borderBottom: '1px solid var(--border)',
@@ -171,9 +171,9 @@ const AppLayoutClean = ({ children }) => {
   }, [isLight]);
 
   return (
-    <div style={{ display: 'flex', height: '100vh', background: 'var(--bg-dark)', overflow: 'hidden' }}>
+    <div style={{ display: 'flex', height: '100vh', background: 'var(--bg-dark)', overflowX: 'auto', overflowY: 'hidden' }}>
       <Sidebar />
-      <div style={{ flex: 1, overflowY: 'auto' }}>
+      <div style={{ flex: 1, overflowY: 'auto', minWidth: 0 }}>
         {children}
       </div>
       <ConfirmModal />

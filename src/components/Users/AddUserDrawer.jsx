@@ -204,6 +204,7 @@ const AddUserDrawer = ({ isOpen, onClose, onSuccess }) => {
                   style={{ ...inputStyle, paddingLeft: '3rem', cursor: 'pointer', appearance: 'none' }}
                 >
                   <option value="employee">Employee</option>
+                  <option value="client">Client</option>
                   <option value="hr">HR Role</option>
                   <option value="team_leader">Team Leader</option>
                   {isAdmin && <option value="admin">Admin</option>}

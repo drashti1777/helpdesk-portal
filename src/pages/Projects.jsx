@@ -27,12 +27,16 @@ const Projects = () => {
     uatUrl: '',
     productionLink: '',
     teamLeader: '',
+    client: '',
+    poc1: '',
+    poc2: '',
     teamMembers: [],
     status: 1
   });
   const [infoProject, setInfoProject] = useState(null);
   const [saving, setSaving] = useState(false);
   const [availableUsers, setAvailableUsers] = useState([]);
+  const [availableClients, setAvailableClients] = useState([]);
   const [memberSearch, setMemberSearch] = useState('');
   const [showMemberDropdown, setShowMemberDropdown] = useState(false);
   const [expandedDescId, setExpandedDescId] = useState(null);
@@ -43,6 +47,8 @@ const Projects = () => {
 
   const getKnowledgeBaseUrl = (project) =>
     project?.knowledgeBase ? `${API_BASE_URL}${project.knowledgeBase}` : '';
+
+  const gridCell = { minWidth: 0 };
 
   const handleKnowledgeBaseSelect = (files) => {
     const [file] = Array.from(files || []);
@@ -68,11 +74,19 @@ const Projects = () => {
   const fetchUsers = async () => {
     if (user.role !== 'admin' && user.role !== 'team_leader') return;
     try {
-      const res = await fetch(`${API_BASE_URL}/api/users/agents`, {
-        headers: { 'Authorization': `Bearer ${user.token}` }
-      });
-      const data = await res.json();
-      setAvailableUsers(Array.isArray(data) ? data : []);
+      const [agentsRes, clientsRes] = await Promise.all([
+        fetch(`${API_BASE_URL}/api/users/agents`, {
+          headers: { 'Authorization': `Bearer ${user.token}` }
+        }),
+        fetch(`${API_BASE_URL}/api/users/clients`, {
+          headers: { 'Authorization': `Bearer ${user.token}` }
+        })
+      ]);
+
+      const agentsData = await agentsRes.json();
+      const clientsData = await clientsRes.json();
+      setAvailableUsers(Array.isArray(agentsData) ? agentsData : []);
+      setAvailableClients(Array.isArray(clientsData) ? clientsData : []);
     } catch (err) {
       console.error('Fetch users failed:', err);
     }
@@ -124,6 +138,9 @@ const Projects = () => {
       payload.append('productionUrl', formData.productionUrl);
       payload.append('uatUrl', formData.uatUrl);
       payload.append('teamLeader', formData.teamLeader);
+      payload.append('client', formData.client);
+      payload.append('poc1', formData.poc1);
+      payload.append('poc2', formData.poc2);
       payload.append('teamMembers', JSON.stringify(formData.teamMembers));
       payload.append('status', formData.status);
       if (knowledgeBaseFile) {
@@ -160,7 +177,11 @@ const Projects = () => {
       teamName: '',
       productionUrl: '',
       uatUrl: '',
+      productionLink: '',
       teamLeader: '',
+      client: '',
+      poc1: '',
+      poc2: '',
       teamMembers: [],
       status: 1
     });
@@ -178,7 +199,11 @@ const Projects = () => {
       teamName: project.teamName || '',
       productionUrl: project.productionUrl || '',
       uatUrl: project.uatUrl || '',
+      productionLink: project.productionLink || '',
       teamLeader: project.teamLeader?._id || project.teamLeader || '',
+      client: project.client?._id || project.client || '',
+      poc1: project.poc1?._id || project.poc1 || '',
+      poc2: project.poc2?._id || project.poc2 || '',
       teamMembers: (project.teamMembers || []).map(m => m._id || m),
       status: project.status ?? 1
     });
@@ -219,7 +244,9 @@ const Projects = () => {
     });
   };
 
-  const filteredProjects = projects.filter(p => 
+  const filteredProjects = projects
+    .filter(p => user.role !== 'client' || (p.client?._id || p.client) === user._id)
+    .filter(p => 
     p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (p.teamName || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -232,7 +259,7 @@ const Projects = () => {
             <h1 style={{ fontSize: '2rem', fontWeight: '700', letterSpacing: '-0.02em' }}>Project Management</h1>
             <p style={{ color: 'var(--text-muted)', marginTop: '0.25rem' }}>Full visibility and oversight of all registered projects.</p>
           </div>
-          {user.role === 'admin' && (
+          {(user.role === 'admin' || user.role === 'team_leader') && (
             <button onClick={() => { resetForm(); setShowModal(true); }} className="btn btn-primary">
               <PlusCircle size={18} /> New Project
             </button>
@@ -252,10 +279,11 @@ const Projects = () => {
           </div>
         </div>
 
-        <div className="glass-card" style={{ padding: 0, overflow: 'hidden' }}>
+        <div className="glass-card" style={{ padding: 0, overflowX: 'auto', overflowY: 'hidden' }}>
           <div style={{
+            minWidth: '1000px',
             display: 'grid',
-            gridTemplateColumns: '180px 210px 150px 1fr 120px 120px 120px 90px',
+            gridTemplateColumns: 'minmax(180px, 240px) minmax(210px, 260px) minmax(170px, 220px) minmax(150px, 200px) minmax(220px, 1fr) minmax(120px, 140px) minmax(120px, 140px) minmax(120px, 140px) 90px',
             padding: '0.75rem 1.5rem',
             background: 'rgba(255,255,255,0.03)',
             borderBottom: '1px solid var(--border)',
@@ -265,14 +293,15 @@ const Projects = () => {
             textTransform: 'uppercase',
             letterSpacing: '0.07em'
           }}>
-            <span>Project & Status</span>
-            <span>Project Leader</span>
-            <span>Access Links</span>
-            <span>Description</span>
-            <span>KBase</span>
-            <span>Team Info</span>
-            <span>Bugs</span>
-            <span style={{ textAlign: 'right' }}>Actions</span>
+            <span style={gridCell}>Project & Status</span>
+            <span style={gridCell}>Project Leader</span>
+            <span style={gridCell}>Client</span>
+            <span style={gridCell}>Access Links</span>
+            <span style={gridCell}>Description</span>
+            <span style={gridCell}>KBase</span>
+            <span style={gridCell}>Team Info</span>
+            <span style={gridCell}>Bugs</span>
+            <span style={{ ...gridCell, textAlign: 'right' }}>Actions</span>
           </div>
 
           {loading ? (
@@ -289,14 +318,14 @@ const Projects = () => {
             filteredProjects.map((project, idx) => (
               <div key={project._id} style={{
                 display: 'grid',
-                gridTemplateColumns: '180px 210px 150px 1fr 120px 120px 120px 90px',
+                gridTemplateColumns: 'minmax(180px, 240px) minmax(210px, 260px) minmax(170px, 220px) minmax(150px, 200px) minmax(220px, 1fr) minmax(120px, 140px) minmax(120px, 140px) minmax(120px, 140px) 90px',
                 alignItems: 'center',
                 padding: '1.25rem 1.5rem',
                 borderBottom: idx < filteredProjects.length - 1 ? '1px solid var(--border)' : 'none',
                 transition: 'background 0.2s ease'
               }} onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.02)'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
                 {/* 1. Project & Team Name */}
-                <div>
+                <div style={gridCell}>
                   <h3 style={{ fontWeight: '700', fontSize: '1rem', color: 'var(--text-main)' }}>{project.name}</h3>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '4px' }}>
                     <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
@@ -335,7 +364,7 @@ const Projects = () => {
                 </div>
 
                 {/* 2. Leader Details */}
-                <div>
+                <div style={gridCell}>
                   {project.teamLeader ? (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
@@ -352,14 +381,47 @@ const Projects = () => {
                           <Phone size={12} /> {project.teamLeader.mobile}
                         </div>
                       )}
+                      {(project.poc1 || project.poc2) && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem', marginTop: '0.45rem' }}>
+                          {project.poc1 && (
+                            <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                              POC 1: {project.poc1.name}
+                            </span>
+                          )}
+                          {project.poc2 && (
+                            <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                              POC 2: {project.poc2.name}
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>Unassigned</span>
                   )}
                 </div>
 
-                {/* 3. Access Links */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                {/* 3. Client Details */}
+                <div style={gridCell}>
+                  {project.client ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                      <span style={{ fontSize: '0.85rem', fontWeight: '700', color: 'var(--text-main)' }}>{project.client.name}</span>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: 'var(--text-muted)', fontSize: '0.72rem' }}>
+                        <Mail size={12} /> {project.client.email}
+                      </span>
+                      {project.client.mobile && (
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: 'var(--text-muted)', fontSize: '0.72rem' }}>
+                          <Phone size={12} /> {project.client.mobile}
+                        </span>
+                      )}
+                    </div>
+                  ) : (
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>No client assigned</span>
+                  )}
+                </div>
+
+                {/* 4. Access Links */}
+                <div style={{ ...gridCell, display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
                   {project.productionUrl && (
                     <a href={project.productionUrl} target="_blank" rel="noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.75rem', color: '#6366f1', textDecoration: 'none', fontWeight: '600' }}>
                       <Globe size={13} /> Production
@@ -376,7 +438,7 @@ const Projects = () => {
                 </div>
 
                 {/* 4. Description */}
-                <div>
+                <div style={gridCell}>
                   <p style={{ 
                     fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: '1.4', 
                     display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden'
@@ -386,7 +448,7 @@ const Projects = () => {
                 </div>
 
                 {/* 5. Knowledge Base */}
-                <div>
+                <div style={gridCell}>
                   {project.knowledgeBase ? (
                     <button
                       type="button"
@@ -403,7 +465,7 @@ const Projects = () => {
                 </div>
 
                 {/* 5. Info */}
-                <div>
+                <div style={gridCell}>
                   <button 
                     onClick={() => setInfoProject(project)}
                     className="btn btn-outline" 
@@ -415,7 +477,7 @@ const Projects = () => {
                 </div>
 
                 {/* 6. Bug Stats */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                <div style={{ ...gridCell, display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
                   {(() => {
                     const s = bugStats[project._id];
                     if (!s) {
@@ -446,7 +508,7 @@ const Projects = () => {
                 </div>
 
                 {(user.role === 'admin' || (user.role === 'team_leader' && (project.teamLeader?._id || project.teamLeader) === user._id)) && (
-                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
+                  <div style={{ ...gridCell, display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
                     <button onClick={() => handleEdit(project)} className="btn btn-outline" style={{ padding: '0.4rem', borderRadius: '8px' }}>
                       <Edit2 size={16} />
                     </button>
@@ -499,7 +561,7 @@ const Projects = () => {
             <div style={{ padding: '1.5rem 2rem', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-card)' }}>
               <div>
                 <h2 style={{ fontSize: '1.5rem', fontWeight: '800', letterSpacing: '-0.02em', color: 'var(--text-main)' }}>
-                  {editingProject ? 'Update Project' : 'Create Project'}
+                  {editingProject ? 'Update Project' : 'Add Project'}
                 </h2>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Configure project details and team assignments.</p>
               </div>
@@ -584,6 +646,37 @@ const Projects = () => {
                       </div>
                     );
                   })()}
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>Client</label>
+                  <select value={formData.client} onChange={e => setFormData({ ...formData, client: e.target.value })}>
+                    <option value="">Select Client</option>
+                    {availableClients.map(u => (
+                      <option key={u._id} value={u._id}>{u.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>POC 1</label>
+                    <select value={formData.poc1} onChange={e => setFormData({ ...formData, poc1: e.target.value })}>
+                      <option value="">Select POC 1</option>
+                      {availableUsers.filter(u => u.role === 'team_leader').map(u => (
+                        <option key={u._id} value={u._id}>{u.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>POC 2</label>
+                    <select value={formData.poc2} onChange={e => setFormData({ ...formData, poc2: e.target.value })}>
+                      <option value="">Select POC 2</option>
+                      {availableUsers.filter(u => u.role === 'team_leader').map(u => (
+                        <option key={u._id} value={u._id}>{u.name}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
 
                 <div>
@@ -743,7 +836,7 @@ const Projects = () => {
             <div style={{ padding: '1.5rem 2rem', borderTop: '1px solid var(--border)', display: 'flex', gap: '1rem', background: 'var(--bg-card)' }}>
               <button type="button" onClick={() => setShowModal(false)} className="btn btn-outline" style={{ flex: 1 }}>Cancel</button>
               <button type="submit" form="project-form" disabled={saving} className="btn btn-primary" style={{ flex: 2 }}>
-                {saving ? 'Processing...' : editingProject ? 'Update Details' : 'Create Project'}
+                {saving ? 'Processing...' : editingProject ? 'Update Details' : 'Add Project'}
               </button>
             </div>
           </div>

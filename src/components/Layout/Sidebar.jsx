@@ -51,98 +51,98 @@ const Sidebar = () => {
         </div>
       </div>
 
-      {/* Nav */ }
-  <nav style={{ flex: 1 }}>
+      {/* Nav */}
+      <nav style={{ flex: 1 }}>
 
 
-    {/* Tickets — everyone */}
-    <NavLink to="/tickets" end className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-      <Ticket size={18} />
-      {role === 'employee' ? 'All Tickets' : 'Tickets'}
-    </NavLink>
+        {/* Tickets — everyone */}
+        <NavLink to="/tickets" end className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+          <Ticket size={18} />
+          {role === 'employee' ? 'All Tickets' : 'Tickets'}
+        </NavLink>
 
-    {/* Project */}
-    <NavLink to="/projects" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-      <PlusCircle size={18} /> Project
-    </NavLink>
+        {/* Project */}
+        <NavLink to="/projects" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+          <PlusCircle size={18} /> Project
+        </NavLink>
 
-    {/* Users — admin, team_leader */}
-    {(role === 'admin' || role === 'team_leader') && (
-      <NavLink to="/users" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-        <Users size={18} /> Manage Team
-      </NavLink>
-    )}
+        {/* Users — admin, team_leader */}
+        {(role === 'admin' || role === 'team_leader') && (
+          <NavLink to="/users" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+            <Users size={18} /> Manage Team
+          </NavLink>
+        )}
 
-    {/* Admin Control */}
-    {role === 'admin' && (
-      <NavLink to="/admin" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-        <ShieldCheck size={18} /> Admin Control
-      </NavLink>
-    )}
+        {/* Admin Control */}
+        {role === 'admin' && (
+          <NavLink to="/admin" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+            <ShieldCheck size={18} /> Admin Control
+          </NavLink>
+        )}
 
-    {/* Help — everyone */}
-    <NavLink to="/knowledge-base" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-      <BookOpen size={18} /> Help
-    </NavLink>
-  </nav>
+        {/* Help — everyone */}
+        <NavLink to="/knowledge-base" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+          <BookOpen size={18} /> Help
+        </NavLink>
+      </nav>
 
-  {/* User Card */ }
-  <div style={{ marginTop: 'auto', paddingTop: '1.5rem', borderTop: '1px solid var(--border)' }}>
-    <div
-      onClick={() => navigate('/profile')}
-      style={{
-        padding: '0.85rem 1rem',
-        background: 'var(--glass)',
-        borderRadius: 'var(--radius)',
-        marginBottom: '0.75rem',
-        display: 'flex', alignItems: 'center', gap: '0.75rem',
-        cursor: 'pointer',
-        transition: 'transform 0.2s ease',
-        border: '1px solid transparent'
-      }}
-      onMouseEnter={e => {
-        e.currentTarget.style.transform = 'translateY(-2px)';
-        e.currentTarget.style.borderColor = 'var(--primary)';
-      }}
-      onMouseLeave={e => {
-        e.currentTarget.style.transform = '';
-        e.currentTarget.style.borderColor = 'transparent';
-      }}
-    >
-      <div style={{
-        width: '36px', height: '36px', borderRadius: '50%',
-        background: 'linear-gradient(135deg,#6366f1,#8b5cf6)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontWeight: '700', fontSize: '0.8rem', color: '#fff', flexShrink: 0
-      }}>
-        {getInitials(user?.name)}
-      </div>
-      <div style={{ overflow: 'hidden' }}>
-        <p style={{ fontSize: '0.85rem', fontWeight: '600', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-          {user?.name}
-        </p>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', marginTop: '2px', flexWrap: 'wrap' }}>
-          <span style={{
-            fontSize: '0.68rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.06em',
-            padding: '0.15rem 0.55rem', borderRadius: '999px',
-            background: meta.bg, color: meta.color, display: 'inline-block'
+      {/* User Card */}
+      <div style={{ marginTop: 'auto', paddingTop: '1.5rem', borderTop: '1px solid var(--border)' }}>
+        <div
+          onClick={() => navigate('/profile')}
+          style={{
+            padding: '0.85rem 1rem',
+            background: 'var(--glass)',
+            borderRadius: 'var(--radius)',
+            marginBottom: '0.75rem',
+            display: 'flex', alignItems: 'center', gap: '0.75rem',
+            cursor: 'pointer',
+            transition: 'transform 0.2s ease',
+            border: '1px solid transparent'
+          }}
+          onMouseEnter={e => {
+            e.currentTarget.style.transform = 'translateY(-2px)';
+            e.currentTarget.style.borderColor = 'var(--primary)';
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.transform = '';
+            e.currentTarget.style.borderColor = 'transparent';
+          }}
+        >
+          <div style={{
+            width: '36px', height: '36px', borderRadius: '50%',
+            background: 'linear-gradient(135deg,#6366f1,#8b5cf6)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontWeight: '700', fontSize: '0.8rem', color: '#fff', flexShrink: 0
           }}>
-            {meta.label}
-          </span>
-          {['employee', 'team_leader', 'hr'].includes(role) && user?.currentBadge && user.currentBadge !== 'none' && (
-            <Badge tier={user.currentBadge} size="sm" showLabel={false} />
-          )}
+            {getInitials(user?.name)}
+          </div>
+          <div style={{ overflow: 'hidden' }}>
+            <p style={{ fontSize: '0.85rem', fontWeight: '600', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {user?.name}
+            </p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', marginTop: '2px', flexWrap: 'wrap' }}>
+              <span style={{
+                fontSize: '0.68rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.06em',
+                padding: '0.15rem 0.55rem', borderRadius: '999px',
+                background: meta.bg, color: meta.color, display: 'inline-block'
+              }}>
+                {meta.label}
+              </span>
+              {['employee', 'team_leader', 'hr'].includes(role) && user?.currentBadge && user.currentBadge !== 'none' && (
+                <Badge tier={user.currentBadge} size="sm" showLabel={false} />
+              )}
+            </div>
+          </div>
         </div>
+        <button
+          onClick={handleLogout}
+          className="btn btn-outline"
+          style={{ width: '100%', justifyContent: 'center', fontSize: '0.875rem', padding: '0.6rem 1rem' }}
+        >
+          <LogOut size={16} /> Sign Out
+        </button>
       </div>
-    </div>
-    <button
-      onClick={handleLogout}
-      className="btn btn-outline"
-      style={{ width: '100%', justifyContent: 'center', fontSize: '0.875rem', padding: '0.6rem 1rem' }}
-    >
-      <LogOut size={16} /> Sign Out
-    </button>
-  </div>
     </div >
   );
 };

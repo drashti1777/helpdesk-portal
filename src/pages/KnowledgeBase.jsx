@@ -56,7 +56,7 @@ const FAQ_DATA = [
     color: '#a5b4fc',
     roles: ['admin'],
     items: [
-      { q: 'How do I create a project?', a: 'Go to "Projects" → Enter project name, description, assign a Team Leader → Click "Create Project". All tickets can be linked to a project.' },
+      { q: 'How do I create a project?', a: 'Go to "Projects" → Enter project name, description, assign a Team Leader → Click "Add Project". All tickets can be linked to a project.' },
       { q: 'How do I delete a project?', a: 'Click the trash icon on any project → A confirmation popup will appear before permanent deletion.' },
       { q: 'What is Admin Control?', a: 'Admin Control lets you configure system-wide settings:\n• Self-registration toggle\n• Maintenance mode\n• Default ticket priority\n• Role-based permissions' },
     ]

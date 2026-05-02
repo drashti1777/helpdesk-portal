@@ -12,6 +12,7 @@ const normalizeRole = (role = '') => {
     admin: 'admin',
     employee: 'employee',
     hr: 'hr',
+    client: 'client'
   };
   return roleMap[key] || 'employee';
 };

@@ -39,7 +39,7 @@ const NewTicket = () => {
   const isTeamLeader = user.role === 'team_leader';
   const isManagement = isAdmin || isTeamLeader;
 
-  const defaultType = TICKET_TYPE_MAP[user.role]?.value || 'hr';
+  const defaultType = user.role === 'client' ? 'bug' : (TICKET_TYPE_MAP[user.role]?.value || 'hr');
   const [projects, setProjects] = useState([]);
 
   useEffect(() => {
@@ -60,6 +60,7 @@ const NewTicket = () => {
     type: defaultType,
     priority: 'low',
     category: '',
+    otherCategory: '',
     project: '',
     assignedTo: '',
   });
@@ -82,7 +83,13 @@ const NewTicket = () => {
     e.preventDefault();
     setLoading(true);
     const data = new FormData();
-    Object.entries(formData).forEach(([k, v]) => { if (v) data.append(k, v); });
+    Object.entries(formData).forEach(([k, v]) => { 
+      if (k === 'category' && v === 'Other') {
+        data.append(k, formData.otherCategory || 'Other');
+      } else if (k !== 'otherCategory' && v) {
+        data.append(k, v); 
+      }
+    });
     files.forEach(f => data.append('files', f));
 
     try {
@@ -144,6 +151,17 @@ const NewTicket = () => {
               {(CATEGORIES_BY_TYPE[formData.type] || []).map(c => <option key={c} value={c}>{c}</option>)}
             </select>
 
+            {formData.category === 'Other' && (
+              <>
+                <label style={labelStyle}>Specify Category *</label>
+                <input
+                  type="text" placeholder="Enter custom category" required
+                  value={formData.otherCategory || ''}
+                  onChange={e => setFormData({ ...formData, otherCategory: e.target.value })}
+                />
+              </>
+            )}
+
 
             {(formData.type === 'bug' || !['employee', 'hr'].includes(user.role)) && (
               <>
@@ -154,7 +172,9 @@ const NewTicket = () => {
                   onChange={e => setFormData({ ...formData, project: e.target.value })}
                 >
                   <option value="">Select a project</option>
-                  {projects.map(p => (
+                  {projects
+                    .filter(p => user.role !== 'client' || (p.client?._id || p.client) === user._id)
+                    .map(p => (
                     <option key={p._id} value={p.name}>{p.name}</option>
                   ))}
                 </select>
@@ -284,6 +304,8 @@ const NewTicket = () => {
                 BUG_TYPE_TILE
               ] : user.role === 'employee' ? [
                 { value: 'employee', label: 'IT Issue', desc: 'Internal system or software problem' },
+                BUG_TYPE_TILE
+              ] : user.role === 'client' ? [
                 BUG_TYPE_TILE
               ] : [
                 { value: (TICKET_TYPE_MAP[user.role]?.value || 'hr'), ...(TICKET_TYPE_MAP[user.role] || { label: 'Request', desc: 'Submit a request' }) }

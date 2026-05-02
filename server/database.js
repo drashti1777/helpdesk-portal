@@ -5,7 +5,7 @@ const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   mobile: { type: String },
   password: { type: String, required: true },
-  role: { type: String, enum: ['employee', 'team_leader', 'hr', 'admin'], default: 'employee' },
+  role: { type: String, enum: ['employee', 'team_leader', 'hr', 'admin', 'client'], default: 'employee' },
   status: { type: Number, enum: [0, 1], default: 1 },
   lastLogin: { type: Date },
   points: { type: Number, default: 0 },
@@ -97,6 +97,9 @@ const projectSchema = new mongoose.Schema({
   uatUrl: { type: String },
   productionLink: { type: String },
   teamName: { type: String },
+  client: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  poc1: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  poc2: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   teamMembers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   teamLeader: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   status: { type: Number, enum: [0, 1], default: 1 }, // 0: Inactive/Deleted, 1: Active

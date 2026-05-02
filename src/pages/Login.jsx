@@ -159,7 +159,7 @@ const Login = () => {
               </div>
               <div style={{ textAlign: 'left' }}>
                 <h1 style={{ fontSize: '2.8rem', fontWeight: '850', color: '#1e293b', lineHeight: 0.9, letterSpacing: '-0.02em' }}>
-                   <br />
+                  <br />
                   <span style={{ color: '#4f46e5' }}>Helpdesk Portal</span>
                 </h1>
               </div>

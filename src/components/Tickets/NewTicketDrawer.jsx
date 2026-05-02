@@ -38,7 +38,7 @@ const NewTicketDrawer = ({ isOpen, onClose, onSuccess }) => {
   const isTeamLeader = user?.role === 'team_leader';
   const isManagement = isAdmin || isTeamLeader;
 
-  const defaultType = 'hr';
+  const defaultType = user?.role === 'client' ? 'bug' : 'hr';
 
   const [formData, setFormData] = useState({
     title: '',
@@ -208,6 +208,8 @@ const NewTicketDrawer = ({ isOpen, onClose, onSuccess }) => {
                   { value: 'hr', label: 'HR Request' },
                   { value: 'team_leader', label: 'Team Leader' },
                   { value: 'bug', label: 'Bug Report' }
+                ] : user.role === 'client' ? [
+                  { value: 'bug', label: 'Bug Report' }
                 ] : [
                   { value: 'hr', label: 'HR Request' },
                   { value: 'bug', label: 'Bug Report' }
@@ -253,7 +255,9 @@ const NewTicketDrawer = ({ isOpen, onClose, onSuccess }) => {
                     style={{ ...inputStyle, cursor: 'pointer', appearance: 'none' }}
                   >
                     <option value="">Internal / No Project</option>
-                    {projects.map(p => <option key={p._id} value={p.name}>{p.name} {p.teamName ? `(${p.teamName})` : ''}</option>)}
+                    {projects
+                      .filter(p => user.role !== 'client' || (p.client?._id || p.client) === user._id)
+                      .map(p => <option key={p._id} value={p.name}>{p.name} {p.teamName ? `(${p.teamName})` : ''}</option>)}
                   </select>
                   <ChevronDown size={16} style={{ position: 'absolute', right: '1.1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', opacity: 0.5, pointerEvents: 'none' }} />
                 </div>
@@ -286,6 +290,18 @@ const NewTicketDrawer = ({ isOpen, onClose, onSuccess }) => {
                   <ChevronDown size={16} style={{ position: 'absolute', right: '1.1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', opacity: 0.5, pointerEvents: 'none' }} />
                 </div>
               </div>
+
+              {formData.category === 'Other' && (
+                <div style={{ gridColumn: 'span 2' }}>
+                  <label style={labelStyle}>Specify Category *</label>
+                  <input
+                    type="text" placeholder="Enter custom category" required
+                    value={formData.otherCategory}
+                    onChange={e => setFormData({ ...formData, otherCategory: e.target.value })}
+                    style={inputStyle}
+                  />
+                </div>
+              )}
 
               {/* Priority */}
               <div>

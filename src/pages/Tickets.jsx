@@ -178,6 +178,8 @@ const Tickets = () => {
       else if (activeTab === 'employee_pool') matchCategory = ['employee', 'bug'].includes(t.type);
       else if (activeTab === 'all_tickets') matchCategory = true;
       else matchCategory = (t.createdBy?._id || t.createdBy) === user?._id;
+    } else if (user.role === 'client') {
+      matchCategory = (t.createdBy?._id || t.createdBy) === user?._id;
     } else {
       matchCategory = !typeFilter || t.type === typeFilter;
     }
@@ -193,12 +195,14 @@ const Tickets = () => {
     admin: 'All Tickets',
     team_leader: 'Tickets Management',
     employee: 'Tickets',
+    client: 'My Bug Reports',
   }[user.role] || 'Tickets';
 
   const pageSubtitle = {
     admin: 'Manage, assign, and resolve support tickets.',
     team_leader: 'Oversee and manage your team tickets.',
     employee: 'Your assigned and available tickets.',
+    client: 'Track and manage your submitted bug reports.',
   }[user.role] || '';
 
   return (

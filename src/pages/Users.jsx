@@ -12,6 +12,7 @@ import AddUserDrawer from '../components/Users/AddUserDrawer';
 const ROLE_META = {
   admin: { label: 'Admin', color: '#a5b4fc', bg: 'rgba(99,102,241,0.15)', border: 'rgba(99,102,241,0.3)', icon: Shield },
   team_leader: { label: 'Team Leader', color: '#c084fc', bg: 'rgba(168,85,247,0.15)', border: 'rgba(168,85,247,0.3)', icon: Award },
+  client: { label: 'Client', color: '#fbbf24', bg: 'rgba(251,191,36,0.15)', border: 'rgba(251,191,36,0.3)', icon: UsersIcon },
   hr: { label: 'HR Role', color: '#fb7185', bg: 'rgba(251,113,133,0.15)', border: 'rgba(251,113,133,0.3)', icon: ShieldCheck },
   employee: { label: 'Employee', color: '#6ee7b7', bg: 'rgba(16,185,129,0.12)', border: 'rgba(16,185,129,0.25)', icon: UserCheck },
 };
@@ -226,6 +227,7 @@ const Users = () => {
             <option value="all">All Roles</option>
             <option value="admin">Admin</option>
             <option value="team_leader">Team Leader</option>
+            <option value="client">Client</option>
             <option value="employee">Employee</option>
           </select>
         </div>

@@ -423,12 +423,17 @@ app.get('/api/projects', protect, async (req, res) => {
   try {
     let query = { status: 1 };
     if (req.user.role === 'team_leader') {
-      query = { teamLeader: req.user._id };
+      query = { status: 1, teamLeader: req.user._id };
     } else if (req.user.role === 'employee') {
-      query = { teamMembers: req.user._id };
+      query = { status: 1, teamMembers: req.user._id };
+    } else if (req.user.role === 'client') {
+      query = { status: 1, client: req.user._id };
     }
     const projects = await Project.find(query)
       .populate('teamLeader', 'name email mobile')
+      .populate('client', 'name email mobile')
+      .populate('poc1', 'name email mobile')
+      .populate('poc2', 'name email mobile')
       .populate('teamMembers', 'name email role mobile')
       .sort({ name: 1 });
     res.json(projects);
@@ -437,12 +442,19 @@ app.get('/api/projects', protect, async (req, res) => {
   }
 });
 
-app.post('/api/projects', protect, authorize('admin'), upload.single('knowledgeBaseFile'), async (req, res) => {
+app.post('/api/projects', protect, authorize('admin', 'team_leader'), upload.single('knowledgeBaseFile'), async (req, res) => {
   try {
-    const { name, teamName, productionUrl, uatUrl, productionLink, teamLeader, teamMembers, status: projectStatus } = req.body;
+    const { name, teamName, productionUrl, uatUrl, productionLink, teamLeader, teamMembers, client, poc1, poc2, status: projectStatus } = req.body;
     const project = await Project.create({
-      name, teamName, productionUrl, uatUrl, productionLink,
+      name,
+      teamName,
+      productionUrl,
+      uatUrl,
+      productionLink,
       teamLeader: teamLeader || null,
+      client: client || null,
+      poc1: poc1 || null,
+      poc2: poc2 || null,
       status: projectStatus !== undefined ? Number(projectStatus) : 1,
       teamMembers: teamMembers ? JSON.parse(teamMembers) : [],
       knowledgeBase: req.file ? `/uploads/${req.file.filename}` : null,
@@ -456,7 +468,7 @@ app.post('/api/projects', protect, authorize('admin'), upload.single('knowledgeB
 
 app.put('/api/projects/:id', protect, authorize('admin', 'team_leader'), upload.single('knowledgeBaseFile'), async (req, res) => {
   try {
-    const { name, teamName, productionUrl, uatUrl, productionLink, teamLeader, teamMembers, status: projectStatus } = req.body;
+    const { name, teamName, productionUrl, uatUrl, productionLink, teamLeader, teamMembers, client, poc1, poc2, status: projectStatus } = req.body;
     const project = await Project.findById(req.params.id);
     if (!project) return res.status(404).json({ message: 'Project not found' });
 
@@ -471,6 +483,9 @@ app.put('/api/projects/:id', protect, authorize('admin', 'team_leader'), upload.
     project.uatUrl = uatUrl;
     project.productionLink = productionLink;
     project.teamLeader = teamLeader || null;
+    project.client = client || null;
+    project.poc1 = poc1 || null;
+    project.poc2 = poc2 || null;
     if (projectStatus !== undefined) project.status = Number(projectStatus);
     project.teamMembers = teamMembers ? JSON.parse(teamMembers) : [];
     
@@ -943,6 +958,12 @@ app.get('/api/users/agents', protect, authorize('admin', 'super_admin', 'team_le
   const query = { status: 1, role: { $in: ['employee', 'team_leader', 'hr', 'admin'] } };
   const agents = await User.find(query).select('name email role mobile');
   res.json(agents);
+});
+
+app.get('/api/users/clients', protect, authorize('admin', 'team_leader'), async (req, res) => {
+  const query = { status: 1, role: 'client' };
+  const clients = await User.find(query).select('name email mobile');
+  res.json(clients);
 });
 
 app.get('/api/users/all', protect, authorize('admin'), async (req, res) => {
