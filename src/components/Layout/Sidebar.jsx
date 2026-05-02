@@ -2,7 +2,7 @@ import React, { useContext } from 'react';
 import { NavLink } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
 import {
-  LayoutDashboard, Ticket, Users, ShieldCheck, BookOpen, Trophy,
+  LayoutDashboard, Ticket, Users, ShieldCheck, BookOpen,
   Briefcase, Rocket,
 } from 'lucide-react';
 import PoweredByThemidnight from '../Branding/PoweredByThemidnight';
@@ -53,9 +53,7 @@ const Sidebar = () => {
           <Ticket size={18} /> {role === 'employee' ? 'My Tickets' : 'Tickets'}
         </NavLink>
 
-        <NavLink to="/leaderboard" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-          <Trophy size={18} /> Leaderboard
-        </NavLink>
+
 
         <NavLink to="/knowledge-base" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
           <BookOpen size={18} /> Knowledge Base

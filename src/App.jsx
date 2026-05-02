@@ -13,7 +13,7 @@ import AdminControl from './pages/AdminControl';
 import Help from './pages/KnowledgeBase';
 import Projects from './pages/Projects';
 import Profile from './pages/Profile';
-import Leaderboard from './pages/Leaderboard';
+
 import NotificationPanel from './components/Notifications/NotificationPanel';
 import NotificationToast from './components/Notifications/NotificationToast';
 import ConfirmModal from './components/Layout/ConfirmModal';
@@ -332,9 +332,7 @@ function App() {
           <PrivateRoute><AppLayout><Help /></AppLayout></PrivateRoute>
         } />
 
-        <Route path="/leaderboard" element={
-          <PrivateRoute><AppLayout><Leaderboard /></AppLayout></PrivateRoute>
-        } />
+
 
         <Route path="/users" element={
           <RoleRoute allowedRoles={['admin', 'team_leader']}>
